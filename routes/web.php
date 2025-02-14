@@ -1,17 +1,23 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\UserController;
+
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ClockingController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Middleware\RoleMiddleware; // Import the middleware
 use App\Http\Controllers\ExportController;
+use App\Http\Controllers\AttendanceController;
 
 Route::get('/', function () {
     return view('auth.login');
 });
 
 
+Route::middleware(['role:admin'])->group(function () {
+    Route::resource('users', UserController::class);
+});
 // Dashboard - Only for Admins
 Route::get('/dashboard', function () {
     return view('dashboard');
@@ -22,6 +28,7 @@ Route::middleware(['auth', RoleMiddleware::class . ':user'])->group(function () 
     Route::get('/clocking', [ClockingController::class, 'index'])->name('clocking.index');
     Route::post('/clock-in', [ClockingController::class, 'clockIn'])->name('clocking.clockIn');
     Route::post('/clock-out', [ClockingController::class, 'clockOut'])->name('clocking.clockOut');
+    Route::get('/attendance', [AttendanceController::class, 'index'])->name('attendance.index');
 });
 
 // Profile Routes - Available to All Authenticated Users
@@ -39,5 +46,8 @@ Route::middleware(['auth', RoleMiddleware::class . ':admin'])->group(function ()
 Route::middleware(['auth', RoleMiddleware::class . ':admin'])->group(function () {
     Route::get('/admin/clockings/export', [ExportController::class, 'exportCSV'])->name('admin.clocking.export');
 });
+
+Route::post('/admin/clocking/update', [ClockingController::class, 'updateClocking'])
+    ->name('admin.clocking.update');
 
 require __DIR__.'/auth.php';
