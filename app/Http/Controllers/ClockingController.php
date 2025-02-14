@@ -13,6 +13,7 @@ class ClockingController extends Controller
 
     public function index()
     {
+
         // Retrieve the latest clocking record for the authenticated user
         $clocking = Clocking::where('user_id', Auth::id())
             ->whereNull('clock_out')
@@ -23,6 +24,33 @@ class ClockingController extends Controller
         return view('clocking', compact('clocking'));
     }
 
+    public function ClockingTable(Request $request)
+{
+    // Check if the user is an admin
+    if (Auth::user()->role !== 'admin') {
+        return redirect()->route('dashboard'); // Redirect non-admins
+    }
+
+    // Get filter dates from request
+    $startDate = $request->input('start_date');
+    $endDate = $request->input('end_date');
+
+    // Query with optional date filters
+    $query = Clocking::with('user')->latest();
+
+    if ($startDate) {
+        $query->whereDate('clock_in', '>=', $startDate);
+    }
+
+    if ($endDate) {
+        $query->whereDate('clock_in', '<=', $endDate);
+    }
+
+    $clockings = $query->get();
+
+    // Return the view with the data
+    return view('clockingTable', compact('clockings', 'startDate', 'endDate'));
+}
 
 
     public function clockIn(Request $request)
@@ -51,7 +79,7 @@ class ClockingController extends Controller
     {
         $request->validate([
             'miles_out' => 'required|integer',
-            'image_out' => 'required|image|mimes:jpg,png,jpeg|max:2048',
+            'image_out' => 'required|image|mimes:jpg,png,jpeg',
         ]);
 
         // Store the clock-out image

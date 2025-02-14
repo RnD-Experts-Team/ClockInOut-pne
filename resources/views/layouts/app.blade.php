@@ -10,11 +10,18 @@
     <header class="bg-blue-600 text-white shadow-md">
         <nav class="container mx-auto px-4 py-4 flex justify-between items-center">
             <h1 class="text-2xl font-bold">PNE Clocking</h1>
+
             @auth
-                <form action="{{ route('logout') }}" method="POST">
-                    @csrf
-                    <button type="submit" class="text-white hover:text-blue-200">Logout</button>
-                </form>
+                <div class="flex items-center space-x-4">
+                    @if(Auth::user()->role === 'admin')
+                        <a href="{{ route('admin.clocking') }}" class="text-white hover:text-blue-200">Clocking Records</a>
+                    @endif
+
+                    <form action="{{ route('logout') }}" method="POST">
+                        @csrf
+                        <button type="submit" class="text-white hover:text-blue-200">Logout</button>
+                    </form>
+                </div>
             @endauth
         </nav>
     </header>

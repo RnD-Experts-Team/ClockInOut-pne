@@ -45,4 +45,9 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    public function clockings()
+{
+    return $this->hasMany(Clocking::class, 'user_id');
+}
 }
