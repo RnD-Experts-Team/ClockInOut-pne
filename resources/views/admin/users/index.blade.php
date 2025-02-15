@@ -8,14 +8,11 @@
             <div class="sm:flex-auto">
                 <h1 class="text-2xl font-semibold text-gray-900">Users List</h1>
                 <p class="mt-2 text-sm text-gray-700">
-                    A list of all users in your account including their name, email, and role.
+                    A list of all users in your account including their name, email, hourly pay, and role.
                 </p>
             </div>
             <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
                 <a href="{{ route('users.create') }}" class="px-6 py-3 bg-primary text-white text-sm font-semibold rounded-lg shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors">
-                    {{-- <svg class="-ml-1 mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                    </svg> --}}
                     Add New User
                 </a>
             </div>
@@ -60,6 +57,7 @@
                                     <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6 lg:pl-8">ID</th>
                                     <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Name</th>
                                     <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Email</th>
+                                    <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Hourly Pay</th>
                                     <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Role</th>
                                     <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6 lg:pr-8">
                                         <span class="sr-only">Actions</span>
@@ -77,6 +75,9 @@
                                     </td>
                                     <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                                         {{ $user->email }}
+                                    </td>
+                                    <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                        {{ $user->hourly_pay !== null ? '$' . number_format($user->hourly_pay, 2) : '-' }}
                                     </td>
                                     <td class="whitespace-nowrap px-3 py-4 text-sm">
                                         <span class="inline-flex rounded-full bg-primary-100 px-2 text-xs font-semibold leading-5 text-primary-800">

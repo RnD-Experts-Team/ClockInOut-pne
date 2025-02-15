@@ -79,11 +79,11 @@
                     </div>
                 @endforeach
             </div>
-{{-- 
+
             <!-- Pagination -->
-            <div class="mt-6">
-                {{ $clockings->links() }}
-            </div> --}}
+            <div class="mt-8">
+                {{ $clockings->links('vendor.pagination.custom') }}
+            </div>
         @else
             <!-- Empty State -->
             <div class="text-center bg-white rounded-lg shadow-sm p-12 border border-gray-200">

@@ -23,54 +23,109 @@ class ClockingController extends Controller
     }
 
     public function ClockingTable(Request $request)
-    {
-        // Check if the user is an admin
-        if (Auth::user()->role !== 'admin') {
-            return redirect()->route('dashboard'); // Redirect non-admins
-        }
-
-        // Get filter dates from request
-        $startDate = $request->input('start_date');
-        $endDate   = $request->input('end_date');
-
-        // Query with optional date filters
-        $query = Clocking::with('user')->latest();
-
-        if ($startDate) {
-            $query->whereDate('clock_in', '>=', $startDate);
-        }
-
-        if ($endDate) {
-            $query->whereDate('clock_in', '<=', $endDate);
-        }
-
-        $clockings = $query->paginate(10);
-
-        // Calculate total miles and total hours for each clocking record
-        foreach ($clockings as $clocking) {
-            // Total Miles calculation
-            if (!is_null($clocking->miles_in) && !is_null($clocking->miles_out)) {
-                $clocking->total_miles = $clocking->miles_out - $clocking->miles_in;
-            } else {
-                $clocking->total_miles = '-';
-            }
-
-            // Total Hours calculation
-            if ($clocking->clock_in && $clocking->clock_out) {
-                $start = Carbon::parse($clocking->clock_in);
-                $end   = Carbon::parse($clocking->clock_out);
-                $clocking->total_hours = $end->diff($start)->format('%H:%I:%S');
-            } else {
-                $clocking->total_hours = '-';
-            }
-        }
-
-        // Retrieve all employees (users)
-        $users = User::all();
-
-        // Return the view with the data
-        return view('clockingTable', compact('clockings', 'startDate', 'endDate', 'users'));
+{
+    // Check if the user is an admin
+    if (Auth::user()->role !== 'admin') {
+        return redirect()->route('dashboard'); // Redirect non-admins
     }
+
+    // Get filter dates from request
+    $startDate = $request->input('start_date');
+    $endDate   = $request->input('end_date');
+
+    // Query with optional date filters
+    $query = Clocking::with('user')->latest();
+
+    if ($startDate) {
+        $query->whereDate('clock_in', '>=', $startDate);
+    }
+
+    if ($endDate) {
+        $query->whereDate('clock_in', '<=', $endDate);
+    }
+
+    // Paginate results
+    $clockings = $query->paginate(10);
+
+    // Variables to accumulate totals
+    $totalMilesIn = 0;
+    $totalMilesOut = 0;
+    $totalMiles = 0;
+    $totalSeconds = 0;
+    $totalEarnings = 0;
+
+    // Calculate per-record values + accumulate totals
+    foreach ($clockings as $clocking) {
+        // Miles In / Miles Out
+        if (!is_null($clocking->miles_in)) {
+            $totalMilesIn += $clocking->miles_in;
+        }
+        if (!is_null($clocking->miles_out)) {
+            $totalMilesOut += $clocking->miles_out;
+        }
+
+        // Total Miles
+        if (!is_null($clocking->miles_in) && !is_null($clocking->miles_out)) {
+            $clocking->total_miles = $clocking->miles_out - $clocking->miles_in;
+            $totalMiles += $clocking->total_miles;
+        } else {
+            $clocking->total_miles = '-';
+        }
+
+        // Total Hours & Earnings
+        if ($clocking->clock_in && $clocking->clock_out) {
+            $start = Carbon::parse($clocking->clock_in);
+            $end   = Carbon::parse($clocking->clock_out);
+            $diffInSeconds = $end->diffInSeconds($start);
+
+            // Format total hours as HH:MM:SS
+            $clocking->total_hours = gmdate('H:i:s', $diffInSeconds);
+
+            // Calculate hours in decimal
+            $hoursDecimal = $diffInSeconds / 3600;
+
+            // Multiply by user's hourly pay if available
+            if (isset($clocking->user->hourly_pay)) {
+                $clocking->earnings = $hoursDecimal * $clocking->user->hourly_pay;
+                $totalEarnings += $clocking->earnings; // accumulate
+            } else {
+                $clocking->earnings = '-';
+            }
+
+            // Accumulate total seconds for all records
+            $totalSeconds += $diffInSeconds;
+        } else {
+            $clocking->total_hours = '-';
+            $clocking->earnings = '-';
+        }
+    }
+
+    // Format the accumulated total hours as HH:MM:SS
+    $hours   = floor($totalSeconds / 3600);
+    $minutes = floor(($totalSeconds % 3600) / 60);
+    $seconds = $totalSeconds % 60;
+    $totalHoursFormatted = sprintf('%02d:%02d:%02d', $hours, $minutes, $seconds);
+
+    // Retrieve all employees (users)
+    $users = User::all();
+
+    // Return the view with data + totals
+    return view('clockingTable', compact(
+        'clockings',
+        'startDate',
+        'endDate',
+        'users',
+        // Totals
+        'totalMilesIn',
+        'totalMilesOut',
+        'totalMiles',
+        'totalHoursFormatted',
+        'totalEarnings'
+    ));
+}
+
+
+
 
     public function clockIn(Request $request)
     {
@@ -94,7 +149,7 @@ class ClockingController extends Controller
             'is_clocked_in' => true,
         ]);
 
-        return back()->with('success', 'Clock-in successful.');
+        return back()->with('success', 'تم تسجيل الحضور بنجاح');
     }
 
     public function clockOut(Request $request)
@@ -124,7 +179,7 @@ class ClockingController extends Controller
             'is_clocked_in' => false,
         ]);
 
-        return back()->with('success', 'Clock-out successful.');
+        return back()->with('success', 'تم تسجيل الإنصراف بنجاح');
     }
 
     public function updateClocking(Request $request)
@@ -139,12 +194,24 @@ class ClockingController extends Controller
 
         $clocking = Clocking::findOrFail($request->clocking_id);
 
+      
+
         $clocking->update([
             'clock_in'  => $request->clock_in,
             'clock_out' => $request->clock_out,
             'miles_in'  => $request->miles_in,
             'miles_out' => $request->miles_out,
         ]);
+
+          // Optional: Add a check to ensure clock_out is after clock_in
+          if (
+            $request->clock_out && $request->clock_in &&
+            Carbon::parse($request->clock_out)->lessThanOrEqualTo(Carbon::parse($request->clock_in))
+        ) {
+            return back()->withErrors([
+                'clock_out' => 'Clock-out time cannot be before or equal to clock-in time.'
+            ]);
+        }
 
         return redirect()->back()->with('success', 'Clocking record updated successfully.');
     }
