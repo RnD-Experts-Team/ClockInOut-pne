@@ -80,6 +80,6 @@
         </div>
     </footer>
 
-    <script src="{{asset('build/assets/app-CbEvcXly.js')}}"></script>
+    {{-- <script src="{{asset('build/assets/app-CbEvcXly.js')}}"></script> --}}
 </body>
 </html>
