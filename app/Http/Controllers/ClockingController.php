@@ -48,11 +48,11 @@ class ClockingController extends Controller
     $clockings = $query->paginate(10);
 
     // Variables to accumulate totals
-    $totalMilesIn = 0;
-    $totalMilesOut = 0;
-    $totalMiles = 0;
-    $totalSeconds = 0;
-    $totalEarnings = 0;
+    $totalMilesIn     = 0;
+    $totalMilesOut    = 0;
+    $totalMiles       = 0;
+    $totalSeconds     = 0;
+    $totalEarnings    = 0;
 
     // Calculate per-record values + accumulate totals
     foreach ($clockings as $clocking) {
@@ -76,7 +76,12 @@ class ClockingController extends Controller
         if ($clocking->clock_in && $clocking->clock_out) {
             $start = Carbon::parse($clocking->clock_in);
             $end   = Carbon::parse($clocking->clock_out);
-            $diffInSeconds = $end->diffInSeconds($start);
+
+            // --- FIX: Use timestamp subtraction to avoid unexpected time zone offsets ---
+            $diffInSeconds = $end->timestamp - $start->timestamp;
+            if ($diffInSeconds < 0) {
+                $diffInSeconds = 0; // If clock_out is before clock_in, force 0
+            }
 
             // Format total hours as HH:MM:SS
             $clocking->total_hours = gmdate('H:i:s', $diffInSeconds);
@@ -85,7 +90,7 @@ class ClockingController extends Controller
             $hoursDecimal = $diffInSeconds / 3600;
 
             // Multiply by user's hourly pay if available
-            if (isset($clocking->user->hourly_pay)) {
+            if (isset($clocking->user->hourly_pay) && is_numeric($clocking->user->hourly_pay)) {
                 $clocking->earnings = $hoursDecimal * $clocking->user->hourly_pay;
                 $totalEarnings += $clocking->earnings; // accumulate
             } else {
@@ -115,7 +120,6 @@ class ClockingController extends Controller
         'startDate',
         'endDate',
         'users',
-        // Totals
         'totalMilesIn',
         'totalMilesOut',
         'totalMiles',
@@ -123,6 +127,8 @@ class ClockingController extends Controller
         'totalEarnings'
     ));
 }
+
+
 
 
 
