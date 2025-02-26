@@ -4,23 +4,66 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'PNE Clocking')</title>
-    {{-- <script src="https://cdn.tailwindcss.com"></script> --}}
-    <link rel="stylesheet" href="{{asset('build/assets/app-DosSlAWK.css')}}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    {{-- <link rel="stylesheet" href="{{asset('build/assets/app-DosSlAWK.css')}}"> --}}
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script>
-        // tailwind.config = {
-        //     theme: {
-        //         extend: {
-        //             fontFamily: {
-        //                 sans: ['Inter', 'sans-serif'],
-        //             },
-        //             colors: {
-        //                 'primary': '#3B82F6',
-        //                 'primary-dark': '#2563EB',
-        //             },
-        //         }
-        //     }
-        // }
+        tailwind.config = {
+            theme: {
+          extend: {
+            fontFamily: {
+              sans: [
+                'Inter', 
+                'ui-sans-serif', 
+                'system-ui', 
+                '-apple-system', 
+                'BlinkMacSystemFont', 
+                'Segoe UI', 
+                'Roboto', 
+                'Helvetica Neue', 
+                'Arial', 
+                'Noto Sans', 
+                'sans-serif', 
+                'Apple Color Emoji', 
+                'Segoe UI Emoji', 
+                'Segoe UI Symbol', 
+                'Noto Color Emoji'
+              ],
+              serif: [
+                'Merriweather', 
+                'ui-serif', 
+                'Georgia', 
+                'Cambria', 
+                'Times New Roman', 
+                'Times', 
+                'serif'
+              ],
+              mono: [
+                'JetBrains Mono', 
+                'ui-monospace', 
+                'SFMono-Regular', 
+                'Menlo', 
+                'Monaco', 
+                'Consolas', 
+                'Liberation Mono', 
+                'Courier New', 
+                'monospace'
+              ],
+            },
+            colors: {
+              'primary': '#3B82F6',
+              'primary-dark': '#2563EB',
+            },
+            spacing: {
+              '128': '32rem',
+              '144': '36rem',
+            },
+            borderRadius: {
+              '4xl': '2rem',
+            },
+          },
+        },
+    }
     </script>
 </head>
 <body class="bg-gray-50 font-sans">
@@ -42,8 +85,10 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
                     </div>
-                    <h1 class="text-2xl font-bold text-gray-800 hidden sm:block">
-                        <span class="bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary-dark">PNE</span> Clocking
+                    <h1 class="text-2xl font-bold hidden sm:block relative group/title">
+                        <span class="bg-clip-text text-transparent bg-gradient-to-r from-primary via-blue-500 to-primary-dark relative inline-block transform transition-transform duration-300 group-hover/title:scale-105 drop-shadow-[0_2px_2px_rgba(0,0,0,0.1)]">PNE</span>
+                        <span class="text-gray-800 inline-block transform transition-transform duration-300 group-hover/title:scale-105 ml-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.05)]">Clocking</span>
+                        <div class="absolute inset-0 bg-gradient-to-r from-primary/10 to-primary-dark/10 blur-xl opacity-0 group-hover/title:opacity-100 transition-opacity duration-500 -z-10"></div>
                     </h1>
                 </a>
     

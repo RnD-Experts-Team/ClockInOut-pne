@@ -9,12 +9,51 @@
             <h1 class="text-2xl font-bold text-gray-900 sm:text-3xl">سجل الحضور</h1>
             <p class="mt-2 text-sm text-gray-700">عرض سجلات الحضور والانصراف الخاصة بك</p>
         </div>
-        
-        {{-- <!-- Total Hours Summary -->
-        <div class="mt-4 sm:mt-0 bg-white rounded-lg shadow-sm p-4 border border-gray-200">
-            <div class="text-sm font-medium text-gray-500">إجمالي ساعات العمل</div>
-            <div class="mt-1 text-2xl font-semibold text-primary-600">{{ $totalHours ?? '0' }} ساعة</div>
-        </div> --}}
+    </div>
+
+    <!-- Date Filter Section -->
+    <div class="mt-8 bg-white shadow-lg rounded-xl p-8 transition-all duration-300 hover:shadow-xl border border-gray-100">
+        <form method="GET" action="{{ route('attendance.index') }}" id="filter-form" class="space-y-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+                <!-- Start Date -->
+                <div class="space-y-3">
+                    <label for="start_date" class="block text-sm font-semibold text-gray-800">تاريخ البداية</label>
+                    <div class="relative">
+                        <input type="date" name="start_date" id="start_date" 
+                            value="{{ request('start_date', Carbon\Carbon::now()->startOfWeek()->format('Y-m-d')) }}"
+                            class="block w-full rounded-xl border-gray-200 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 sm:text-sm transition-all duration-200 hover:border-blue-400 py-3 px-4">
+                    </div>
+                </div>
+                <!-- End Date -->
+                <div class="space-y-3">
+                    <label for="end_date" class="block text-sm font-semibold text-gray-800">تاريخ النهاية</label>
+                    <div class="relative">
+                        <input type="date" name="end_date" id="end_date" 
+                            value="{{ request('end_date', Carbon\Carbon::now()->endOfWeek()->format('Y-m-d')) }}"
+                            class="block w-full rounded-xl border-gray-200 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 sm:text-sm transition-all duration-200 hover:border-blue-400 py-3 px-4">
+                    </div>
+                </div>
+            </div>
+            <!-- Filter Buttons -->
+            <div class="flex justify-end mt-8 space-x-4 rtl:space-x-reverse">
+                <a href="{{ route('attendance.index') }}"
+                    class="inline-flex items-center px-5 py-3 border border-gray-200 text-sm font-medium rounded-xl text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 active:bg-gray-100 transition-all duration-200 transform hover:scale-[1.02] hover:shadow-md">
+                    <svg class="-ml-1 mr-2 rtl:ml-2 rtl:-mr-1 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    إعادة تعيين
+                </a>
+                <button type="submit"
+                    class="inline-flex items-center px-5 py-3 border border-transparent text-sm font-medium rounded-xl text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 active:bg-blue-800 transition-all duration-200 transform hover:scale-[1.02] hover:shadow-md">
+                    <svg class="-ml-1 mr-2 rtl:ml-2 rtl:-mr-1 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                    </svg>
+                    تطبيق الفلتر
+                </button>
+            </div>
+        </form>
     </div>
 
     <!-- Records Section -->
@@ -29,7 +68,12 @@
                                 <th scope="col" class="py-3.5 pr-4 pl-3 text-right text-sm font-semibold text-gray-900">التاريخ</th>
                                 <th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-gray-900">أميال الحضور</th>
                                 <th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-gray-900">أميال الانصراف</th>
+                                <th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-gray-900">إجمالي الأميال</th>
+                                <th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-gray-900">مدفوعات البنزين</th>
+                                <th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-gray-900">تكلفة المشتريات</th>
                                 <th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-gray-900">مدة الدوام</th>
+                                <th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-gray-900">إجمالي الراتب</th>
+                                <th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-gray-900">الصور</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200 bg-white">
@@ -45,7 +89,38 @@
                                         {{ $clocking->miles_out ?? '-' }}
                                     </td>
                                     <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                        {{ $clocking->total_miles ?? '-' }}
+                                    </td>
+                                    <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                        ${{ number_format($clocking->gas_payment ?? 0, 2) }}
+                                    </td>
+                                    <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                        ${{ number_format($clocking->purchase_cost ?? 0, 2) }}
+                                    </td>
+                                    <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                                         {{ $clocking->total_hours }}
+                                    </td>
+                                    <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                        ${{ number_format($clocking->total_salary ?? 0, 2) }}
+                                    </td>
+                                    <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                        <div class="flex flex-row space-x-2">
+                                            @if ($clocking->image_in)
+                                                <a href="{{ asset('storage/' . $clocking->image_in) }}" target="_blank" class="group">
+                                                    <img src="{{ asset('storage/' . $clocking->image_in) }}" alt="Clock In Image" class="h-10 w-10 rounded-lg object-cover ring-1 ring-gray-200 hover:ring-blue-500">
+                                                </a>
+                                            @endif
+                                            @if ($clocking->image_out)
+                                                <a href="{{ asset('storage/' . $clocking->image_out) }}" target="_blank" class="group">
+                                                    <img src="{{ asset('storage/' . $clocking->image_out) }}" alt="Clock Out Image" class="h-10 w-10 rounded-lg object-cover ring-1 ring-gray-200 hover:ring-blue-500">
+                                                </a>
+                                            @endif
+                                            @if ($clocking->purchase_receipt)
+                                                <a href="{{ asset('storage/' . $clocking->purchase_receipt) }}" target="_blank" class="group">
+                                                    <img src="{{ asset('storage/' . $clocking->purchase_receipt) }}" alt="Receipt" class="h-10 w-10 rounded-lg object-cover ring-1 ring-gray-200 hover:ring-blue-500">
+                                                </a>
+                                            @endif
+                                        </div>
                                     </td>
                                 </tr>
                             @endforeach
@@ -75,7 +150,45 @@
                                 <dt class="text-xs font-medium text-gray-500">أميال الانصراف</dt>
                                 <dd class="mt-1 text-sm text-gray-900">{{ $clocking->miles_out ?? '-' }}</dd>
                             </div>
+                            <div>
+                                <dt class="text-xs font-medium text-gray-500">إجمالي الأميال</dt>
+                                <dd class="mt-1 text-sm text-gray-900">{{ $clocking->total_miles ?? '-' }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-xs font-medium text-gray-500">مدفوعات البنزين</dt>
+                                <dd class="mt-1 text-sm text-gray-900">${{ number_format($clocking->gas_payment ?? 0, 2) }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-xs font-medium text-gray-500">تكلفة المشتريات</dt>
+                                <dd class="mt-1 text-sm text-gray-900">${{ number_format($clocking->purchase_cost ?? 0, 2) }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-xs font-medium text-gray-500">إجمالي الراتب</dt>
+                                <dd class="mt-1 text-sm text-gray-900">${{ number_format($clocking->total_salary ?? 0, 2) }}</dd>
+                            </div>
                         </dl>
+                        @if($clocking->image_in || $clocking->image_out || $clocking->purchase_receipt)
+                            <div class="mt-4">
+                                <dt class="text-xs font-medium text-gray-500 mb-2">الصور</dt>
+                                <div class="flex flex-row space-x-2">
+                                    @if ($clocking->image_in)
+                                        <a href="{{ asset('storage/' . $clocking->image_in) }}" target="_blank" class="group">
+                                            <img src="{{ asset('storage/' . $clocking->image_in) }}" alt="Clock In Image" class="h-10 w-10 rounded-lg object-cover ring-1 ring-gray-200 hover:ring-blue-500">
+                                        </a>
+                                    @endif
+                                    @if ($clocking->image_out)
+                                        <a href="{{ asset('storage/' . $clocking->image_out) }}" target="_blank" class="group">
+                                            <img src="{{ asset('storage/' . $clocking->image_out) }}" alt="Clock Out Image" class="h-10 w-10 rounded-lg object-cover ring-1 ring-gray-200 hover:ring-blue-500">
+                                        </a>
+                                    @endif
+                                    @if ($clocking->purchase_receipt)
+                                        <a href="{{ asset('storage/' . $clocking->purchase_receipt) }}" target="_blank" class="group">
+                                            <img src="{{ asset('storage/' . $clocking->purchase_receipt) }}" alt="Receipt" class="h-10 w-10 rounded-lg object-cover ring-1 ring-gray-200 hover:ring-blue-500">
+                                        </a>
+                                    @endif
+                                </div>
+                            </div>
+                        @endif
                     </div>
                 @endforeach
             </div>
@@ -97,6 +210,16 @@
     </div>
 </div>
 
+<!-- Add this script at the bottom of the file -->
+<script>
+    // Auto-submit form when dates change
+    document.getElementById('start_date').addEventListener('change', submitForm);
+    document.getElementById('end_date').addEventListener('change', submitForm);
+
+    function submitForm() {
+        document.getElementById('filter-form').submit();
+    }
+</script>
 <style>
     /* RTL Support for Tailwind Classes */
     [dir="rtl"] .sm\:text-right {

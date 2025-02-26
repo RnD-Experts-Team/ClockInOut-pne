@@ -41,6 +41,10 @@ Route::middleware('auth')->group(function () {
 
 Route::middleware(['auth', RoleMiddleware::class . ':admin'])->group(function () {
     Route::get('/admin/clockings', [ClockingController::class, 'ClockingTable'])->name('admin.clocking');
+    Route::post('/admin/clocking/update-gas-rate', [ClockingController::class, 'updateGasRate'])
+    ->name('admin.clocking.updateGasRate');
+
+    Route::delete('/admin/clocking/{id}', [ClockingController::class, 'destroy'])->name('admin.clocking.destroy');
 });
 
 Route::middleware(['auth', RoleMiddleware::class . ':admin'])->group(function () {
