@@ -57,13 +57,16 @@
                             <div class="mt-1">
                                 <div
                                     class="flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-red-500 transition-all duration-300">
-                                    <label for="image_out"
-                                        class="relative cursor-pointer rounded-md font-medium text-red-600 hover:text-red-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-red-500 transition-colors duration-300">
-                                        <span>رفع ملف</span>
-                                        <input id="image_out" name="image_out" type="file" accept="image/*"
-                                            class="sr-only" required>
-                                    </label>
-                                    <p class="pl-1">أو اسحب وأفلت</p>
+                                    <div class="text-center">
+                                        <label for="image_out"
+                                            class="relative cursor-pointer rounded-md font-medium text-red-600 hover:text-red-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-red-500 transition-colors duration-300">
+                                            <span>رفع ملف</span>
+                                            <input id="image_out" name="image_out" type="file" accept="image/*" capture="environment"
+                                                class="sr-only" required>
+                                        </label>
+                                        <p class="pl-1 mt-1">أو اسحب وأفلت</p>
+                                        <p class="text-xs text-gray-500 mt-2">يمكنك التقاط صورة مباشرة من الكاميرا أو اختيار صورة من المعرض</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -108,13 +111,16 @@
                         <div class="mt-1">
                             <div
                                 class="flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-red-500 transition-all duration-300">
-                                <label for="purchase_receipt"
-                                    class="relative cursor-pointer rounded-md font-medium text-red-600 hover:text-red-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-red-500 transition-colors duration-300">
-                                    <span>رفع ملف</span>
-                                    <input id="purchase_receipt" name="purchase_receipt" type="file" accept="image/*"
-                                        class="sr-only">
-                                </label>
-                                <p class="pl-1">أو اسحب وأفلت</p>
+                                <div class="text-center">
+                                    <label for="purchase_receipt"
+                                        class="relative cursor-pointer rounded-md font-medium text-red-600 hover:text-red-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-red-500 transition-colors duration-300">
+                                        <span>رفع ملف</span>
+                                        <input id="purchase_receipt" name="purchase_receipt" type="file" accept="image/*" capture="environment"
+                                            class="sr-only">
+                                    </label>
+                                    <p class="pl-1 mt-1">أو اسحب وأفلت</p>
+                                    <p class="text-xs text-gray-500 mt-2">يمكنك التقاط صورة مباشرة من الكاميرا أو اختيار صورة من المعرض</p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -180,13 +186,16 @@
                             <div class="mt-1">
                                 <div
                                     class="flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-green-500 transition-all duration-300">
-                                    <label for="image_in"
-                                        class="relative cursor-pointer rounded-md font-medium text-green-600 hover:text-green-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-green-500 transition-colors duration-300">
-                                        <span>رفع ملف</span>
-                                        <input id="image_in" name="image_in" type="file" accept="image/*"
-                                            class="sr-only">
-                                    </label>
-                                    <p class="pl-1">أو اسحب وأفلت</p>
+                                    <div class="text-center">
+                                        <label for="image_in"
+                                            class="relative cursor-pointer rounded-md font-medium text-green-600 hover:text-green-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-green-500 transition-colors duration-300">
+                                            <span>رفع ملف</span>
+                                            <input id="image_in" name="image_in" type="file" accept="image/*" capture="environment"
+                                                class="sr-only">
+                                        </label>
+                                        <p class="pl-1 mt-1">أو اسحب وأفلت</p>
+                                        <p class="text-xs text-gray-500 mt-2">يمكنك التقاط صورة مباشرة من الكاميرا أو اختيار صورة من المعرض</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
