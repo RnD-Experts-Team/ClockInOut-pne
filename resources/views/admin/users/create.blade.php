@@ -35,80 +35,26 @@
             @endif
 
             <!-- Form -->
-            <form action="{{ route('users.store') }}" method="POST" class="px-6 py-6 space-y-6">
+            <form action="{{ route('users.store') }}" method="POST" class="p-6">
                 @csrf
-
                 <div class="space-y-6">
-                    <!-- Full Name -->
+                    <!-- Name -->
                     <div>
-                        <label for="name" class="block text-sm font-medium text-gray-700">Full Name</label>
+                        <label for="name" class="block text-sm font-medium text-gray-700">Name</label>
                         <div class="mt-1 relative rounded-md shadow-sm">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                </svg>
-                            </div>
                             <input type="text" id="name" name="name" value="{{ old('name') }}"
-                                   class="block w-full pl-10 pr-3 py-3 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-md transition-shadow @error('name') border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500 @enderror"
-                                   placeholder="Enter your full name">
+                                   class="block w-full pl-10 pr-3 py-3 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-md transition-shadow"
+                                   placeholder="Enter user name" required>
                         </div>
-                        @error('name')
-                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <!-- Email Address -->
-                    <div>
-                        <label for="email" class="block text-sm font-medium text-gray-700">Email Address</label>
-                        <div class="mt-1 relative rounded-md shadow-sm">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                          d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                                </svg>
-                            </div>
-                            <input type="email" id="email" name="email" value="{{ old('email') }}"
-                                   class="block w-full pl-10 pr-3 py-3 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-md transition-shadow @error('email') border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500 @enderror"
-                                   placeholder="Enter your email address">
-                        </div>
-                        @error('email')
-                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
                     </div>
 
                     <!-- Password -->
                     <div>
                         <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
                         <div class="mt-1 relative rounded-md shadow-sm">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                          d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                                </svg>
-                            </div>
                             <input type="password" id="password" name="password"
-                                   class="block w-full pl-10 pr-3 py-3 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-md transition-shadow @error('password') border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500 @enderror"
-                                   placeholder="Enter your password">
-                        </div>
-                        @error('password')
-                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <!-- Confirm Password -->
-                    <div>
-                        <label for="password_confirmation" class="block text-sm font-medium text-gray-700">Confirm Password</label>
-                        <div class="mt-1 relative rounded-md shadow-sm">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                          d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                                </svg>
-                            </div>
-                            <input type="password" id="password_confirmation" name="password_confirmation"
                                    class="block w-full pl-10 pr-3 py-3 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-md transition-shadow"
-                                   placeholder="Confirm your password">
+                                   placeholder="Enter password" required>
                         </div>
                     </div>
 
@@ -118,32 +64,20 @@
                         <div class="mt-1 relative rounded-md shadow-sm">
                             <select id="role" name="role"
                                     class="block w-full pl-3 pr-10 py-3 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-md">
-                                <option value="user" {{ old('role') == 'user' ? 'selected' : '' }}>User</option>
-                                <option value="admin" {{ old('role') == 'admin' ? 'selected' : '' }}>Admin</option>
+                                <option value="user">User</option>
+                                <option value="admin">Admin</option>
                             </select>
                         </div>
-                        @error('role')
-                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
                     </div>
 
                     <!-- Hourly Pay -->
                     <div>
                         <label for="hourly_pay" class="block text-sm font-medium text-gray-700">Hourly Pay</label>
                         <div class="mt-1 relative rounded-md shadow-sm">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                          d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                            </div>
                             <input type="number" step="0.01" id="hourly_pay" name="hourly_pay" value="{{ old('hourly_pay') }}"
-                                   class="block w-full pl-10 pr-3 py-3 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-md transition-shadow @error('hourly_pay') border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500 @enderror"
-                                   placeholder="Enter hourly pay">
+                                   class="block w-full pl-10 pr-3 py-3 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-md transition-shadow"
+                                   placeholder="Enter hourly pay rate" required>
                         </div>
-                        @error('hourly_pay')
-                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
                     </div>
                 </div>
 
