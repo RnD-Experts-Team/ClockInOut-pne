@@ -47,6 +47,16 @@
                                    placeholder="Enter user name" required>
                         </div>
                     </div>
+                    
+                    <!-- Email -->
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+                        <div class="mt-1 relative rounded-md shadow-sm">
+                            <input type="email" id="email" name="email" value="{{ old('email') }}"
+                                class="block w-full pl-10 pr-3 py-3 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-md transition-shadow"
+                                placeholder="Enter email address" required>
+                        </div>
+                    </div>
 
                     <!-- Password -->
                     <div>

@@ -10,10 +10,12 @@ use App\Http\Middleware\RoleMiddleware; // Import the middleware
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\AttendanceController;
 
+
 Route::get('/', function () {
     return view('auth.login');
 });
-
+//export Clcok in out data to excel
+Route::get('/export-clocking/{startDate?}/{endDate?}', [ExportController::class, 'exportToExcel'])->name('export.clocking');
 
 Route::middleware(['role:admin'])->group(function () {
     Route::resource('users', UserController::class);
@@ -50,6 +52,7 @@ Route::middleware(['auth', RoleMiddleware::class . ':admin'])->group(function ()
 Route::middleware(['auth', RoleMiddleware::class . ':admin'])->group(function () {
     Route::get('/admin/clockings/export', [ExportController::class, 'exportCSV'])->name('admin.clocking.export');
 });
+
 
 Route::post('/admin/clocking/update', [ClockingController::class, 'updateClocking'])
     ->name('admin.clocking.update');

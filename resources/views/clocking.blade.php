@@ -5,67 +5,68 @@
 @include('components.toast-notification')
 
 @section('content')
-    <div class="max-w-xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div class="bg-white rounded-2xl shadow-lg p-6 sm:p-8 transition-all duration-300 hover:shadow-xl">
+    <div class="mx-auto max-w-xl px-4 py-8 sm:px-6 lg:px-8">
+        <div class="rounded-2xl bg-white p-6 shadow-lg transition-all duration-300 hover:shadow-xl sm:p-8">
 
             <!-- Status Header -->
-            <div class="text-center mb-8 animate-fade-in">
+            <div class="animate-fade-in mb-8 text-center">
                 <div
-                    class="inline-flex items-center justify-center w-20 h-20 rounded-full mb-4 {{ $clocking ? 'bg-red-100' : 'bg-green-100' }} transition-colors duration-300">
-                    <svg class="w-10 h-10 {{ $clocking ? 'text-red-500' : 'text-green-500' }} transition-colors duration-300"
+                    class="{{ $clocking ? 'bg-red-100' : 'bg-green-100' }} mb-4 inline-flex h-20 w-20 items-center justify-center rounded-full transition-colors duration-300">
+                    <svg class="{{ $clocking ? 'text-red-500' : 'text-green-500' }} h-10 w-10 transition-colors duration-300"
                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
                 </div>
-                <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-2 transition-all duration-300">
+                <h2 class="mb-2 text-3xl font-bold text-gray-900 transition-all duration-300 sm:text-4xl">
                     {{ $clocking ? 'تسجيل الانصراف' : 'تسجيل الحضور' }}
                 </h2>
-                <p class="text-gray-500 text-lg transition-all duration-300">
+                <p class="text-lg text-gray-500 transition-all duration-300">
                     {{ $clocking ? 'سجل تفاصيل نهاية دوامك' : 'ابدأ تسجيل دوامك' }}
                 </p>
             </div>
 
             {{-- Clock-Out Form --}}
             @if ($clocking)
-                <form id="clockOutForm" action="{{ route('clocking.clockOut') }}" method="POST"
-                    enctype="multipart/form-data" class="space-y-6 animate-fade-in">
+                <form class="animate-fade-in space-y-6" id="clockOutForm" action="{{ route('clocking.clockOut') }}"
+                    method="POST" enctype="multipart/form-data">
                     @csrf
 
                     <!-- Clock-Out Error Message (initially hidden) -->
-                    <div id="clockOutError"
-                         class="hidden bg-red-100 text-red-800 p-3 rounded-lg mb-2">
+                    <div class="mb-2 hidden rounded-lg bg-red-100 p-3 text-red-800" id="clockOutError">
                         <!-- Will be populated by JS if there's an error -->
                     </div>
 
                     @if ($using_car)
-                        <div class="transition-all duration-300 hover:shadow-md rounded-lg" id="miles_out_container">
-                            <label for="miles_out" class="block text-sm font-medium text-gray-700 mb-1">
+                        <div class="rounded-lg transition-all duration-300 hover:shadow-md" id="miles_out_container">
+                            <label class="mb-1 block text-sm font-medium text-gray-700" for="miles_out">
                                 أميال الانصراف
                             </label>
                             <div class="relative rounded-md shadow-sm">
-                                <input type="number" id="miles_out" name="miles_out"
-                                    class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500 transition-all duration-300"
-                                    placeholder="أدخل عدد الأميال" required>
+                                <input
+                                    class="block w-full rounded-lg border border-gray-300 py-3 pl-10 pr-3 transition-all duration-300 focus:border-red-500 focus:ring-red-500"
+                                    id="miles_out" name="miles_out" type="number" placeholder="أدخل عدد الأميال" required>
                             </div>
                         </div>
 
-                        <div class="transition-all duration-300 hover:shadow-md rounded-lg" id="image_out_container">
-                            <label for="image_out" class="block text-sm font-medium text-gray-700 mb-1">
+                        <div class="rounded-lg transition-all duration-300 hover:shadow-md" id="image_out_container">
+                            <label class="mb-1 block text-sm font-medium text-gray-700" for="image_out">
                                 رفع صورة
                             </label>
                             <div class="mt-1">
                                 <div
-                                    class="flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-red-500 transition-all duration-300">
+                                    class="flex justify-center rounded-lg border-2 border-dashed border-gray-300 px-6 pb-6 pt-5 transition-all duration-300 hover:border-red-500">
                                     <div class="text-center">
-                                        <label for="image_out"
-                                            class="relative cursor-pointer rounded-md font-medium text-red-600 hover:text-red-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-red-500 transition-colors duration-300">
+                                        <label
+                                            class="relative cursor-pointer rounded-md font-medium text-red-600 transition-colors duration-300 focus-within:outline-none focus-within:ring-2 focus-within:ring-red-500 focus-within:ring-offset-2 hover:text-red-500"
+                                            for="image_out">
                                             <span>رفع ملف</span>
-                                            <input id="image_out" name="image_out" type="file" accept="image/*" capture="environment"
-                                                class="sr-only" required>
+                                            <input class="sr-only" id="image_out" name="image_out" type="file"
+                                                accept="image/*" capture="environment" required>
                                         </label>
-                                        <p class="pl-1 mt-1">أو اسحب وأفلت</p>
-                                        <p class="text-xs text-gray-500 mt-2">يمكنك التقاط صورة مباشرة من الكاميرا أو اختيار صورة من المعرض</p>
+                                        <p class="mt-1 pl-1">أو اسحب وأفلت</p>
+                                        <p class="mt-2 text-xs text-gray-500">يمكنك التقاط صورة مباشرة من الكاميرا أو اختيار
+                                            صورة من المعرض</p>
                                     </div>
                                 </div>
                             </div>
@@ -74,60 +75,65 @@
 
                     <!-- NEW: Radio Buttons => Did you buy anything for the company? -->
                     <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <label class="mb-2 block text-sm font-medium text-gray-700">
                             هل اشتريت أي شيء لصالح الشركة؟
                         </label>
                         <div class="flex items-center space-x-4">
                             <div class="flex items-center">
-                                <input type="radio" id="didBuyYes" name="bought_something" value="1"
-                                    class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
-                                <label for="didBuyYes" class="mr-2">نعم</label>
+                                <input class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500" id="didBuyYes"
+                                    name="bought_something" type="radio" value="1">
+                                <label class="mr-2" for="didBuyYes">نعم</label>
                             </div>
                             <div class="flex items-center">
-                                <input type="radio" id="didBuyNo" name="bought_something" value="0"
-                                    class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300" checked>
-                                <label for="didBuyNo" class="mr-2">لا</label>
+                                <input class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500" id="didBuyNo"
+                                    name="bought_something" type="radio" value="0" checked>
+                                <label class="mr-2" for="didBuyNo">لا</label>
                             </div>
                         </div>
                     </div>
 
                     <!-- NEW: Purchase cost container -->
-                    <div class="transition-all duration-300 hover:shadow-md rounded-lg hidden" id="purchase_cost_container">
-                        <label for="purchase_cost" class="block text-sm font-medium text-gray-700 mb-1">
+                    <div class="hidden rounded-lg transition-all duration-300 hover:shadow-md" id="purchase_cost_container">
+                        <label class="mb-1 block text-sm font-medium text-gray-700" for="purchase_cost">
                             تكلفة المشتريات
                         </label>
                         <div class="relative rounded-md shadow-sm">
-                            <input type="number" step="0.01" id="purchase_cost" name="purchase_cost"
-                                class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500 transition-all duration-300"
-                                placeholder="مثال: 150.00" >
+                            <input
+                                class="block w-full rounded-lg border border-gray-300 py-3 pl-10 pr-3 transition-all duration-300 focus:border-red-500 focus:ring-red-500"
+                                id="purchase_cost" name="purchase_cost" type="number" step="0.01"
+                                placeholder="مثال: 150.00">
                         </div>
                     </div>
 
                     <!-- NEW: Purchase receipt container -->
-                    <div class="transition-all duration-300 hover:shadow-md rounded-lg hidden" id="purchase_receipt_container">
-                        <label for="purchase_receipt" class="block text-sm font-medium text-gray-700 mb-1">
+                    <div class="hidden rounded-lg transition-all duration-300 hover:shadow-md"
+                        id="purchase_receipt_container">
+                        <label class="mb-1 block text-sm font-medium text-gray-700" for="purchase_receipt">
                             صورة الفاتورة / الإيصال
                         </label>
                         <div class="mt-1">
                             <div
-                                class="flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-red-500 transition-all duration-300">
+                                class="flex justify-center rounded-lg border-2 border-dashed border-gray-300 px-6 pb-6 pt-5 transition-all duration-300 hover:border-red-500">
                                 <div class="text-center">
-                                    <label for="purchase_receipt"
-                                        class="relative cursor-pointer rounded-md font-medium text-red-600 hover:text-red-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-red-500 transition-colors duration-300">
+                                    <label
+                                        class="relative cursor-pointer rounded-md font-medium text-red-600 transition-colors duration-300 focus-within:outline-none focus-within:ring-2 focus-within:ring-red-500 focus-within:ring-offset-2 hover:text-red-500"
+                                        for="purchase_receipt">
                                         <span>رفع ملف</span>
-                                        <input id="purchase_receipt" name="purchase_receipt" type="file" accept="image/*" capture="environment"
-                                            class="sr-only">
+                                        <input class="sr-only" id="purchase_receipt" name="purchase_receipt" type="file"
+                                            accept="image/*" capture="environment">
                                     </label>
-                                    <p class="pl-1 mt-1">أو اسحب وأفلت</p>
-                                    <p class="text-xs text-gray-500 mt-2">يمكنك التقاط صورة مباشرة من الكاميرا أو اختيار صورة من المعرض</p>
+                                    <p class="mt-1 pl-1">أو اسحب وأفلت</p>
+                                    <p class="mt-2 text-xs text-gray-500">يمكنك التقاط صورة مباشرة من الكاميرا أو اختيار
+                                        صورة من المعرض</p>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <button type="button" onclick="handleClockOutClicked()"
-                        class="w-full flex items-center justify-center px-4 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-300 transform hover:scale-105">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <button
+                        class="flex w-full transform items-center justify-center rounded-lg border border-transparent bg-red-600 px-4 py-3 text-base font-medium text-white transition-all duration-300 hover:scale-105 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                        type="button" onclick="handleClockOutClicked()">
+                        <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1">
                             </path>
@@ -136,75 +142,78 @@
                     </button>
                 </form>
 
-            {{-- Clock-In Form --}}
+                {{-- Clock-In Form --}}
             @else
-                <form id="clockInForm" action="{{ route('clocking.clockIn') }}" method="POST"
-                    enctype="multipart/form-data" class="space-y-6 animate-fade-in">
+                <form class="animate-fade-in space-y-6" id="clockInForm" action="{{ route('clocking.clockIn') }}"
+                    method="POST" enctype="multipart/form-data">
                     @csrf
 
                     <!-- Clock-In Error Message (initially hidden) -->
-                    <div id="clockInError"
-                         class="hidden bg-red-100 text-red-800 p-3 rounded-lg mb-2">
+                    <div class="mb-2 hidden rounded-lg bg-red-100 p-3 text-red-800" id="clockInError">
                         <!-- Will be populated by JS if there's an error -->
                     </div>
 
                     <div class="space-y-4">
                         <!-- Radio button to check if car is used -->
                         <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">هل تستخدم سيارتك؟</label>
+                            <label class="mb-2 block text-sm font-medium text-gray-700">هل تستخدم سيارتك؟</label>
                             <div class="flex items-center space-x-4">
                                 <div class="flex items-center">
-                                    <input type="radio" id="using_car_yes" name="using_car" value="1"
-                                        class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
-                                    <label for="using_car_yes" class="mr-2">نعم</label>
+                                    <input class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                        id="using_car_yes" name="using_car" type="radio" value="1">
+                                    <label class="mr-2" for="using_car_yes">نعم</label>
                                 </div>
                                 <div class="flex items-center">
-                                    <input type="radio" id="using_car_no" name="using_car" value="0"
-                                        class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300" checked>
-                                    <label for="using_car_no" class="mr-2">لا</label>
+                                    <input class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                        id="using_car_no" name="using_car" type="radio" value="0" checked>
+                                    <label class="mr-2" for="using_car_no">لا</label>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Clock In Miles -->
-                        <div class="transition-all duration-300 hover:shadow-md rounded-lg" id="miles_in_container"
+                        <div class="rounded-lg transition-all duration-300 hover:shadow-md" id="miles_in_container"
                             style="display: none;">
-                            <label for="miles_in" class="block text-sm font-medium text-gray-700 mb-1">
+                            <label class="mb-1 block text-sm font-medium text-gray-700" for="miles_in">
                                 أميال الحضور
                             </label>
                             <div class="relative rounded-md shadow-sm">
-                                <input type="number" id="miles_in" name="miles_in"
-                                    class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 transition-all duration-300"
-                                    placeholder="أدخل عدد الأميال">
+                                <input
+                                    class="block w-full rounded-lg border border-gray-300 py-3 pl-10 pr-3 transition-all duration-300 focus:border-green-500 focus:ring-green-500"
+                                    id="miles_in" name="miles_in" type="number" placeholder="أدخل عدد الأميال">
                             </div>
                         </div>
 
                         <!-- Clock In Image -->
-                        <div class="transition-all duration-300 hover:shadow-md rounded-lg" id="image_in_container"
+                        <div class="rounded-lg transition-all duration-300 hover:shadow-md" id="image_in_container"
                             style="display: none;">
-                            <label for="image_in" class="block text-sm font-medium text-gray-700 mb-1">رفع صورة</label>
+                            <label class="mb-1 block text-sm font-medium text-gray-700" for="image_in">رفع صورة</label>
                             <div class="mt-1">
                                 <div
-                                    class="flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-green-500 transition-all duration-300">
+                                    class="flex justify-center rounded-lg border-2 border-dashed border-gray-300 px-6 pb-6 pt-5 transition-all duration-300 hover:border-green-500">
                                     <div class="text-center">
-                                        <label for="image_in"
-                                            class="relative cursor-pointer rounded-md font-medium text-green-600 hover:text-green-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-green-500 transition-colors duration-300">
+                                        <label
+                                            class="relative cursor-pointer rounded-md font-medium text-green-600 transition-colors duration-300 focus-within:outline-none focus-within:ring-2 focus-within:ring-green-500 focus-within:ring-offset-2 hover:text-green-500"
+                                            for="image_in">
                                             <span>رفع ملف</span>
-                                            <input id="image_in" name="image_in" type="file" accept="image/*" capture="environment"
-                                                class="sr-only">
+                                            <input class="sr-only" id="image_in" name="image_in" type="file"
+                                                accept="image/*" capture="environment">
                                         </label>
-                                        <p class="pl-1 mt-1">أو اسحب وأفلت</p>
-                                        <p class="text-xs text-gray-500 mt-2">يمكنك التقاط صورة مباشرة من الكاميرا أو اختيار صورة من المعرض</p>
+                                        <p class="mt-1 pl-1">أو اسحب وأفلت</p>
+                                        <p class="mt-2 text-xs text-gray-500">يمكنك التقاط صورة مباشرة من الكاميرا أو
+                                            اختيار صورة من المعرض</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <button type="button" onclick="handleClockInClicked()"
-                            class="w-full flex items-center justify-center px-4 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300 transform hover:scale-105">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <button
+                            class="flex w-full transform items-center justify-center rounded-lg border border-transparent bg-green-600 px-4 py-3 text-base font-medium text-white transition-all duration-300 hover:scale-105 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                            type="button" onclick="handleClockInClicked()">
+                            <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
+                                    d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1">
+                                </path>
                             </svg>
                             تسجيل الحضور
                         </button>
@@ -215,21 +224,21 @@
     </div>
 
     <!-- Confirmation Modal -->
-    <div id="confirmationModal" class="fixed inset-0 flex items-center justify-center z-50 hidden animate-fade-in"
-        aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="animate-fade-in fixed inset-0 z-50 flex hidden items-center justify-center" id="confirmationModal"
+        role="dialog" aria-labelledby="modal-title" aria-modal="true">
         <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
-        <div class="bg-white rounded-lg shadow-xl transform transition-all sm:max-w-lg sm:w-full m-4">
-            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+        <div class="m-4 transform rounded-lg bg-white shadow-xl transition-all sm:w-full sm:max-w-lg">
+            <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
                 <div class="sm:flex sm:items-start">
                     <div
-                        class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
+                        class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
                         <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                         </svg>
                     </div>
-                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                        <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                    <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">
+                        <h3 class="text-lg font-medium leading-6 text-gray-900" id="modal-title">
                             تأكيد الإجراء
                         </h3>
                         <div class="mt-2">
@@ -240,13 +249,15 @@
                     </div>
                 </div>
             </div>
-            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                <button type="button" id="confirmButton"
-                    class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm transition-colors duration-300">
+            <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                <button
+                    class="inline-flex w-full justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-base font-medium text-white shadow-sm transition-colors duration-300 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 sm:ml-3 sm:w-auto sm:text-sm"
+                    id="confirmButton" type="button">
                     تأكيد
                 </button>
-                <button type="button" onclick="hideConfirmation()"
-                    class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition-colors duration-300">
+                <button
+                    class="mt-3 inline-flex w-full justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-base font-medium text-gray-700 shadow-sm transition-colors duration-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:ml-3 sm:mt-0 sm:w-auto sm:text-sm"
+                    type="button" onclick="hideConfirmation()">
                     إلغاء
                 </button>
             </div>
@@ -449,10 +460,12 @@
             from {
                 opacity: 0;
             }
+
             to {
                 opacity: 1;
             }
         }
+
         .animate-fade-in {
             animation: fadeIn 0.3s ease-out;
         }
