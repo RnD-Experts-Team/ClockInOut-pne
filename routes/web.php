@@ -9,6 +9,7 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Middleware\RoleMiddleware; // Import the middleware
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\MaintenanceRequestController;
 
 
 Route::get('/', function () {
@@ -56,5 +57,32 @@ Route::middleware(['auth', RoleMiddleware::class . ':admin'])->group(function ()
 
 Route::post('/admin/clocking/update', [ClockingController::class, 'updateClocking'])
     ->name('admin.clocking.update');
+
+Route::middleware(['auth'])->group(function () {
+    Route::resource('maintenance-requests', MaintenanceRequestController::class)->only([
+        'index', 'show', 'destroy'
+    ]);
+    
+    Route::patch('maintenance-requests/{maintenanceRequest}/status', [MaintenanceRequestController::class, 'updateStatus'])
+         ->name('maintenance-requests.update-status');
+    
+    Route::patch('maintenance-requests/bulk-status', [MaintenanceRequestController::class, 'bulkUpdateStatus'])
+         ->name('maintenance-requests.bulk-update-status');
+         
+    Route::get('maintenance-requests-export', [MaintenanceRequestController::class, 'export'])
+         ->name('maintenance-requests.export');
+
+    Route::post('leases/portfolio-stats', [App\Http\Controllers\LeaseController::class, 'getPortfolioStats'])
+         ->name('leases.portfolio-stats');
+        Route::get('leases/import/form', [App\Http\Controllers\LeaseController::class, 'showImport'])
+         ->name('leases.import.form');
+    Route::post('leases/import', [App\Http\Controllers\LeaseController::class, 'import'])
+         ->name('leases.import');
+    Route::get('leases/download-template', [App\Http\Controllers\LeaseController::class, 'downloadTemplate'])
+         ->name('leases.download-template');
+    Route::resource('leases', App\Http\Controllers\LeaseController::class);
+    Route::get('leases-export', [App\Http\Controllers\LeaseController::class, 'export'])
+         ->name('leases.export');
+});
 
 require __DIR__.'/auth.php';
