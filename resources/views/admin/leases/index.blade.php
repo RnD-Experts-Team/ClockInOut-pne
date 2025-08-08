@@ -458,20 +458,20 @@
                     </div>
 
                     <!-- Portfolio Totals -->
-                    <div class="mb-6">
-                        <h4 class="text-lg font-semibold text-gray-900 mb-4 text-center">Portfolio Totals</h4>
-                        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4" id="portfolioTotals">
-                            <!-- Stats will be populated via JavaScript -->
-                        </div>
-                    </div>
+<div class="mb-6">
+    <h4 class="text-lg font-semibold text-gray-900 mb-4 text-center">Portfolio Totals</h4>
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4" id="portfolioTotals">
+        <!-- Stats will be populated via JavaScript -->
+    </div>
+</div>
 
-                    <!-- Portfolio Averages -->
-                    <div class="mb-6">
-                        <h4 class="text-lg font-semibold text-gray-900 mb-4 text-center">Portfolio Averages</h4>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="portfolioAverages">
-                            <!-- Averages will be populated via JavaScript -->
-                        </div>
-                    </div>
+<!-- Portfolio Averages -->
+<div class="mb-6">
+    <h4 class="text-lg font-semibold text-gray-900 mb-4 text-center">Portfolio Averages</h4>
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4" id="portfolioAverages">
+        <!-- Averages will be populated via JavaScript -->
+    </div>
+</div>
                 </div>
 
                 <!-- Loading Indicator -->
@@ -511,7 +511,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Functions to control body scroll
     function disableBodyScroll() {
-        // Save current scroll position
         const scrollY = window.scrollY;
         document.body.style.position = 'fixed';
         document.body.style.top = `-${scrollY}px`;
@@ -520,7 +519,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function enableBodyScroll() {
-        // Restore scroll position
         const scrollY = document.body.getAttribute('data-scroll-position');
         document.body.style.position = '';
         document.body.style.top = '';
@@ -532,14 +530,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // Open modal
     openModalBtn.addEventListener('click', function() {
         portfolioModal.classList.remove('hidden');
-        disableBodyScroll(); // Prevent background scrolling
+        disableBodyScroll();
         loadInitialPortfolioStats();
     });
 
     // Close modal function
     function closeModal() {
         portfolioModal.classList.add('hidden');
-        enableBodyScroll(); // Restore background scrolling
+        enableBodyScroll();
     }
     
     closeModalBtn.addEventListener('click', closeModal);
@@ -627,7 +625,7 @@ document.addEventListener('DOMContentLoaded', function() {
             selectedStoresInfo.classList.add('hidden');
         }
 
-        // Update totals
+        // Update totals with all requested fields
         const portfolioTotals = document.getElementById('portfolioTotals');
         portfolioTotals.innerHTML = `
             <div class="text-center p-4 bg-blue-50 rounded-lg">
@@ -646,6 +644,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 <p class="text-sm font-medium text-gray-600">Total Base Rent</p>
                 <p class="text-xl font-bold text-indigo-600">$${Number(data.totals.base_rent).toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
             </div>
+            <div class="text-center p-4 bg-gray-50 rounded-lg">
+                <p class="text-sm font-medium text-gray-600">% Increase Per Year</p>
+                <p class="text-xl font-bold text-gray-600">${Number(data.totals.percent_increase_per_year).toFixed(2)}%</p>
+            </div>
             <div class="text-center p-4 bg-yellow-50 rounded-lg">
                 <p class="text-sm font-medium text-gray-600">Total Insurance</p>
                 <p class="text-xl font-bold text-yellow-600">$${Number(data.totals.insurance).toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
@@ -654,26 +656,67 @@ document.addEventListener('DOMContentLoaded', function() {
                 <p class="text-sm font-medium text-gray-600">Total CAM</p>
                 <p class="text-xl font-bold text-red-600">$${Number(data.totals.cam).toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
             </div>
+            <div class="text-center p-4 bg-pink-50 rounded-lg">
+                <p class="text-sm font-medium text-gray-600">Total RE Taxes</p>
+                <p class="text-xl font-bold text-pink-600">$${Number(data.totals.re_taxes).toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
+            </div>
+            <div class="text-center p-4 bg-teal-50 rounded-lg">
+                <p class="text-sm font-medium text-gray-600">Total Others</p>
+                <p class="text-xl font-bold text-teal-600">$${Number(data.totals.others).toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
+            </div>
+            <div class="text-center p-4 bg-orange-50 rounded-lg">
+                <p class="text-sm font-medium text-gray-600">Total Security Deposit</p>
+                <p class="text-xl font-bold text-orange-600">$${Number(data.totals.security_deposit).toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
+            </div>
         `;
 
-        // Update averages
+        // Update averages with all requested fields
         const portfolioAverages = document.getElementById('portfolioAverages');
         portfolioAverages.innerHTML = `
-            <div class="text-center p-6 bg-blue-50 rounded-lg">
+            <div class="text-center p-4 bg-blue-50 rounded-lg">
                 <p class="text-sm font-medium text-gray-600">Average AWS</p>
-                <p class="text-2xl font-bold text-blue-600">$${Number(data.averages.aws).toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
+                <p class="text-lg font-bold text-blue-600">$${Number(data.averages.aws).toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
             </div>
-            <div class="text-center p-6 bg-green-50 rounded-lg">
+            <div class="text-center p-4 bg-green-50 rounded-lg">
                 <p class="text-sm font-medium text-gray-600">Average Total Rent</p>
-                <p class="text-2xl font-bold text-green-600">$${Number(data.averages.total_rent).toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
+                <p class="text-lg font-bold text-green-600">$${Number(data.averages.total_rent).toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
             </div>
-            <div class="text-center p-6 bg-purple-50 rounded-lg">
+            <div class="text-center p-4 bg-purple-50 rounded-lg">
                 <p class="text-sm font-medium text-gray-600">Average Lease to Sales Ratio</p>
-                <p class="text-2xl font-bold text-purple-600">${(data.averages.lease_to_sales_ratio * 100).toFixed(2)}%</p>
+                <p class="text-lg font-bold text-purple-600">${(data.averages.lease_to_sales_ratio * 100).toFixed(2)}%</p>
+            </div>
+            <div class="text-center p-4 bg-indigo-50 rounded-lg">
+                <p class="text-sm font-medium text-gray-600">Average Base Rent</p>
+                <p class="text-lg font-bold text-indigo-600">$${Number(data.averages.base_rent).toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
+            </div>
+            <div class="text-center p-4 bg-gray-50 rounded-lg">
+                <p class="text-sm font-medium text-gray-600">Average % Increase Per Year</p>
+                <p class="text-lg font-bold text-gray-600">${Number(data.averages.percent_increase_per_year).toFixed(2)}%</p>
+            </div>
+            <div class="text-center p-4 bg-yellow-50 rounded-lg">
+                <p class="text-sm font-medium text-gray-600">Average Insurance</p>
+                <p class="text-lg font-bold text-yellow-600">$${Number(data.averages.insurance).toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
+            </div>
+            <div class="text-center p-4 bg-red-50 rounded-lg">
+                <p class="text-sm font-medium text-gray-600">Average CAM</p>
+                <p class="text-lg font-bold text-red-600">$${Number(data.averages.cam).toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
+            </div>
+            <div class="text-center p-4 bg-pink-50 rounded-lg">
+                <p class="text-sm font-medium text-gray-600">Average RE Taxes</p>
+                <p class="text-lg font-bold text-pink-600">$${Number(data.averages.re_taxes).toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
+            </div>
+            <div class="text-center p-4 bg-teal-50 rounded-lg">
+                <p class="text-sm font-medium text-gray-600">Average Others</p>
+                <p class="text-lg font-bold text-teal-600">$${Number(data.averages.others).toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
+            </div>
+            <div class="text-center p-4 bg-orange-50 rounded-lg">
+                <p class="text-sm font-medium text-gray-600">Average Security Deposit</p>
+                <p class="text-lg font-bold text-orange-600">$${Number(data.averages.security_deposit).toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
             </div>
         `;
     }
 });
 </script>
+
 
 @endsection

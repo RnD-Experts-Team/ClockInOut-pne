@@ -189,7 +189,7 @@ class Lease extends Model
                 }
                 
                 $annualSales = $this->aws * 4; // AWS * 4 quarters
-                $annualRent = $this->total_rent * 12; // Monthly rent * 12 months
+                $annualRent = $this->total_rent; 
                 
                 return $annualRent / $annualSales;
             }
@@ -278,7 +278,7 @@ class Lease extends Model
         ];
 
         // Calculate total lease to sales ratio
-        $totalLeaseToSalesRatio = $totals['aws'] > 0 ? ($totals['total_rent'] * 12) / ($totals['aws'] * 4) : 0;
+        $totalLeaseToSalesRatio = $totals['aws'] > 0 ? ($totals['total_rent'] ) / ($totals['aws'] * 4) : 0;
 
         return [
             'totals' => array_merge($totals, ['lease_to_sales_ratio' => $totalLeaseToSalesRatio]),
@@ -333,15 +333,29 @@ class Lease extends Model
     $leasesWithData = $leases->filter(fn($lease) => $lease->aws > 0);
     $leasesWithRent = $leases->filter(fn($lease) => $lease->total_rent > 0);
     $leasesWithRatio = $leases->filter(fn($lease) => $lease->lease_to_sales_ratio !== null);
+    $leasesWithBaseRent = $leases->filter(fn($lease) => $lease->base_rent > 0);
+    $leasesWithPercentIncrease = $leases->filter(fn($lease) => $lease->percent_increase_per_year > 0);
+    $leasesWithInsurance = $leases->filter(fn($lease) => $lease->insurance > 0);
+    $leasesWithCAM = $leases->filter(fn($lease) => $lease->cam > 0);
+    $leasesWithRETaxes = $leases->filter(fn($lease) => $lease->re_taxes > 0);
+    $leasesWithOthers = $leases->filter(fn($lease) => $lease->others > 0);
+    $leasesWithSecurityDeposit = $leases->filter(fn($lease) => $lease->security_deposit > 0);
 
     $averages = [
         'aws' => $leasesWithData->count() > 0 ? $leasesWithData->avg('aws') : 0,
         'total_rent' => $leasesWithRent->count() > 0 ? $leasesWithRent->avg(fn($lease) => $lease->total_rent) : 0,
-        'lease_to_sales_ratio' => $leasesWithRatio->count() > 0 ? $leasesWithRatio->avg(fn($lease) => $lease->lease_to_sales_ratio) : 0
+        'lease_to_sales_ratio' => $leasesWithRatio->count() > 0 ? $leasesWithRatio->avg(fn($lease) => $lease->lease_to_sales_ratio) : 0,
+        'base_rent' => $leasesWithBaseRent->count() > 0 ? $leasesWithBaseRent->avg('base_rent') : 0,
+        'percent_increase_per_year' => $leasesWithPercentIncrease->count() > 0 ? $leasesWithPercentIncrease->avg('percent_increase_per_year') : 0,
+        'insurance' => $leasesWithInsurance->count() > 0 ? $leasesWithInsurance->avg('insurance') : 0,
+        'cam' => $leasesWithCAM->count() > 0 ? $leasesWithCAM->avg('cam') : 0,
+        're_taxes' => $leasesWithRETaxes->count() > 0 ? $leasesWithRETaxes->avg('re_taxes') : 0,
+        'others' => $leasesWithOthers->count() > 0 ? $leasesWithOthers->avg('others') : 0,
+        'security_deposit' => $leasesWithSecurityDeposit->count() > 0 ? $leasesWithSecurityDeposit->avg('security_deposit') : 0
     ];
 
     // Calculate total lease to sales ratio
-    $totalLeaseToSalesRatio = $totals['aws'] > 0 ? ($totals['total_rent'] * 12) / ($totals['aws'] * 4) : 0;
+    $totalLeaseToSalesRatio = $totals['aws'] > 0 ? ($totals['total_rent']) / ($totals['aws'] * 4) : 0;
 
     return [
         'totals' => array_merge($totals, ['lease_to_sales_ratio' => $totalLeaseToSalesRatio]),

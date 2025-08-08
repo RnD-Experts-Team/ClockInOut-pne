@@ -59,9 +59,6 @@ Route::post('/admin/clocking/update', [ClockingController::class, 'updateClockin
     ->name('admin.clocking.update');
 
 Route::middleware(['auth'])->group(function () {
-    Route::resource('maintenance-requests', MaintenanceRequestController::class)->only([
-        'index', 'show', 'destroy'
-    ]);
     
     Route::patch('maintenance-requests/{maintenanceRequest}/status', [MaintenanceRequestController::class, 'updateStatus'])
          ->name('maintenance-requests.update-status');
@@ -71,6 +68,12 @@ Route::middleware(['auth'])->group(function () {
          
     Route::get('maintenance-requests-export', [MaintenanceRequestController::class, 'export'])
          ->name('maintenance-requests.export');
+         
+    Route::resource('maintenance-requests', MaintenanceRequestController::class)->only([
+        'index', 'show', 'destroy'
+    ]);
+    
+    
 
     Route::post('leases/portfolio-stats', [App\Http\Controllers\LeaseController::class, 'getPortfolioStats'])
          ->name('leases.portfolio-stats');

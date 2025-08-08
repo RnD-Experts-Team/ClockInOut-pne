@@ -46,8 +46,11 @@ class LeaseImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnErr
         // Clean renewal options format
         $renewalOptions = $this->cleanRenewalOptions($row['renewal_optionstermsyears'] ?? null);
 
+        // Parse store number - ensure it's always a string
+        $storeNumber = $this->parseStoreNumber($row['store'] ?? null);
+
         return new Lease([
-            'store_number' => $row['store'] ?? null,
+            'store_number' => $storeNumber,
             'name' => $row['known_as'] ?? null,
             'store_address' => $row['store_address'] ?? null,
             'aws' => $aws,
@@ -75,7 +78,7 @@ class LeaseImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnErr
     public function rules(): array
     {
         return [
-            'store' => 'nullable|string|max:255',
+            'store' => 'nullable|max:255',
             'known_as' => 'nullable|string|max:255',
             'store_address' => 'nullable|string',
             'aws' => 'nullable|numeric|min:0',
@@ -195,5 +198,29 @@ class LeaseImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnErr
         }
         
         return $value; // Return original if can't parse
+    }
+
+    /**
+     * Parse store number and ensure it's always returned as a string
+     * 
+     * @param mixed $value
+     * @return string|null
+     */
+    private function parseStoreNumber($value)
+    {
+        if (is_null($value) || $value === '') {
+            return null;
+        }
+
+        // Convert to string and trim whitespace
+        $storeNumber = trim((string) $value);
+        
+        // Handle edge cases
+        if ($storeNumber === '' || $storeNumber === '0') {
+            return null;
+        }
+
+        // Always return as string, preserving any formatting like leading zeros
+        return $storeNumber;
     }
 }
