@@ -110,6 +110,21 @@
                                 </svg>
                                 Users
                             </a>
+                            <a href="{{ route('maintenance-requests.index') }}" 
+                               class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all duration-300 hover:shadow-lg">
+                                <svg class="w-5 h-5 mr-2 rtl:ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                </svg>
+                                Maintenance
+                            </a>
+                            <a href="{{ route('leases.index') }}" 
+       class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all duration-300 hover:shadow-lg">
+        <svg class="w-5 h-5 mr-2 rtl:ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-2m-14 0h2m0 0V9a2 2 0 012-2h2a2 2 0 012 2v10"></path>
+        </svg>
+        Store Leases
+    </a>
                         @else
                             <a href="{{ route('attendance.index') }}" 
                                class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all duration-300 hover:shadow-lg">
@@ -125,7 +140,6 @@
                              </svg>
                              تسجيل الحضور والانصراف
                          </a>
-                         
                         @endif
     
                         <form action="{{ route('logout') }}" method="POST" class="inline-block">
@@ -168,6 +182,14 @@
                                class="block px-3 py-2 rounded-md text-base font-medium text-white bg-primary hover:bg-primary-dark transition-colors duration-300 mb-2">
                                 Users
                             </a>
+                            <a href="{{ route('maintenance-requests.index') }}" 
+                               class="block px-3 py-2 rounded-md text-base font-medium text-white bg-primary hover:bg-primary-dark transition-colors duration-300 mb-2">
+                                Maintenance
+                            </a>
+                            <a href="{{ route('leases.index') }}" 
+   class="block px-3 py-2 rounded-md text-base font-medium text-white bg-primary hover:bg-primary-dark transition-colors duration-300 mb-2">
+    Store Leases
+</a>
                         @else
                             <a href="{{ route('attendance.index') }}" 
                                class="block px-3 py-2 rounded-md text-base font-medium text-white bg-primary hover:bg-primary-dark transition-colors duration-300 mb-2">
@@ -256,11 +278,13 @@
     
     
 
+
     <main class="container mx-auto px-4 py-8">
         <div class="bg-white shadow-md rounded-lg p-6">
             @yield('content')
         </div>
     </main>
+
 
     <footer class="bg-gray-100 border-t mt-12">
         <div class="container mx-auto px-4 py-6 text-center text-gray-600">
@@ -270,6 +294,7 @@
             </p>
         </div>
     </footer>
+
 
     {{-- <script src="{{asset('build/assets/app-CbEvcXly.js')}}"></script> --}}
 </body>
