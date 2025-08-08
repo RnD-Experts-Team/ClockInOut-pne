@@ -123,7 +123,7 @@
         <svg class="w-5 h-5 mr-2 rtl:ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-2m-14 0h2m0 0V9a2 2 0 012-2h2a2 2 0 012 2v10"></path>
         </svg>
-        Leases
+        Store Leases
     </a>
                         @else
                             <a href="{{ route('attendance.index') }}" 
@@ -188,7 +188,7 @@
                             </a>
                             <a href="{{ route('leases.index') }}" 
    class="block px-3 py-2 rounded-md text-base font-medium text-white bg-primary hover:bg-primary-dark transition-colors duration-300 mb-2">
-    Leases
+    Store Leases
 </a>
                         @else
                             <a href="{{ route('attendance.index') }}" 
