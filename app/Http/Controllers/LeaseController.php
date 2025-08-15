@@ -40,12 +40,12 @@ class LeaseController extends Controller
     // Sort
     $sortField = $request->get('sort', 'store_number');
     $sortDirection = $request->get('direction', 'asc');
-    
+
     $validSortFields = [
-        'store_number', 'name', 'base_rent', 'franchise_agreement_expiration_date', 
+        'store_number', 'name', 'base_rent', 'franchise_agreement_expiration_date',
         'initial_lease_expiration_date', 'sqf', 'created_at'
     ];
-    
+
     if (in_array($sortField, $validSortFields)) {
         $query->orderBy($sortField, $sortDirection);
     } else {
@@ -76,10 +76,10 @@ class LeaseController extends Controller
     ];
 
     return view('admin.leases.index', compact(
-        'leases', 
-        'stats', 
-        'overallStats', 
-        'availableStores', 
+        'leases',
+        'stats',
+        'overallStats',
+        'availableStores',
         'selectedStores'
     ));
 }
@@ -93,7 +93,7 @@ public function getPortfolioStats(Request $request)
     }
 
     $stats = Lease::getScopedStatistics($selectedStores);
-    
+
     return response()->json($stats);
 }
     public function create(): View
@@ -220,7 +220,7 @@ public function getPortfolioStats(Request $request)
 
         foreach ($leases as $lease) {
             $currentTerm = $lease->current_term_info;
-            
+
             $csvData[] = [
                 $lease->store_number,
                 $lease->name,
@@ -249,7 +249,7 @@ public function getPortfolioStats(Request $request)
         }
 
         $filename = 'leases_' . date('Y-m-d_H-i-s') . '.csv';
-        
+
         $headers = [
             'Content-Type' => 'text/csv',
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
@@ -283,7 +283,7 @@ public function import(Request $request): RedirectResponse
         Excel::import($import, $request->file('import_file'));
 
         $errors = $import->getErrors();
-        
+
         if (!empty($errors)) {
             DB::rollback();
             return back()->withErrors([
@@ -298,10 +298,10 @@ public function import(Request $request): RedirectResponse
 
     } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
         DB::rollback();
-        
+
         $failures = $e->failures();
         $errorMessages = [];
-        
+
         foreach ($failures as $failure) {
             $errorMessages[] = "Row {$failure->row()}: " . implode(', ', $failure->errors());
         }
@@ -312,7 +312,7 @@ public function import(Request $request): RedirectResponse
 
     } catch (\Exception $e) {
         DB::rollback();
-        
+
         return back()->withErrors([
             'import' => 'Import failed: ' . $e->getMessage()
         ])->withInput();
@@ -373,7 +373,7 @@ public function downloadTemplate()
     ];
 
     $filename = 'lease_import_template.csv';
-    
+
     $headers = [
         'Content-Type' => 'text/csv',
         'Content-Disposition' => 'attachment; filename="' . $filename . '"',
@@ -389,4 +389,21 @@ public function downloadTemplate()
 
     return response()->stream($callback, 200, $headers);
 }
+    public function landlordContact()
+    {
+        $leases = Lease::all();
+        return view('admin.leases.landlord-contact', compact('leases'));
+    }
+
+    public function costBreakdown()
+    {
+        $leases = Lease::all();
+        return view('admin.leases.cost-breakdown', compact('leases'));
+    }
+
+    public function leaseTracker()
+    {
+        $leases = Lease::all();
+        return view('admin.leases.lease-tracker', compact('leases'));
+    }
 }
