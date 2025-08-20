@@ -13,7 +13,8 @@ return new class extends Migration
     {
         Schema::create('apartment_leases', function (Blueprint $table) {
             $table->id();
-            $table->integer('store_number')->nullable(); // Changed from decimal to integer
+            $table->foreignId('store_id')->nullable()->constrained('stores')->onDelete('cascade');
+            $table->integer('store_number')->nullable();
             $table->text('apartment_address');
             $table->decimal('rent', 10, 2);
             $table->decimal('utilities', 10, 2)->nullable();

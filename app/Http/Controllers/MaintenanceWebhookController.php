@@ -9,10 +9,12 @@ use App\Models\Manager;
 use App\Models\UrgencyLevel;
 use App\Models\MaintenanceAttachment;
 use App\Models\MaintenanceLink;
+use App\Models\Store;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
 
 class MaintenanceWebhookController extends Controller
 {
@@ -22,7 +24,7 @@ class MaintenanceWebhookController extends Controller
             DB::beginTransaction();
 
             $payload = $request->all();
-            
+
             // Validate required fields
             $this->validatePayload($payload);
 
@@ -43,16 +45,19 @@ class MaintenanceWebhookController extends Controller
                 throw new \Exception("Invalid urgency level: {$payload['UrgencyLevel']}");
             }
 
+            // Handle store - extract store number and create/get store
+            $storeId = $this->handleStore($payload['Store']);
+
             // Create maintenance request
             $maintenanceRequest = MaintenanceRequest::create([
                 'form_id' => $payload['Form']['Id'],
-                'store' => $payload['Store'],
+                'store_id' => $storeId, // Use store_id instead of store string
                 'description_of_issue' => $payload['DescriptionOfTheIssue'],
                 'urgency_level_id' => $urgencyLevel->id,
                 'equipment_with_issue' => $payload['TheEquipmentWhichHasTheIssue'],
                 'basic_troubleshoot_done' => $payload['DidYouGoThroughTheBasicTroubleshootsAndTheIssueStillNotFixed'],
-                'request_date' => $payload['TodaysDate'],
-                'date_submitted' => $payload['Entry']['DateSubmitted'],
+                'request_date' => Carbon::parse($payload['TodaysDate'])->format('Y-m-d'),
+                'date_submitted' => Carbon::parse($payload['Entry']['DateSubmitted'])->format('Y-m-d H:i:s'),
                 'entry_number' => $payload['Entry']['Number'],
                 'status' => 'on_hold',
                 'requester_id' => $requester->id,
@@ -82,7 +87,7 @@ class MaintenanceWebhookController extends Controller
 
         } catch (\Exception $e) {
             DB::rollback();
-            
+
             Log::error('Failed to process maintenance webhook', [
                 'error' => $e->getMessage(),
                 'payload' => $payload ?? null
@@ -95,12 +100,60 @@ class MaintenanceWebhookController extends Controller
         }
     }
 
+    /**
+     * Handle store extraction and creation/retrieval
+     * Takes "1 - Chatterton" format and returns store ID
+     */
+    private function handleStore(string $storeString): int
+    {
+        // Extract store number and name from "1 - Chatterton"
+        $parts = explode(' - ', $storeString, 2);
+
+        if (count($parts) < 2) {
+            throw new \Exception("Invalid store format: {$storeString}. Expected format: 'number - name'");
+        }
+
+        $storeNumber = trim($parts[0]);
+        $storeName = trim($parts[1]);
+
+        // First try to find store by store_number
+        $store = Store::where('store_number', $storeNumber)->first();
+
+        if ($store) {
+            // Update name if it's different or empty
+            if (empty($store->name) || $store->name !== $storeName) {
+                $store->update(['name' => $storeName]);
+                Log::info("Updated store name", [
+                    'store_id' => $store->id,
+                    'store_number' => $storeNumber,
+                    'old_name' => $store->name,
+                    'new_name' => $storeName
+                ]);
+            }
+            return $store->id;
+        }
+
+        // Store doesn't exist, create new one
+        $newStore = Store::create([
+            'store_number' => $storeNumber,
+            'name' => $storeName,
+            'is_active' => true
+        ]);
+
+        Log::info("Created new store", [
+            'store_id' => $newStore->id,
+            'store_number' => $storeNumber,
+            'name' => $storeName
+        ]);
+
+        return $newStore->id;
+    }
 
     private function validatePayload(array $payload): void
     {
         $requiredFields = [
             'Id', 'Form.Id', 'Name.First', 'Store', 'DescriptionOfTheIssue',
-            'UrgencyLevel', 'TheEquipmentWhichHasTheIssue', 
+            'UrgencyLevel', 'TheEquipmentWhichHasTheIssue',
             'DidYouGoThroughTheBasicTroubleshootsAndTheIssueStillNotFixed',
             'TodaysDate', 'Entry.DateSubmitted', 'Entry.Number',
             'TheGroupManagerWhoReviewedThisIssueBeforeSubmittingIt.First'

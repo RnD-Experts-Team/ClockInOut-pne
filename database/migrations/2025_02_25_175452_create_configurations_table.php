@@ -16,8 +16,8 @@ class CreateConfigurationsTable extends Migration
             $table->string('value');          // To store the value of the key
             $table->timestamps();
         });
-        
-        // Set default gas payment rate
+
+        // Set default gas payments rate
         DB::table('configurations')->insert([
             'key' => 'gas_payment_rate',
             'value' => '10',  // default $10 per mile

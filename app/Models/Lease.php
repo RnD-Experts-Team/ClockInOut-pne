@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Collection;
 
 class Lease extends Model
@@ -14,6 +15,7 @@ class Lease extends Model
     use HasFactory;
 
     protected $fillable = [
+        'store_id',
         'store_number',
         'name',
         'store_address',
@@ -35,7 +37,7 @@ class Lease extends Model
         'landlord_email',
         'landlord_phone',
         'landlord_address',
-        'comments'
+        'comments',
     ];
 
     protected $casts = [
@@ -53,6 +55,50 @@ class Lease extends Model
         'hvac' => 'boolean'
     ];
 
+    public function store(): BelongsTo
+    {
+        return $this->belongsTo(Store::class);
+    }
+
+    // Scopes
+    public function scopeExpiringFranchise($query, $months = 6)
+    {
+        return $query->where('franchise_agreement_expiration_date', '<=', now()->addMonths($months));
+    }
+
+    public function scopeExpiringLease($query, $months = 6)
+    {
+        return $query->where('initial_lease_expiration_date', '<=', now()->addMonths($months));
+    }
+
+    // Accessors
+    public function getTotalMonthlyCostAttribute()
+    {
+        return ($this->base_rent ?? 0) +
+            ($this->cam ?? 0) +
+            ($this->insurance ?? 0) +
+            ($this->re_taxes ?? 0) +
+            ($this->others ?? 0);
+    }
+
+    public function getFormattedTotalMonthlyCostAttribute()
+    {
+        return '$' . number_format($this->total_monthly_cost, 2);
+    }
+
+    public function getDaysUntilFranchiseExpirationAttribute()
+    {
+        return $this->franchise_agreement_expiration_date
+            ? now()->diffInDays($this->franchise_agreement_expiration_date, false)
+            : null;
+    }
+
+    public function getDaysUntilLeaseExpirationAttribute()
+    {
+        return $this->initial_lease_expiration_date
+            ? now()->diffInDays($this->initial_lease_expiration_date, false)
+            : null;
+    }
     // Calculate total monthly rent
     protected function totalRent(): Attribute
     {
@@ -77,7 +123,7 @@ class Lease extends Model
                 if (!$this->renewal_options) {
                     return null;
                 }
-                
+
                 $parts = explode(',', $this->renewal_options);
                 if (count($parts) === 2) {
                     return [
@@ -85,7 +131,7 @@ class Lease extends Model
                         'years_per_term' => (int) trim($parts[1])
                     ];
                 }
-                
+
                 return null;
             }
         );
@@ -103,7 +149,7 @@ class Lease extends Model
                 $dates = collect([]);
                 $currentDate = $this->initial_lease_expiration_date->copy();
                 $renewalOptions = $this->parsed_renewal_options;
-                
+
                 // Add initial lease expiration
                 $dates->push([
                     'term' => 'Initial Term',
@@ -133,7 +179,7 @@ class Lease extends Model
             get: function () {
                 $now = Carbon::now();
                 $termDates = $this->term_expiration_dates;
-                
+
                 foreach ($termDates as $index => $term) {
                     if ($now->lte($term['expiration_date'])) {
                         return [
@@ -143,7 +189,7 @@ class Lease extends Model
                         ];
                     }
                 }
-                
+
                 return null;
             }
         );
@@ -158,7 +204,7 @@ class Lease extends Model
                 if ($termDates->isEmpty()) {
                     return null;
                 }
-                
+
                 return $termDates->last()['expiration_date'];
             }
         );
@@ -173,7 +219,7 @@ class Lease extends Model
                 if (!$lastDate) {
                     return null;
                 }
-                
+
                 return $this->formatTimeDifference(Carbon::now(), $lastDate);
             }
         );
@@ -187,10 +233,10 @@ class Lease extends Model
                 if (!$this->aws || $this->aws == 0) {
                     return null;
                 }
-                
+
                 $annualSales = $this->aws * 4; // AWS * 4 quarters
-                $annualRent = $this->total_rent; 
-                
+                $annualRent = $this->total_rent;
+
                 return $annualRent / $annualSales;
             }
         );
@@ -204,7 +250,7 @@ class Lease extends Model
                 if (!$this->franchise_agreement_expiration_date) {
                     return null;
                 }
-                
+
                 return $this->formatTimeDifference(Carbon::now(), $this->franchise_agreement_expiration_date);
             }
         );
@@ -218,7 +264,7 @@ class Lease extends Model
         }
 
         $diff = $start->diff($end);
-        
+
         return [
             'expired' => false,
             'years' => $diff->y,
@@ -232,7 +278,7 @@ class Lease extends Model
     private function formatTimeString(int $years, int $months, int $days): string
     {
         $parts = [];
-        
+
         if ($years > 0) {
             $parts[] = $years . ' year' . ($years != 1 ? 's' : '');
         }
@@ -242,11 +288,11 @@ class Lease extends Model
         if ($days > 0) {
             $parts[] = $days . ' day' . ($days != 1 ? 's' : '');
         }
-        
+
         if (empty($parts)) {
             return 'Expired';
         }
-        
+
         return implode(', ', $parts);
     }
 
@@ -254,7 +300,7 @@ class Lease extends Model
     public static function getOverallStatistics(): array
     {
         $leases = self::all();
-        
+
         $totals = [
             'aws' => $leases->sum('aws'),
             'total_rent' => $leases->sum(fn($lease) => $lease->total_rent),
@@ -310,14 +356,14 @@ class Lease extends Model
     public static function getScopedStatistics(array $storeNumbers = []): array
 {
     $query = self::query();
-    
+
     // If specific stores are provided, filter by them
     if (!empty($storeNumbers)) {
         $query->whereIn('store_number', $storeNumbers);
     }
-    
+
     $leases = $query->get();
-    
+
     $totals = [
         'aws' => $leases->sum('aws'),
         'total_rent' => $leases->sum(fn($lease) => $lease->total_rent),

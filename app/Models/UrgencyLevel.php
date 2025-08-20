@@ -11,11 +11,7 @@ class UrgencyLevel extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'name',
-        'description',
-        'priority_order'
-    ];
+    protected $fillable = ['name', 'level', 'description'];
 
     public function maintenanceRequests(): HasMany
     {

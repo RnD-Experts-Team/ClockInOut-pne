@@ -26,7 +26,7 @@ class ExportController extends Controller
         $endDate = $request->input('end_date');
         $selectedUser = $request->input('user_id');
 
-        // Get gas payment rate from configuration
+        // Get gas payments rate from configuration
         $gasPaymentRate = \App\Models\Configuration::getGasPaymentRate();
 
         $query = Clocking::with('user')->latest();
@@ -69,7 +69,7 @@ class ExportController extends Controller
                     ? ($clocking->miles_out - $clocking->miles_in)
                     : 0;
 
-                // Calculate gas payment
+                // Calculate gas payments
                 $gasPayment = $totalMiles * $gasPaymentRate;
 
                 // Calculate hours and earnings
@@ -137,9 +137,9 @@ class ExportController extends Controller
         ]);
 
         try {
-            // Get gas payment rate from configuration
+            // Get gas payments rate from configuration
             $gasPaymentRate = Configuration::getGasPaymentRate();
-            Log::debug('Retrieved gas payment rate', ['rate' => $gasPaymentRate]);
+            Log::debug('Retrieved gas payments rate', ['rate' => $gasPaymentRate]);
 
             // Build the query, eager‐loading "user"
             $query = Clocking::with('user')->latest('clock_in');

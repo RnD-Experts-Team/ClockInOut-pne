@@ -1,8 +1,11 @@
 <?php
 
 use App\Http\Controllers\Admin\ApartmentLeaseController;
+use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\LeaseController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\StoreController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ClockingController;
@@ -102,12 +105,33 @@ Route::middleware(['auth'])->group(function () {
     Route::get('leases-export', [App\Http\Controllers\LeaseController::class, 'export'])
         ->name('leases.export');
 
+    Route::resource('stores', StoreController::class);
+    Route::patch('stores/{store}/toggle-status', [StoreController::class, 'toggleStatus'])
+        ->name('stores.toggle-status');
 
+// Optional: API routes for AJAX calls
+    Route::prefix('api')->group(function () {
+        Route::get('stores/search', [StoreController::class, 'search'])->name('api.stores.search');
+    });
+    Route::post('/apartment-leases/import-xlsx', [ApartmentLeaseController::class, 'importXlsx'])->name('admin.apartment-leases.import-xlsx');
     Route::get('/leases/export/landlord-contact-image', [LeaseController::class, 'exportLandlordContactImage'])->name('leases.export.landlord-contact-image');
     Route::get('/leases/export/cost-breakdown-image', [LeaseController::class, 'exportCostBreakdownImage'])->name('leases.export.cost-breakdown-image');
     Route::get('/leases/export/lease-tracker-image', [LeaseController::class, 'exportLeaseTrackerImage'])->name('leases.export.lease-tracker-image');
+    Route::get('payments/dashboard', [PaymentController::class, 'dashboard'])->name('payments.dashboard');
+    Route::get('companies/export', [CompanyController::class, 'export'])->name('companies.export');
+    Route::get('payments/export', [PaymentController::class, 'export'])->name('payments.export');
+    Route::get('payments/store-image/{store}', [PaymentController::class, 'storeImageView'])->name('payments.store-image');
 
+    Route::resource('companies', CompanyController::class);
+    Route::get('dashboard', [PaymentController::class, 'dashboard'])->name('dashboard');
+    Route::resource('payments', PaymentController::class);
+    Route::post('payments/portfolio-stats', [PaymentController::class, 'portfolioStats'])->name('payments.portfolio-stats');
 
+    Route::get('payments/reports/cost-by-company', [PaymentController::class, 'costByCompanyReport'])->name('payments.cost-by-company');
+    Route::get('payments/reports/monthly-report', [PaymentController::class, 'monthlyReport'])->name('payments.monthly-report');
+    Route::get('payments/reports/weekly-maintenance', [PaymentController::class, 'weeklyMaintenanceReport'])->name('payments.weekly-maintenance');
+    Route::get('payments/reports/cost-per-store-yearly', [PaymentController::class, 'costPerStoreYearlyReport'])->name('payments.cost-per-store-yearly');
+    Route::get('payments/reports/pending-projects', [PaymentController::class, 'pendingProjectsReport'])->name('payments.pending-projects');
 });
 
 require __DIR__.'/auth.php';
