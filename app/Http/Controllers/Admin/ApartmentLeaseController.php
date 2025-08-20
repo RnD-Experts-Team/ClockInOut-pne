@@ -3,23 +3,22 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Imports\ApartmentLeasesImport;
 use App\Models\ApartmentLease;
+use App\Models\Store;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Collection;
 
 class ApartmentLeaseController extends Controller
 {
-
-
-    /**
-     * Display a listing of apartment leases.
-     */
     public function index(Request $request)
     {
-        $query = ApartmentLease::query();
+        $query = ApartmentLease::with('store');
 
         // Search functionality
         if ($request->filled('search')) {
@@ -28,7 +27,11 @@ class ApartmentLeaseController extends Controller
                 $q->where('store_number', 'like', "%{$search}%")
                     ->orWhere('apartment_address', 'like', "%{$search}%")
                     ->orWhere('lease_holder', 'like', "%{$search}%")
-                    ->orWhere('notes', 'like', "%{$search}%");
+                    ->orWhere('notes', 'like', "%{$search}%")
+                    ->orWhereHas('store', function($q) use ($search) {
+                        $q->where('store_number', 'like', "%{$search}%")
+                            ->orWhere('name', 'like', "%{$search}%");
+                    });
             });
         }
 
@@ -50,29 +53,31 @@ class ApartmentLeaseController extends Controller
             }
         }
 
-        // Get paginated results
+        // Store filter
+        if ($request->filled('store_id') && $request->store_id !== 'all') {
+            $query->where('store_id', $request->store_id);
+        }
+
         $leases = $query->orderBy('store_number')->paginate(15)->withQueryString();
 
-        // Calculate statistics
         $stats = $this->calculateStats();
+        $stores = Store::orderBy('store_number')->get();
 
-        return view('admin.apartment-leases.index', compact('leases', 'stats'));
+        return view('admin.apartment-leases.index', compact('leases', 'stats', 'stores'));
     }
 
-    /**
-     * Show the form for creating a new apartment lease.
-     */
     public function create()
     {
-        return view('admin.apartment-leases.create');
+        $stores = Store::orderBy('store_number')->get();
+        return view('admin.apartment-leases.create', compact('stores'));
     }
 
-    /**
-     * Store a newly created apartment lease in storage.
-     */
     public function store(Request $request)
     {
         $validated = $request->validate([
+            'store_id' => 'nullable|exists:stores,id',
+            'new_store_number' => 'nullable|string|max:255',
+            'new_store_name' => 'nullable|string|max:255',
             'store_number' => 'nullable|integer',
             'apartment_address' => 'required|string',
             'rent' => 'required|numeric|min:0',
@@ -86,37 +91,56 @@ class ApartmentLeaseController extends Controller
             'lease_holder' => 'required|string'
         ]);
 
-        // Add the current user's ID to the validated data
-        $validated['created_by'] = auth()->id();
+        DB::beginTransaction();
+        try {
+            // Handle store creation if needed
+            if (!$validated['store_id'] && $validated['new_store_number']) {
+                $store = Store::create([
+                    'store_number' => $validated['new_store_number'],
+                    'name' => $validated['new_store_name'],
+                    'is_active' => true,
+                ]);
+                $validated['store_id'] = $store->id;
+                $validated['store_number'] = $store->store_number;
+            } elseif ($validated['store_id']) {
+                $store = Store::find($validated['store_id']);
+                $validated['store_number'] = $store->store_number;
+            }
 
-        ApartmentLease::create($validated);
+            $validated['created_by'] = auth()->id();
+            unset($validated['new_store_number'], $validated['new_store_name']);
 
-        return redirect()->route('admin.apartment-leases.index')
-            ->with('success', 'Apartment lease created successfully.');
+            ApartmentLease::create($validated);
+
+            DB::commit();
+
+            return redirect()->route('admin.apartment-leases.index')
+                ->with('success', 'Apartment lease created successfully.');
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return back()->withErrors(['error' => 'Failed to create apartment lease: ' . $e->getMessage()]);
+        }
     }
 
-    /**
-     * Display the specified apartment lease.
-     */
     public function show(ApartmentLease $apartmentLease)
     {
+        $apartmentLease->load('store');
         return view('admin.apartment-leases.show', compact('apartmentLease'));
     }
 
-    /**
-     * Show the form for editing the specified apartment lease.
-     */
     public function edit(ApartmentLease $apartmentLease)
     {
-        return view('admin.apartment-leases.edit', compact('apartmentLease'));
+        $stores = Store::orderBy('store_number')->get();
+        return view('admin.apartment-leases.edit', compact('apartmentLease', 'stores'));
     }
 
-    /**
-     * Update the specified apartment lease in storage.
-     */
     public function update(Request $request, ApartmentLease $apartmentLease)
     {
         $validated = $request->validate([
+            'store_id' => 'nullable|exists:stores,id',
+            'new_store_number' => 'nullable|string|max:255',
+            'new_store_name' => 'nullable|string|max:255',
             'store_number' => 'nullable|numeric',
             'apartment_address' => 'required|string',
             'rent' => 'required|numeric|min:0',
@@ -130,15 +154,37 @@ class ApartmentLeaseController extends Controller
             'lease_holder' => 'required|string'
         ]);
 
-        $apartmentLease->update($validated);
+        DB::beginTransaction();
+        try {
+            // Handle store creation if needed
+            if (!$validated['store_id'] && $validated['new_store_number']) {
+                $store = Store::create([
+                    'store_number' => $validated['new_store_number'],
+                    'name' => $validated['new_store_name'],
+                    'is_active' => true,
+                ]);
+                $validated['store_id'] = $store->id;
+                $validated['store_number'] = $store->store_number;
+            } elseif ($validated['store_id']) {
+                $store = Store::find($validated['store_id']);
+                $validated['store_number'] = $store->store_number;
+            }
 
-        return redirect()->route('admin.apartment-leases.index')
-            ->with('success', 'Apartment lease updated successfully.');
+            unset($validated['new_store_number'], $validated['new_store_name']);
+
+            $apartmentLease->update($validated);
+
+            DB::commit();
+
+            return redirect()->route('admin.apartment-leases.index')
+                ->with('success', 'Apartment lease updated successfully.');
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return back()->withErrors(['error' => 'Failed to update apartment lease: ' . $e->getMessage()]);
+        }
     }
 
-    /**
-     * Remove the specified apartment lease from storage.
-     */
     public function destroy(ApartmentLease $apartmentLease)
     {
         $apartmentLease->delete();
@@ -147,12 +193,9 @@ class ApartmentLeaseController extends Controller
             ->with('success', 'Apartment lease deleted successfully.');
     }
 
-    /**
-     * Export leases as CSV.
-     */
     public function export(Request $request)
     {
-        $query = ApartmentLease::query();
+        $query = ApartmentLease::with('store');
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -160,7 +203,11 @@ class ApartmentLeaseController extends Controller
                 $q->where('store_number', 'like', "%{$search}%")
                     ->orWhere('apartment_address', 'like', "%{$search}%")
                     ->orWhere('lease_holder', 'like', "%{$search}%")
-                    ->orWhere('notes', 'like', "%{$search}%");
+                    ->orWhere('notes', 'like', "%{$search}%")
+                    ->orWhereHas('store', function($q) use ($search) {
+                        $q->where('store_number', 'like', "%{$search}%")
+                            ->orWhere('name', 'like', "%{$search}%");
+                    });
             });
         }
 
@@ -192,12 +239,13 @@ class ApartmentLeaseController extends Controller
         $callback = function () use ($leases) {
             $file = fopen('php://output', 'w');
             fputcsv($file, [
-                'Store Number', 'Apartment Address', 'Rent', 'Utilities', 'Total Rent', 'Number of AT', 'Has Car', 'Is Family', 'Expiration Date', 'Drive Time', 'Notes', 'Lease Holder', 'Expiration Warning'
+                'Store Number', 'Store Name', 'Apartment Address', 'Rent', 'Utilities', 'Total Rent', 'Number of AT', 'Has Car', 'Is Family', 'Expiration Date', 'Drive Time', 'Notes', 'Lease Holder', 'Expiration Warning'
             ]);
 
             foreach ($leases as $lease) {
                 fputcsv($file, [
-                    $lease->store_number,
+                    $lease->store ? $lease->store->store_number : $lease->store_number,
+                    $lease->store ? $lease->store->name : 'N/A',
                     $lease->apartment_address,
                     $lease->rent,
                     $lease->utilities,
@@ -218,11 +266,6 @@ class ApartmentLeaseController extends Controller
         return response()->stream($callback, 200, $headers);
     }
 
-
-
-    /**
-     * Calculate statistics for the index page.
-     */
     private function calculateStats()
     {
         $total = ApartmentLease::count();
@@ -250,10 +293,28 @@ class ApartmentLeaseController extends Controller
             'expiring_next_3_months' => ApartmentLease::whereBetween('expiration_date', [now(), now()->addMonths(3)])->count(),
         ];
     }
+
     public function list()
     {
-
-        $leases = ApartmentLease::all(); // Fetch all apartment leases; adjust query as needed (e.g., with pagination)
+        $leases = ApartmentLease::with('store')->get();
         return view('admin.apartment-leases.list', compact('leases'));
+    }
+
+    public function importXlsx(Request $request)
+    {
+        $request->validate([
+            'xlsx_file' => 'required|file|mimes:xlsx,xls'
+        ]);
+
+        try {
+            Excel::import(new ApartmentLeasesImport, $request->file('xlsx_file'));
+
+            return redirect()->route('admin.apartment-leases.index')
+                ->with('success', 'Excel file imported successfully!');
+
+        } catch (\Exception $e) {
+            return redirect()->route('admin.apartment-leases.index')
+                ->with('error', 'Import failed: ' . $e->getMessage());
+        }
     }
 }

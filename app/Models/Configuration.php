@@ -1,4 +1,4 @@
-<?php 
+<?php
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
@@ -6,8 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 class Configuration extends Model
 {
     protected $fillable = ['key', 'value'];
-    
-    // Optionally, add a method to retrieve gas payment rate
+
+    // Optionally, add a method to retrieve gas payments rate
     public static function getGasPaymentRate()
     {
         $config = self::where('key', 'gas_payment_rate')->first();

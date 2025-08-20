@@ -11,9 +11,9 @@ return new class extends Migration
     {
         Schema::create('maintenance_requests', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('store_id')->nullable()->constrained('stores')->onDelete('cascade');
             $table->string('form_id');
-            $table->string('store');
-            $table->text('description_of_issue');
+            $table->string('store')->nullable()->change();            $table->text('description_of_issue');
             $table->foreignId('urgency_level_id')->constrained('urgency_levels');
             $table->string('equipment_with_issue');
             $table->boolean('basic_troubleshoot_done')->default(false);
@@ -26,7 +26,7 @@ return new class extends Migration
             $table->foreignId('reviewed_by_manager_id')->constrained('managers');
             $table->string('webhook_id')->unique(); // Store the original "971-955" ID
             $table->timestamps();
-            
+
             $table->index(['status', 'urgency_level_id']);
             $table->index('webhook_id');
             $table->index('entry_number');

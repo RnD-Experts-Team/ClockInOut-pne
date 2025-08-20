@@ -20,10 +20,10 @@ class ClockingController extends Controller
             ->whereNull('clock_out')
             ->where('is_clocked_in', true)
             ->first();
-    
+
         // Get the using_car value from the current clocking record
         $using_car = $clocking ? $clocking->using_car : false;
-    
+
         return view('clocking', compact('clocking', 'using_car'));
     }
 
@@ -32,21 +32,21 @@ class ClockingController extends Controller
         if (Auth::user()->role !== 'admin') {
             return redirect()->route('dashboard');
         }
-    
-        // Get gas payment rate from configuration
+
+        // Get gas payments rate from configuration
         $gasPaymentRate = Configuration::getGasPaymentRate();
-    
+
         // Get all users for the dropdown
         $users = User::orderBy('name')->get();
-    
+
         // Get filter parameters
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
         $selectedUser = $request->input('user_id');
-    
+
         // Build the query for totals (without pagination)
         $query = Clocking::with('user');
-    
+
         // Apply filters
         if ($startDate) {
             $query->whereDate('clock_in', '>=', $startDate);
@@ -57,61 +57,61 @@ class ClockingController extends Controller
         if ($selectedUser) {
             $query->where('user_id', $selectedUser);
         }
-    
+
         // Clone the query for totals before pagination
         $totalQuery = clone $query;
-    
+
         // Get paginated results
         $clockings = $query->latest()->paginate(25);
-    
+
         // Initialize totals
         $totalMilesIn = $totalMilesOut = $totalMiles = $totalSeconds = 0;
         $totalGasPayment = $totalPurchaseCost = $totalEarnings = $totalSalary = 0;
-    
+
         // Calculate totals from all filtered records
         $allFilteredClockings = $totalQuery->get();
-    
+
         foreach ($allFilteredClockings as $clocking) {
             // Add miles to totals
             $totalMilesIn += $clocking->miles_in ?? 0;
             $totalMilesOut += $clocking->miles_out ?? 0;
-    
-            // Calculate total miles and gas payment
+
+            // Calculate total miles and gas payments
             if (!is_null($clocking->miles_in) && !is_null($clocking->miles_out)) {
                 $miles = $clocking->miles_out - $clocking->miles_in;
                 $totalMiles += $miles;
                 $gasPayment = $miles * $gasPaymentRate;
                 $totalGasPayment += $gasPayment;
             }
-    
+
             // Calculate hours and earnings
             if ($clocking->clock_in && $clocking->clock_out) {
                 $start = Carbon::parse($clocking->clock_in);
                 $end = Carbon::parse($clocking->clock_out);
                 $diffInSeconds = $end->timestamp - $start->timestamp;
                 $totalSeconds += $diffInSeconds;
-    
+
                 if (isset($clocking->user->hourly_pay)) {
                     $hoursDecimal = $diffInSeconds / 3600;
                     $earnings = $hoursDecimal * $clocking->user->hourly_pay;
                     $totalEarnings += $earnings;
                 }
             }
-    
+
             // Add purchase cost to totals
             $totalPurchaseCost += $clocking->purchase_cost ?? 0;
         }
-    
+
         // Format total hours
-        $totalHoursFormatted = sprintf('%02d:%02d:%02d', 
+        $totalHoursFormatted = sprintf('%02d:%02d:%02d',
             floor($totalSeconds / 3600),
             floor(($totalSeconds % 3600) / 60),
             $totalSeconds % 60
         );
-    
+
         // Calculate total salary for all filtered records
         $totalSalary = $totalEarnings + $totalGasPayment + $totalPurchaseCost;
-    
+
         // Process individual records for display
         foreach ($clockings as $clocking) {
             // Calculate individual record totals
@@ -119,42 +119,42 @@ class ClockingController extends Controller
                 $clocking->total_miles = $clocking->miles_out - $clocking->miles_in;
                 $clocking->gas_payment = $clocking->total_miles * $gasPaymentRate;
             }
-    
+
             if ($clocking->clock_in && $clocking->clock_out) {
                 $start = Carbon::parse($clocking->clock_in);
                 $end = Carbon::parse($clocking->clock_out);
                 $diffInSeconds = $end->timestamp - $start->timestamp;
-                
+
                 $clocking->total_hours = gmdate('H:i:s', $diffInSeconds);
-                
+
                 if (isset($clocking->user->hourly_pay)) {
                     $hoursDecimal = $diffInSeconds / 3600;
                     $clocking->earnings = $hoursDecimal * $clocking->user->hourly_pay;
                 }
             }
-    
+
             // Calculate total salary for individual record
-            $clocking->total_salary = ($clocking->earnings ?? 0) + 
-                                     ($clocking->gas_payment ?? 0) + 
+            $clocking->total_salary = ($clocking->earnings ?? 0) +
+                                     ($clocking->gas_payment ?? 0) +
                                      ($clocking->purchase_cost ?? 0);
             $totalSalary += $clocking->total_salary;
-    
+
             // Format dates for display
             $clocking->formatted_date = $clocking->clock_in ? Carbon::parse($clocking->clock_in)->format('M d, Y') : '';
             $clocking->formatted_clock_in = $clocking->clock_in ? Carbon::parse($clocking->clock_in)->format('g:i A') : '';
             $clocking->formatted_clock_out = $clocking->clock_out ? Carbon::parse($clocking->clock_out)->format('g:i A') : '';
         }
-    
+
         // Format total hours
-        $totalHoursFormatted = sprintf('%02d:%02d:%02d', 
+        $totalHoursFormatted = sprintf('%02d:%02d:%02d',
             floor($totalSeconds / 3600),
             floor(($totalSeconds % 3600) / 60),
             $totalSeconds % 60
         );
-    
+
         // Get all users for filter
         $users = User::all();
-    
+
         return view('clockingTable', compact(
             'clockings',
             'users',
@@ -172,17 +172,17 @@ class ClockingController extends Controller
             'totalSalary'
         ));
     }
-    
+
     public function updateGasRate(Request $request)
     {
         $request->validate([
             'gas_payment_rate' => 'required|numeric|min:0'
         ]);
-    
+
         Configuration::where('key', 'gas_payment_rate')
             ->update(['value' => $request->gas_payment_rate]);
-    
-        return back()->with('success', 'Gas payment rate updated successfully');
+
+        return back()->with('success', 'Gas payments rate updated successfully');
     }
 
 
@@ -190,7 +190,7 @@ class ClockingController extends Controller
 public function destroy($id)
 {
     $clocking = Clocking::findOrFail($id);
-    
+
     // Delete associated images if they exist
     if ($clocking->image_in) {
         Storage::disk('public')->delete($clocking->image_in);
@@ -201,9 +201,9 @@ public function destroy($id)
     if ($clocking->purchase_receipt) {
         Storage::disk('public')->delete($clocking->purchase_receipt);
     }
-    
+
     $clocking->delete();
-    
+
     return back()->with('success', 'Record deleted successfully');
 }
 
@@ -295,9 +295,9 @@ public function destroy($id)
             'miles_out'   => 'nullable|numeric',
             'purchase_cost' => 'nullable|numeric|min:0',
         ]);
-    
+
         $clocking = Clocking::findOrFail($request->clocking_id);
-    
+
         // Check if clock_out is after clock_in
         if (
             $request->clock_in && $request->clock_out &&
@@ -307,7 +307,7 @@ public function destroy($id)
                 'clock_out' => 'Clock-out time cannot be before or equal to clock-in time.'
             ]);
         }
-    
+
         // Check if miles_out is greater than miles_in when both are provided
         if (
             !is_null($request->miles_in) && !is_null($request->miles_out) &&
@@ -317,7 +317,7 @@ public function destroy($id)
                 'miles_out' => 'Miles out must be greater than miles in.'
             ]);
         }
-    
+
         $updateData = [
             'clock_in'      => $request->clock_in ?: null,
             'clock_out'     => $request->clock_out ?: null,
@@ -325,9 +325,9 @@ public function destroy($id)
             'miles_out'     => $request->miles_out ?: null,
             'purchase_cost' => $request->purchase_cost ?: null,
         ];
-    
+
         $clocking->update($updateData);
-    
+
         return redirect()->back()->with('success', 'Clocking record updated successfully.');
     }
 }

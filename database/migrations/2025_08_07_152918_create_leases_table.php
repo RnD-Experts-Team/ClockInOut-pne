@@ -11,6 +11,7 @@ return new class extends Migration
     {
         Schema::create('leases', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('store_id')->nullable()->constrained('stores')->onDelete('cascade');
             $table->string('store_number')->nullable()->comment('Store identification number');
             $table->string('name')->nullable()->comment('Store name');
             $table->text('store_address')->nullable()->comment('Physical store address');

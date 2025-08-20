@@ -7,36 +7,53 @@
         <!-- Header Section -->
         <div class="sm:flex sm:items-center sm:justify-between mb-6">
             <div>
-                <h1 class="text-3xl font-bold text-gray-900">Apartment Lease Management</h1>
-                <p class="mt-2 text-sm text-gray-700">Manage apartment leases, tenant information, and expiration tracking</p>
+                <h1 class="text-3xl font-bold text-black-900">Apartment Lease Management</h1>
+                <p class="mt-2 text-sm text-black-700">Manage apartment leases, tenant information, and expiration tracking</p>
             </div>
             <div class="mt-4 sm:mt-0 flex space-x-3">
+                <!-- View Lease List Button -->
                 <button type="button" id="openApartmentLeaseListModal"
-                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-[#3B82F6] hover:bg-[#2563EB] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#3B82F6] transition-all duration-300 hover:shadow-lg">
+                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-all duration-300 hover:shadow-lg">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a4 4 0 01-4-4V5a4 4 0 014-4h10a4 4 0 014 4v10a4 4 0 01-4 4z"></path>
                     </svg>
-                    View Apartment Lease List
-                    <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                    </svg>
+                    View Lease List
                 </button>
+
+                <!-- Add New Lease Button -->
                 <a href="{{ route('admin.apartment-leases.create') }}"
-                   class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300 hover:shadow-lg">
+                   class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-all duration-300 hover:shadow-lg">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                     </svg>
-                    Add Apartment Lease
+                    Add New Lease
                 </a>
+
+                <!-- Export CSV Button -->
                 <a href="{{ route('admin.apartment-leases.export', request()->query()) }}"
-                   class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300 hover:shadow-lg">
+                   class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-all duration-300 hover:shadow-lg">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
                     Export CSV
                 </a>
+
+                <!-- Import Excel Button -->
+                <form id="importExcelForm" action="{{ route('admin.apartment-leases.import-xlsx') }}" method="POST" enctype="multipart/form-data" class="hidden">
+                    @csrf
+                    <input id="xlsx_file_input" name="xlsx_file" type="file" accept=".xlsx,.xls" required>
+                </form>
+
+                <label for="xlsx_file_input" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-all duration-300 hover:shadow-lg cursor-pointer">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                    </svg>
+                    Import Excel
+                </label>
+
+                <!-- Export Image Button -->
                 <button id="exportImageBtn"
-                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-300 hover:shadow-lg">
+                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-all duration-300 hover:shadow-lg">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
@@ -45,93 +62,101 @@
             </div>
         </div>
 
+        <script>
+            document.getElementById('xlsx_file_input').addEventListener('change', function() {
+                if (this.files.length > 0) {
+                    document.getElementById('importExcelForm').submit();
+                }
+            });
+        </script>
+
         <!-- Quick Stats Overview -->
         <div class="grid grid-cols-1 md:grid-cols-6 gap-4 mb-8">
-            <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200 hover:shadow-md transition-shadow">
+            <div class="bg-orange-50 rounded-lg shadow-sm p-6 border border-orange-200 hover:shadow-md transition-shadow">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
-                        <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-8 h-8 text-black-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2V7" />
                         </svg>
                     </div>
                     <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-500">Total Apartments</p>
-                        <p class="text-2xl font-bold text-blue-600">{{ $stats['total'] ?? 0 }}</p>
+                        <p class="text-sm font-medium text-black-500">Total Apartments</p>
+                        <p class="text-2xl font-bold text-black-600">{{ $stats['total'] ?? 0 }}</p>
                     </div>
                 </div>
             </div>
-            <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200 hover:shadow-md transition-shadow">
+            <div class="bg-orange-50 rounded-lg shadow-sm p-6 border border-orange-200 hover:shadow-md transition-shadow">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
-                        <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-8 h-8 text-black-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
                         </svg>
                     </div>
                     <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-500">Total Monthly Rent</p>
-                        <p class="text-2xl font-bold text-green-600">${{ number_format($stats['total_monthly_rent'] ?? 0) }}</p>
+                        <p class="text-sm font-medium text-black-500">Total Monthly Rent</p>
+                        <p class="text-2xl font-bold text-black-600">${{ number_format($stats['total_monthly_rent'] ?? 0) }}</p>
                     </div>
                 </div>
             </div>
-            <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200 hover:shadow-md transition-shadow">
+            <div class="bg-orange-50 rounded-lg shadow-sm p-6 border border-orange-200 hover:shadow-md transition-shadow">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
-                        <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-8 h-8 text-black-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                         </svg>
                     </div>
                     <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-500">Number of Family</p>
-                        <p class="text-2xl font-bold text-purple-600">{{ $stats['families'] ?? 0 }}</p>
+                        <p class="text-sm font-medium text-black-500">Number of Family</p>
+                        <p class="text-2xl font-bold text-black-600">{{ $stats['families'] ?? 0 }}</p>
                     </div>
                 </div>
             </div>
-            <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200 hover:shadow-md transition-shadow">
+            <div class="bg-orange-50 rounded-lg shadow-sm p-6 border border-orange-200 hover:shadow-md transition-shadow">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
-                        <svg class="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-8 h-8 text-black-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
                     </div>
                     <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-500">Number of Cars</p>
-                        <p class="text-2xl font-bold text-orange-600">{{ $stats['total_cars'] ?? 0 }}</p>
+                        <p class="text-sm font-medium text-black-500">Number of Cars</p>
+                        <p class="text-2xl font-bold text-black-600">{{ $stats['total_cars'] ?? 0 }}</p>
                     </div>
                 </div>
             </div>
-            <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200 hover:shadow-md transition-shadow">
+            <div class="bg-orange-50 rounded-lg shadow-sm p-6 border border-orange-200 hover:shadow-md transition-shadow">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
-                        <svg class="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-8 h-8 text-black-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                         </svg>
                     </div>
                     <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-500">Number of AT</p>
-                        <p class="text-2xl font-bold text-indigo-600">{{ $stats['total_at'] ?? 0 }}</p>
+                        <p class="text-sm font-medium text-black-500">Number of AT</p>
+                        <p class="text-2xl font-bold text-black-600">{{ $stats['total_at'] ?? 0 }}</p>
                     </div>
                 </div>
             </div>
-            <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200 hover:shadow-md transition-shadow">
+            <div class="bg-orange-50 rounded-lg shadow-sm p-6 border border-orange-200 hover:shadow-md transition-shadow">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
-                        <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-8 h-8 text-black-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                     </div>
                     <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-500">Expiration Warning</p>
-                        <p class="text-2xl font-bold text-red-600">{{ $stats['expiring_soon'] ?? 0 }}</p>
+                        <p class="text-sm font-medium text-black-500">Expiration Warning</p>
+                        <p class="text-2xl font-bold text-black-600">{{ $stats['expiring_soon'] ?? 0 }}</p>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- Filters Section -->
-        <div class="bg-white shadow-lg rounded-xl p-6 mb-8 transition-all duration-300 hover:shadow-xl border border-gray-100">
+        <div class="bg-orange-50 shadow-lg rounded-xl p-6 mb-8 transition-all duration-300 hover:shadow-xl border border-orange-100">
             <div class="flex justify-between items-center mb-4">
-                <h2 class="text-lg font-semibold text-gray-900">Filter Apartments</h2>
-                <button type="button" id="toggleFilters" class="text-sm text-blue-600 hover:text-blue-800">
+                <h2 class="text-lg font-semibold text-black-900">Filter Apartments</h2>
+                <button type="button" id="toggleFilters" class="text-sm text-black-600 hover:text-black-800">
                     <span id="toggleText">Hide Filters</span>
                     <svg id="toggleIcon" class="w-4 h-4 inline ml-1 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -141,23 +166,23 @@
             <form method="GET" action="{{ route('admin.apartment-leases.index') }}" id="filterForm" class="space-y-6">
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
                     <div>
-                        <label for="search" class="block text-sm font-semibold text-gray-800 mb-2">Search</label>
+                        <label for="search" class="block text-sm font-semibold text-black-800 mb-2">Search</label>
                         <input type="text" name="search" id="search"
-                               class="block w-full rounded-xl border-gray-200 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 sm:text-sm transition-all duration-200 hover:border-blue-400 py-3 px-4"
+                               class="block w-full rounded-xl border-orange-200 shadow-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 sm:text-sm transition-all duration-200 hover:border-orange-400 py-3 px-4"
                                placeholder="Store number, address, tenant..."
                                value="{{ request('search') }}">
                     </div>
                     <div>
-                        <label for="family_filter" class="block text-sm font-semibold text-gray-800 mb-2">Family Status</label>
-                        <select name="family_filter" id="family_filter" class="block w-full rounded-xl border-gray-200 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 sm:text-sm transition-all duration-200 hover:border-blue-400 py-3 px-4">
+                        <label for="family_filter" class="block text-sm font-semibold text-black-800 mb-2">Family Status</label>
+                        <select name="family_filter" id="family_filter" class="block w-full rounded-xl border-orange-200 shadow-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 sm:text-sm transition-all duration-200 hover:border-orange-400 py-3 px-4">
                             <option value="all" {{ request('family_filter') === 'all' || !request('family_filter') ? 'selected' : '' }}>All</option>
                             <option value="no" {{ request('family_filter') === 'no' ? 'selected' : '' }}>No</option>
                             <option value="yes" {{ request('family_filter') === 'yes' ? 'selected' : '' }}>Yes</option>
                         </select>
                     </div>
                     <div>
-                        <label for="car_filter" class="block text-sm font-semibold text-gray-800 mb-2">Car Ownership</label>
-                        <select name="car_filter" id="car_filter" class="block w-full rounded-xl border-gray-200 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 sm:text-sm transition-all duration-200 hover:border-blue-400 py-3 px-4">
+                        <label for="car_filter" class="block text-sm font-semibold text-black-800 mb-2">Car Ownership</label>
+                        <select name="car_filter" id="car_filter" class="block w-full rounded-xl border-orange-200 shadow-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 sm:text-sm transition-all duration-200 hover:border-orange-400 py-3 px-4">
                             <option value="all" {{ request('car_filter') === 'all' || !request('car_filter') ? 'selected' : '' }}>All</option>
                             <option value="no_car" {{ request('car_filter') === 'no_car' ? 'selected' : '' }}>No Car</option>
                             <option value="with_car" {{ request('car_filter') === 'with_car' ? 'selected' : '' }}>With Car</option>
@@ -166,14 +191,14 @@
                     <div class="flex items-end">
                         <div class="w-full space-y-2">
                             <button type="submit"
-                                    class="w-full inline-flex justify-center items-center px-4 py-3 border border-transparent text-sm font-medium rounded-xl text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200">
+                                    class="w-full inline-flex justify-center items-center px-4 py-3 border border-transparent text-sm font-medium rounded-xl text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-all duration-200">
                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                 </svg>
                                 Apply Filter
                             </button>
                             <a href="{{ route('admin.apartment-leases.index') }}"
-                               class="w-full inline-flex justify-center items-center px-4 py-2 border border-gray-200 text-sm font-medium rounded-xl text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-all duration-200">
+                               class="w-full inline-flex justify-center items-center px-4 py-2 border border-orange-200 text-sm font-medium rounded-xl text-black-700 bg-orange-50 hover:bg-orange-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-all duration-200">
                                 Reset
                             </a>
                         </div>
@@ -183,33 +208,33 @@
         </div>
 
         <!-- Apartments Table -->
-        <div class="bg-white shadow-sm ring-1 ring-black ring-opacity-5 rounded-lg overflow-hidden">
+        <div class="bg-orange-50 shadow-sm ring-1 ring-orange-900/5 rounded-lg overflow-hidden">
             @if($leases->count() > 0)
                 <!-- Desktop Table View -->
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-300">
-                        <thead class="bg-gray-50">
+                    <table class="min-w-full divide-y divide-orange-300">
+                        <thead class="bg-orange-100">
                         <tr>
-                            <th class="px-3 py-3.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Apartment Info</th>
-                            <th class="px-3 py-3.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Financial</th>
-                            <th class="px-3 py-3.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">AT & Details</th>
-                            <th class="px-3 py-3.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Lease Details</th>
-                            <th class="px-3 py-3.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Expiration Status</th>
-                            <th class="px-3 py-3.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Actions</th>
+                            <th class="px-3 py-3.5 text-left text-xs font-medium text-black-500 uppercase tracking-wide">Apartment Info</th>
+                            <th class="px-3 py-3.5 text-left text-xs font-medium text-black-500 uppercase tracking-wide">Financial</th>
+                            <th class="px-3 py-3.5 text-left text-xs font-medium text-black-500 uppercase tracking-wide">AT & Details</th>
+                            <th class="px-3 py-3.5 text-left text-xs font-medium text-black-500 uppercase tracking-wide">Lease Details</th>
+                            <th class="px-3 py-3.5 text-left text-xs font-medium text-black-500 uppercase tracking-wide">Expiration Status</th>
+                            <th class="px-3 py-3.5 text-left text-xs font-medium text-black-500 uppercase tracking-wide">Actions</th>
                         </tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-200 bg-white">
+                        <tbody class="divide-y divide-orange-200 bg-orange-50">
                         @foreach($leases as $lease)
-                            <tr class="hover:bg-gray-50 transition-colors duration-150">
+                            <tr class="hover:bg-orange-100 transition-colors duration-150">
                                 <!-- Apartment Info -->
                                 <td class="px-3 py-4 text-sm">
                                     <div class="space-y-1">
                                         @if($lease->store_number)
-                                            <div class="font-medium text-gray-900">Store #{{ $lease->store_number }}</div>
+                                            <div class="font-medium text-black-900">Store #{{ $lease->store_number }}</div>
                                         @endif
-                                        <div class="text-gray-600 text-xs max-w-xs">{{ Str::limit($lease->apartment_address, 50) }}</div>
+                                        <div class="text-black-700 text-xs max-w-xs">{{ Str::limit($lease->apartment_address, 50) }}</div>
                                         @if($lease->drive_time)
-                                            <div class="text-xs text-blue-600">{{ $lease->drive_time }} drive</div>
+                                            <div class="text-xs text-black-600">{{ $lease->drive_time }} drive</div>
                                         @endif
                                     </div>
                                 </td>
@@ -217,10 +242,10 @@
                                 <!-- Financial -->
                                 <td class="px-3 py-4 text-sm">
                                     <div class="space-y-1">
-                                        <div class="font-semibold text-green-600">${{ number_format($lease->total_rent, 0) }}/mo</div>
-                                        <div class="text-xs text-gray-500">Rent: ${{ number_format($lease->rent, 0) }}</div>
+                                        <div class="font-semibold text-black-600">${{ number_format($lease->total_rent, 0) }}/mo</div>
+                                        <div class="text-xs text-black-500">Rent: ${{ number_format($lease->rent, 0) }}</div>
                                         @if($lease->utilities)
-                                            <div class="text-xs text-blue-600">Utilities: ${{ number_format($lease->utilities, 0) }}</div>
+                                            <div class="text-xs text-black-600">Utilities: ${{ number_format($lease->utilities, 0) }}</div>
                                         @endif
                                     </div>
                                 </td>
@@ -228,7 +253,7 @@
                                 <!-- AT & Details -->
                                 <td class="px-3 py-4 text-sm">
                                     <div class="space-y-1">
-                                        <div class="font-medium text-gray-900">{{ $lease->number_of_AT }} AT</div>
+                                        <div class="font-medium text-black-900">{{ $lease->number_of_AT }} AT</div>
                                         <div class="flex space-x-2">
                                             @if($lease->is_family === 'Yes' || $lease->is_family === 'yes')
                                                 <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
@@ -236,7 +261,7 @@
                                                 </span>
                                             @endif
                                             @if($lease->has_car > 0)
-                                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-orange-100 text-black-800">
                                                     {{ $lease->has_car }} Car{{ $lease->has_car > 1 ? 's' : '' }}
                                                 </span>
                                             @endif
@@ -247,14 +272,14 @@
                                 <!-- Lease Details -->
                                 <td class="px-3 py-4 text-sm">
                                     <div class="space-y-1">
-                                        <div class="font-medium text-gray-900 text-xs">{{ Str::limit($lease->lease_holder, 25) }}</div>
+                                        <div class="font-medium text-black-900 text-xs">{{ Str::limit($lease->lease_holder, 25) }}</div>
                                         @if($lease->expiration_date)
-                                            <div class="text-xs text-gray-600">
+                                            <div class="text-xs text-black-700">
                                                 Expires: {{ $lease->formatted_expiration_date }}
                                             </div>
                                         @endif
                                         @if($lease->notes)
-                                            <div class="text-xs text-gray-500">{{ Str::limit($lease->notes, 30) }}</div>
+                                            <div class="text-xs text-black-500">{{ Str::limit($lease->notes, 30) }}</div>
                                         @endif
                                     </div>
                                 </td>
@@ -269,7 +294,7 @@
                                             if ($expirationDate->isPast()) {
                                                 $timeAgo = $expirationDate->diffForHumans($now, true);
                                                 $formattedDate = $expirationDate->format('F j, Y') . ' (' . $timeAgo . ' ago)';
-                                                $statusClass = 'bg-red-100 text-red-800';
+                                                $statusClass = 'bg-orange-100 text-black-800';
                                             } else {
                                                 $timeFromNow = $now->diffForHumans($expirationDate, true);
                                                 $formattedDate = $expirationDate->format('F j, Y') . ' (in ' . $timeFromNow . ')';
@@ -277,17 +302,17 @@
                                                 // Different colors based on how soon it expires
                                                 $daysUntil = $expirationDate->diffInDays($now);
                                                 if ($daysUntil <= 30) {
-                                                    $statusClass = 'bg-yellow-100 text-yellow-800';
+                                                    $statusClass = 'bg-orange-100 text-black-800';
                                                 } elseif ($daysUntil <= 90) {
-                                                    $statusClass = 'bg-blue-100 text-blue-800';
+                                                    $statusClass = 'bg-orange-100 text-black-800';
                                                 } else {
-                                                    $statusClass = 'text-gray-600';
+                                                    $statusClass = 'text-black-700';
                                                 }
                                             }
                                         @endphp
 
                                         <div class="space-y-1">
-                                            <div class="text-xs font-medium text-gray-700">Lease Expiration Date</div>
+                                            <div class="text-xs font-medium text-black-700">Lease Expiration Date</div>
                                             <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {{ $statusClass }}">
                                                 {{ $formattedDate }}
                                             </span>
@@ -298,7 +323,7 @@
                                 <td class="px-3 py-4 text-sm">
                                     <div class="flex space-x-2">
                                         <a href="{{ route('admin.apartment-leases.show', $lease) }}"
-                                           class="inline-flex items-center text-blue-600 hover:text-blue-900 font-medium transition-colors duration-150">
+                                           class="inline-flex items-center text-black-600 hover:text-black-900 font-medium transition-colors duration-150">
                                             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -306,7 +331,7 @@
                                             View
                                         </a>
                                         <a href="{{ route('admin.apartment-leases.edit', $lease) }}"
-                                           class="inline-flex items-center text-orange-600 hover:text-orange-900 font-medium transition-colors duration-150">
+                                           class="inline-flex items-center text-black-600 hover:text-black-900 font-medium transition-colors duration-150">
                                             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                             </svg>
@@ -323,29 +348,29 @@
                 <!-- Mobile Card View -->
                 <div class="sm:hidden space-y-4 p-4">
                     @foreach($leases as $lease)
-                        <div class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                        <div class="bg-orange-50 border border-orange-200 rounded-lg p-4 shadow-sm">
                             <div class="flex justify-between items-start mb-3">
                                 <div>
                                     @if($lease->store_number)
-                                        <p class="text-sm font-medium text-gray-900">Store #{{ $lease->store_number }}</p>
+                                        <p class="text-sm font-medium text-black-900">Store #{{ $lease->store_number }}</p>
                                     @endif
-                                    <p class="text-xs text-gray-500">{{ Str::limit($lease->apartment_address, 40) }}</p>
+                                    <p class="text-xs text-black-700">{{ Str::limit($lease->apartment_address, 40) }}</p>
                                 </div>
                                 <div class="text-right">
-                                    <p class="text-sm font-semibold text-green-600">${{ number_format($lease->total_rent, 0) }}/mo</p>
-                                    <p class="text-xs text-gray-500">{{ $lease->number_of_AT }} AT</p>
+                                    <p class="text-sm font-semibold text-black-600">${{ number_format($lease->total_rent, 0) }}/mo</p>
+                                    <p class="text-xs text-black-500">{{ $lease->number_of_AT }} AT</p>
                                 </div>
                             </div>
 
                             @php $status = $lease->expiration_status @endphp
                             @if($status['status'] !== 'no_date' && $status['status'] !== 'active')
-                                <div class="mb-3 p-2 bg-yellow-50 rounded">
-                                    <p class="text-xs font-medium text-yellow-900">{{ $status['message'] }}</p>
+                                <div class="mb-3 p-2 bg-orange-100 rounded">
+                                    <p class="text-xs font-medium text-black-900">{{ $status['message'] }}</p>
                                 </div>
                             @endif
 
                             <div class="flex justify-between items-center">
-                                <div class="flex space-x-4 text-xs text-gray-500">
+                                <div class="flex space-x-4 text-xs text-black-700">
                                     <span>{{ Str::limit($lease->lease_holder, 25) }}</span>
                                     @if($lease->expiration_date)
                                         <span>{{ $lease->formatted_expiration_date }}</span>
@@ -353,7 +378,7 @@
                                 </div>
                                 <div>
                                     <a href="{{ route('admin.apartment-leases.show', $lease) }}"
-                                       class="text-indigo-600 hover:text-indigo-900">
+                                       class="text-black-600 hover:text-black-900">
                                         View
                                     </a>
                                 </div>
@@ -363,9 +388,9 @@
                 </div>
 
                 <!-- Pagination -->
-                <div class="px-4 py-3 border-t border-gray-200 sm:px-6">
+                <div class="px-4 py-3 border-t border-orange-200 sm:px-6">
                     <div class="flex justify-between items-center">
-                        <div class="text-sm text-gray-700">
+                        <div class="text-sm text-black-700">
                             Showing {{ $leases->firstItem() ?? 0 }} to {{ $leases->lastItem() ?? 0 }}
                             of {{ $leases->total() }} results
                         </div>
@@ -376,14 +401,14 @@
                 </div>
             @else
                 <div class="text-center py-12">
-                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg class="mx-auto h-12 w-12 text-black-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-2m-14 0h2m0 0V9a2 2 0 012-2h2a2 2 0 012 2v10" />
                     </svg>
-                    <h3 class="mt-2 text-sm font-medium text-gray-900">No leases found</h3>
-                    <p class="mt-1 text-sm text-gray-500">Get started by creating a new lease.</p>
+                    <h3 class="mt-2 text-sm font-medium text-black-900">No leases found</h3>
+                    <p class="mt-1 text-sm text-black-500">Get started by creating a new lease.</p>
                     <div class="mt-6">
                         <a href="{{ route('admin.apartment-leases.create') }}"
-                           class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700">
+                           class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-orange-600 hover:bg-orange-700">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                             </svg>
@@ -397,7 +422,7 @@
         <!-- Modal for Apartment Lease List -->
         <div id="apartmentLeaseListModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50" onclick="closeModal('apartmentLeaseListModal')">
             <div class="flex items-center justify-center min-h-screen">
-                <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-4xl max-h-[80vh] overflow-y-auto relative" onclick="event.stopPropagation()">
+                <div class="bg-orange-50 rounded-lg shadow-lg p-6 w-full max-w-4xl max-h-[80vh] overflow-y-auto relative" onclick="event.stopPropagation()">
                     <div class="modal-content">
                         <div id="apartmentLeaseListContent" class="p-4">
                             <p>Loading...</p>
@@ -412,7 +437,7 @@
                             Screenshot
                         </button>
                         <button onclick="closeModal('apartmentLeaseListModal')"
-                                class="inline-flex items-center px-4 py-2 bg-[#3B82F6] text-white text-sm font-medium rounded hover:bg-[#2563EB]">
+                                class="inline-flex items-center px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded hover:bg-orange-700">
                             Close
                         </button>
                     </div>

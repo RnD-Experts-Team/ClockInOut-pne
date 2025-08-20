@@ -5,12 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ApartmentLease extends Model
 {
     use HasFactory;
 
     protected $fillable = [
+        'store_id',
         'store_number',
         'apartment_address',
         'rent',
@@ -26,7 +28,48 @@ class ApartmentLease extends Model
     ];
 
     // Add proper casting for your fields
+    public function store(): BelongsTo
+    {
+        return $this->belongsTo(Store::class);
+    }
 
+    public function createdBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    // Scopes
+    public function scopeExpiringSoon($query, $months = 3)
+    {
+        return $query->where('expiration_date', '<=', now()->addMonths($months));
+    }
+
+    public function scopeForFamilies($query)
+    {
+        return $query->where('is_family', 'yes');
+    }
+
+    public function scopeWithCar($query)
+    {
+        return $query->where('has_car', true);
+    }
+
+    // Accessors
+    public function getTotalMonthlyCostAttribute()
+    {
+        return ($this->rent ?? 0) + ($this->utilities ?? 0);
+    }
+
+    public function getFormattedTotalMonthlyCostAttribute()
+    {
+        return '$' . number_format($this->total_monthly_cost, 2);
+    }
+
+
+    public function getIsFamilyBooleanAttribute()
+    {
+        return $this->is_family === 'yes';
+    }
 
     public function creator()
     {

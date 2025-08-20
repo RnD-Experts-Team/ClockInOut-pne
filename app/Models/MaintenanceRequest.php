@@ -14,7 +14,7 @@ class MaintenanceRequest extends Model
 
     protected $fillable = [
         'form_id',
-        'store',
+        'store_id',
         'description_of_issue',
         'urgency_level_id',
         'equipment_with_issue',
@@ -27,7 +27,7 @@ class MaintenanceRequest extends Model
         'how_we_fixed_it',
         'requester_id',
         'reviewed_by_manager_id',
-        'webhook_id'
+        'webhook_id',
     ];
 
     protected $casts = [
@@ -37,7 +37,11 @@ class MaintenanceRequest extends Model
         'costs' => 'decimal:2'
     ];
 
-    // Relationships remain the same...
+    public function store(): BelongsTo
+    {
+        return $this->belongsTo(Store::class);
+    }
+
     public function urgencyLevel(): BelongsTo
     {
         return $this->belongsTo(UrgencyLevel::class);
@@ -53,6 +57,58 @@ class MaintenanceRequest extends Model
         return $this->belongsTo(Manager::class, 'reviewed_by_manager_id');
     }
 
+    public function statusHistories(): HasMany
+    {
+        return $this->hasMany(StatusHistory::class);
+    }
+
+    // Scopes
+    public function scopeByStatus($query, $status)
+    {
+        return $query->where('status', $status);
+    }
+
+    public function scopeOnHold($query)
+    {
+        return $query->where('status', 'on_hold');
+    }
+
+    public function scopeInProgress($query)
+    {
+        return $query->where('status', 'in_progress');
+    }
+
+    public function scopeDone($query)
+    {
+        return $query->where('status', 'done');
+    }
+
+    public function scopeCanceled($query)
+    {
+        return $query->where('status', 'canceled');
+    }
+
+    public function scopeByUrgency($query, $urgencyId)
+    {
+        return $query->where('urgency_level_id', $urgencyId);
+    }
+
+    // Accessors
+    public function getStatusLabelAttribute()
+    {
+        return ucfirst(str_replace('_', ' ', $this->status));
+    }
+
+    public function getFormattedCostsAttribute()
+    {
+        return $this->costs ? '$' . number_format($this->costs, 2) : null;
+    }
+    // Relationships remain the same...
+
+
+
+
+
     public function attachments(): HasMany
     {
         return $this->hasMany(MaintenanceAttachment::class);
@@ -63,10 +119,7 @@ class MaintenanceRequest extends Model
         return $this->hasMany(MaintenanceLink::class);
     }
 
-    public function statusHistories(): HasMany
-    {
-        return $this->hasMany(StatusHistory::class);
-    }
+
 
     // Updated helper methods
     public function canMoveToStatus(string $newStatus): bool
@@ -88,13 +141,13 @@ class MaintenanceRequest extends Model
         }
 
         $oldStatus = $this->status;
-        
+
         $this->status = $newStatus;
         if ($newStatus === 'done') {
             $this->costs = $costs;
             $this->how_we_fixed_it = $howWeFixedIt;
         }
-        
+
         $saved = $this->save();
 
         if ($saved) {
