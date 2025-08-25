@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ff671b;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#c74f14;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="clockGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f0f0f0;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background Circle -->
+  <circle cx="256" cy="256" r="240" fill="url(#bgGradient)" stroke="#ffffff" stroke-width="8"/>
+  
+  <!-- Clock Face -->
+  <circle cx="256" cy="256" r="180" fill="url(#clockGradient)" stroke="#ff671b" stroke-width="4"/>
+  
+  <!-- Hour Markers -->
+  <g stroke="#ff671b" stroke-width="6" stroke-linecap="round">
+    <!-- 12 o'clock -->
+    <line x1="256" y1="86" x2="256" y2="106" />
+    <!-- 3 o'clock -->
+    <line x1="426" y1="256" x2="406" y2="256" />
+    <!-- 6 o'clock -->
+    <line x1="256" y1="426" x2="256" y2="406" />
+    <!-- 9 o'clock -->
+    <line x1="86" y1="256" x2="106" y2="256" />
+  </g>
+  
+  <!-- Minute Markers -->
+  <g stroke="#ff671b" stroke-width="2" stroke-linecap="round">
+    <!-- 1 o'clock -->
+    <line x1="331" y1="106" x2="325" y2="116" />
+    <!-- 2 o'clock -->
+    <line x1="381" y1="181" x2="371" y2="187" />
+    <!-- 4 o'clock -->
+    <line x1="381" y1="331" x2="371" y2="325" />
+    <!-- 5 o'clock -->
+    <line x1="331" y1="406" x2="325" y2="396" />
+    <!-- 7 o'clock -->
+    <line x1="181" y1="406" x2="187" y2="396" />
+    <!-- 8 o'clock -->
+    <line x1="131" y1="331" x2="141" y2="325" />
+    <!-- 10 o'clock -->
+    <line x1="131" y1="181" x2="141" y2="187" />
+    <!-- 11 o'clock -->
+    <line x1="181" y1="106" x2="187" y2="116" />
+  </g>
+  
+  <!-- Clock Hands -->
+  <g stroke="#ff671b" stroke-linecap="round">
+    <!-- Hour Hand (pointing to 9) -->
+    <line x1="256" y1="256" x2="196" y2="256" stroke-width="8" />
+    <!-- Minute Hand (pointing to 12) -->
+    <line x1="256" y1="256" x2="256" y2="156" stroke-width="6" />
+  </g>
+  
+  <!-- Center Dot -->
+  <circle cx="256" cy="256" r="12" fill="#ff671b" />
+  
+  <!-- PNE Text -->
+  <text x="256" y="360" font-family="Arial, sans-serif" font-size="32" font-weight="bold" text-anchor="middle" fill="#ff671b">PNE</text>
+  
+  <!-- Clock In/Out Text -->
+  <text x="256" y="390" font-family="Arial, sans-serif" font-size="16" text-anchor="middle" fill="#666">CLOCK IN/OUT</text>
+</svg>

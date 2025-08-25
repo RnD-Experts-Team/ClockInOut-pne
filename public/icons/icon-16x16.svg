@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16">
+  <!-- Background Circle -->
+  <circle cx="8" cy="8" r="7" fill="#ff671b"/>
+  
+  <!-- Clock Face -->
+  <circle cx="8" cy="8" r="5" fill="#ffffff"/>
+  
+  <!-- Clock Hands -->
+  <g stroke="#ff671b" stroke-width="1" stroke-linecap="round">
+    <line x1="8" y1="8" x2="6" y2="8" />
+    <line x1="8" y1="8" x2="8" y2="5" />
+  </g>
+  
+  <!-- Center Dot -->
+  <circle cx="8" cy="8" r="1" fill="#ff671b" />
+</svg>

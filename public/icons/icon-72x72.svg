@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 72" width="72" height="72">
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ff671b;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#c74f14;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background Circle -->
+  <circle cx="36" cy="36" r="34" fill="url(#bgGradient)" stroke="#ffffff" stroke-width="2"/>
+  
+  <!-- Clock Face -->
+  <circle cx="36" cy="36" r="26" fill="#ffffff" stroke="#ff671b" stroke-width="1"/>
+  
+  <!-- Hour Markers -->
+  <g stroke="#ff671b" stroke-width="2" stroke-linecap="round">
+    <line x1="36" y1="12" x2="36" y2="15" />
+    <line x1="60" y1="36" x2="57" y2="36" />
+    <line x1="36" y1="60" x2="36" y2="57" />
+    <line x1="12" y1="36" x2="15" y2="36" />
+  </g>
+  
+  <!-- Clock Hands -->
+  <g stroke="#ff671b" stroke-linecap="round">
+    <line x1="36" y1="36" x2="28" y2="36" stroke-width="2" />
+    <line x1="36" y1="36" x2="36" y2="22" stroke-width="1.5" />
+  </g>
+  
+  <!-- Center Dot -->
+  <circle cx="36" cy="36" r="2" fill="#ff671b" />
+</svg>

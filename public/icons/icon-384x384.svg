@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 384" width="384" height="384">
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ff671b;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#c74f14;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="clockGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f5f5f5;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background Circle -->
+  <circle cx="192" cy="192" r="176" fill="url(#bgGradient)" stroke="#ffffff" stroke-width="6"/>
+  
+  <!-- Clock Face -->
+  <circle cx="192" cy="192" r="135" fill="url(#clockGradient)" stroke="#ff671b" stroke-width="3"/>
+  
+  <!-- Hour Markers -->
+  <g stroke="#ff671b" stroke-width="5" stroke-linecap="round">
+    <line x1="192" y1="64" x2="192" y2="79" />
+    <line x1="320" y1="192" x2="305" y2="192" />
+    <line x1="192" y1="320" x2="192" y2="305" />
+    <line x1="64" y1="192" x2="79" y2="192" />
+  </g>
+  
+  <!-- Minute Markers -->
+  <g stroke="#ff671b" stroke-width="2" stroke-linecap="round">
+    <line x1="248" y1="79" x2="244" y2="86" />
+    <line x1="286" y1="136" x2="279" y2="140" />
+    <line x1="286" y1="248" x2="279" y2="244" />
+    <line x1="248" y1="305" x2="244" y2="298" />
+    <line x1="136" y1="305" x2="140" y2="298" />
+    <line x1="98" y1="248" x2="105" y2="244" />
+    <line x1="98" y1="136" x2="105" y2="140" />
+    <line x1="136" y1="79" x2="140" y2="86" />
+  </g>
+  
+  <!-- Clock Hands -->
+  <g stroke="#ff671b" stroke-linecap="round">
+    <line x1="192" y1="192" x2="144" y2="192" stroke-width="6" />
+    <line x1="192" y1="192" x2="192" y2="116" stroke-width="4" />
+  </g>
+  
+  <!-- Center Dot -->
+  <circle cx="192" cy="192" r="8" fill="#ff671b" />
+  
+  <!-- PNE Text -->
+  <text x="192" y="260" font-family="Arial, sans-serif" font-size="24" font-weight="bold" text-anchor="middle" fill="#ff671b">PNE</text>
+  
+  <!-- Clock In/Out Text -->
+  <text x="192" y="280" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#666">CLOCK IN/OUT</text>
+</svg>
