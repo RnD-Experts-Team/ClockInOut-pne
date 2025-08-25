@@ -526,6 +526,107 @@
     
     // Initialize online status
     document.addEventListener('DOMContentLoaded', updateOnlineStatus);
+    
+    // Dropdown functionality
+    function toggleDropdown(dropdownId, buttonId) {
+        const dropdown = document.getElementById(dropdownId);
+        const button = document.getElementById(buttonId);
+        const isHidden = dropdown.classList.contains('hidden');
+        
+        // Close all other dropdowns
+        document.querySelectorAll('[id$="-dropdown"]').forEach(dd => {
+            if (dd.id !== dropdownId) {
+                dd.classList.add('hidden');
+            }
+        });
+        
+        // Toggle current dropdown
+        if (isHidden) {
+            dropdown.classList.remove('hidden');
+            button.setAttribute('aria-expanded', 'true');
+        } else {
+            dropdown.classList.add('hidden');
+            button.setAttribute('aria-expanded', 'false');
+        }
+    }
+    
+    // Mobile menu toggle
+    function toggleMobileMenu() {
+        const mobileMenu = document.getElementById('mobileMenu');
+        const menuIcon = document.getElementById('menuIcon');
+        const closeIcon = document.getElementById('closeIcon');
+        
+        if (mobileMenu.classList.contains('hidden')) {
+            mobileMenu.classList.remove('hidden');
+            menuIcon.classList.add('hidden');
+            closeIcon.classList.remove('hidden');
+        } else {
+            mobileMenu.classList.add('hidden');
+            menuIcon.classList.remove('hidden');
+            closeIcon.classList.add('hidden');
+        }
+    }
+    
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', function(event) {
+        const dropdowns = document.querySelectorAll('[id$="-dropdown"]');
+        const buttons = document.querySelectorAll('[id$="-menu"]');
+        
+        let clickedInsideDropdown = false;
+        
+        // Check if click was inside any dropdown or button
+        dropdowns.forEach(dropdown => {
+            if (dropdown.contains(event.target)) {
+                clickedInsideDropdown = true;
+            }
+        });
+        
+        buttons.forEach(button => {
+            if (button.contains(event.target)) {
+                clickedInsideDropdown = true;
+            }
+        });
+        
+        // Close all dropdowns if click was outside
+        if (!clickedInsideDropdown) {
+            dropdowns.forEach(dropdown => {
+                dropdown.classList.add('hidden');
+            });
+            buttons.forEach(button => {
+                button.setAttribute('aria-expanded', 'false');
+            });
+        }
+    });
+    
+    // Add click event listeners to dropdown buttons
+    document.addEventListener('DOMContentLoaded', function() {
+        // Payments dropdown
+        const paymentsButton = document.getElementById('payments-menu');
+        if (paymentsButton) {
+            paymentsButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                toggleDropdown('payments-dropdown', 'payments-menu');
+            });
+        }
+        
+        // Leases dropdown
+        const leasesButton = document.getElementById('leases-menu');
+        if (leasesButton) {
+            leasesButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                toggleDropdown('leases-dropdown', 'leases-menu');
+            });
+        }
+        
+        // Settings dropdown
+        const settingsButton = document.getElementById('settings-menu');
+        if (settingsButton) {
+            settingsButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                toggleDropdown('settings-dropdown', 'settings-menu');
+            });
+        }
+    });
 </script>
 
 </body>
