@@ -19,7 +19,8 @@ use App\Http\Controllers\LanguageController;
 Route::get('/', function () {
     return view('auth.login');
 });
-
+Route::get('/maintenance-requests/ticket-report', [MaintenanceRequestController::class, 'ticketReport'])
+    ->name('maintenance-requests.ticket-report');
 // Language switching route
 Route::post('/language/switch', [LanguageController::class, 'switch'])->name('language.switch');
 Route::get('/leases/landlord-contact', [LeaseController::class, 'landlordContact'])->name('leases.landlord-contact');

@@ -28,6 +28,9 @@ class MaintenanceRequest extends Model
         'requester_id',
         'reviewed_by_manager_id',
         'webhook_id',
+        'not_in_cognito',
+        'assigned_to',
+        'due_date',
     ];
 
     protected $casts = [
@@ -37,6 +40,10 @@ class MaintenanceRequest extends Model
         'costs' => 'decimal:2'
     ];
 
+    public function assignedTo()
+    {
+        return $this->belongsTo(User::class, 'assigned_to');
+    }
     public function store(): BelongsTo
     {
         return $this->belongsTo(Store::class);
@@ -127,8 +134,8 @@ class MaintenanceRequest extends Model
         $allowedTransitions = [
             'on_hold' => ['in_progress', 'done', 'canceled'],
             'in_progress' => ['on_hold', 'done', 'canceled'],
-            'done' => [], // Cannot change from done
-            'canceled' => [] // Cannot change from canceled
+            'done' => ['on_hold', 'done', 'canceled'],
+            'canceled' => ['on_hold', 'done', 'canceled']
         ];
 
         return in_array($newStatus, $allowedTransitions[$this->status] ?? []);

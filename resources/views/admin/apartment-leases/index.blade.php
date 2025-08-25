@@ -706,6 +706,82 @@
                 closeModal('apartmentLeaseListModal');
             }
         }
+        document.addEventListener('DOMContentLoaded', function() {
+            let sortDirection = {};
+
+            window.sortLeaseTable = function(columnIndex, type) {
+                const table = document.getElementById('leaseTable');
+                const tbody = document.getElementById('leaseTableBody');
+                if (!table || !tbody) return;
+                const rows = Array.from(tbody.querySelectorAll('tr:not(:has(td[colspan]))')); // Exclude empty state row
+
+                if (rows.length === 0) return;
+
+                // Toggle sort direction
+                const currentDirection = sortDirection[columnIndex] || 'asc';
+                const newDirection = currentDirection === 'asc' ? 'desc' : 'asc';
+                sortDirection[columnIndex] = newDirection;
+
+                // Clear all sort indicators
+                for (let i = 0; i < 8; i++) {
+                    const indicator = document.getElementById(`lease-sort-indicator-${i}`);
+                    if (indicator) {
+                        indicator.textContent = i === 0 || i === 1 || i === 4 || i === 5 ? 'A↓' : '↑';
+                        indicator.style.opacity = '0.5';
+                    }
+                }
+
+                // Set active sort indicator
+                const activeIndicator = document.getElementById(`lease-sort-indicator-${columnIndex}`);
+                if (activeIndicator) {
+                    if (type === 'number') {
+                        activeIndicator.textContent = newDirection === 'asc' ? '↑' : '↓';
+                    } else {
+                        activeIndicator.textContent = newDirection === 'asc' ? 'A↓' : 'Z↑';
+                    }
+                    activeIndicator.style.opacity = '1';
+                }
+
+                // Sort rows
+                rows.sort((a, b) => {
+                    let aValue = a.cells[columnIndex].getAttribute('data-sort') || '';
+                    let bValue = b.cells[columnIndex].getAttribute('data-sort') || '';
+
+                    if (type === 'number') {
+                        aValue = parseFloat(aValue) || 0;
+                        bValue = parseFloat(bValue) || 0;
+                    } else {
+                        aValue = aValue.toLowerCase();
+                        bValue = bValue.toLowerCase();
+                    }
+
+                    if (aValue === 'N/A' && bValue === 'N/A') return 0;
+                    if (aValue === 'N/A') return 1;
+                    if (bValue === 'N/A') return -1;
+
+                    if (newDirection === 'asc') {
+                        return aValue > bValue ? 1 : -1;
+                    } else {
+                        return aValue < bValue ? 1 : -1;
+                    }
+                });
+
+                // Clear tbody and re-append sorted rows with alternating colors
+                while (tbody.firstChild) {
+                    tbody.removeChild(tbody.firstChild);
+                }
+                rows.forEach((row, index) => {
+                    row.className = (index % 2 === 0 ? 'bg-white' : 'bg-gray-50') + ' hover:bg-[#fff4ed]';
+                    tbody.appendChild(row);
+                });
+
+                // Re-append empty state row if present
+                const emptyRow = document.querySelector('tr:has(td[colspan])');
+                if (emptyRow) {
+                    tbody.appendChild(emptyRow);
+                }
+            };
+        });
     </script>
 
 @endsection
