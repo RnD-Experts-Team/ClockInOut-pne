@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'تسجيل الدخول')
+@section('title', __('messages.login_button'))
 
 @section('content')
 <div class="min-h-[80vh] flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8">
@@ -10,8 +10,8 @@
             <svg class="mx-auto h-12 w-12 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
             </svg>
-            <h2 class="mt-6 text-3xl font-bold tracking-tight text-gray-900">مرحباً بعودتك</h2>
-            <p class="mt-2 text-sm text-gray-600">يرجى تسجيل الدخول إلى حسابك</p>
+            <h2 class="mt-6 text-3xl font-bold tracking-tight text-gray-900">{{ __('messages.login_title') }}</h2>
+            <p class="mt-2 text-sm text-gray-600">{{ __('messages.login_subtitle') }}</p>
         </div>
 
         <!-- Login Form -->
@@ -21,7 +21,7 @@
                 
                 <!-- Username Field -->
                 <div>
-                    <label for="name" class="block text-sm font-medium text-gray-700">اسم المستخدم</label>
+                    <label for="name" class="block text-sm font-medium text-gray-700">{{ __('messages.username') }}</label>
                     <div class="mt-1 relative rounded-md shadow-sm">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -33,7 +33,7 @@
                             id="name" 
                             name="name" 
                             class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm" 
-                            placeholder="أدخل اسم المستخدم"
+                            placeholder="{{ __('messages.username_placeholder') }}"
                             required
                             autocomplete="name"
                         >
@@ -45,7 +45,7 @@
 
                 <!-- Password Field -->
                 <div>
-                    <label for="password" class="block text-sm font-medium text-gray-700">كلمة المرور</label>
+                    <label for="password" class="block text-sm font-medium text-gray-700">{{ __('messages.password') }}</label>
                     <div class="mt-1 relative rounded-md shadow-sm">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -57,7 +57,7 @@
                             id="password" 
                             name="password" 
                             class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm" 
-                            placeholder="أدخل كلمة المرور"
+                            placeholder="{{ __('messages.password_placeholder') }}"
                             required
                             autocomplete="current-password"
                         >
@@ -77,7 +77,7 @@
                             class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
                             {{ old('remember') ? 'checked' : '' }}  <!-- Optional: preselect if previous input exists -->
                         
-                        <label for="remember" class="ml-2 block text-sm text-gray-700">تذكرني</label>
+                        <label for="remember" class="ml-2 block text-sm text-gray-700">{{ __('messages.remember_me') }}</label>
                     </div>
                 </div>
                 
@@ -88,7 +88,7 @@
                         type="submit" 
                         class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition duration-150 ease-in-out"
                     >
-                        تسجيل الدخول
+                        {{ __('messages.login_button') }}
                     </button>
                 </div>
             </form>
@@ -97,8 +97,8 @@
         <!-- Additional Links -->
         {{-- <div class="mt-4 text-center text-sm">
             <p class="text-gray-600">
-                هل تواجه مشكلة في تسجيل الدخول؟ 
-                <a href="#" class="font-medium text-primary hover:text-primary-dark">تواصل مع الدعم</a>
+                {{ __('messages.login_trouble') }} 
+                <a href="#" class="font-medium text-primary hover:text-primary-dark">{{ __('messages.contact_support') }}</a>
             </p>
         </div> --}}
     </div>

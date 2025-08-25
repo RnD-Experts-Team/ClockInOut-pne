@@ -1,33 +1,19 @@
 @extends('layouts.app')
 
-@section('title', 'الحضور')
-
-@include('components.toast-notification')
-
 @section('content')
-    <div class="mx-auto max-w-xl px-4 py-8 sm:px-6 lg:px-8">
-        <div class="rounded-2xl bg-orange-50 p-6 ring-1 ring-orange-900/5 transition-all duration-300 hover:shadow-xl sm:p-8">
-
-            <!-- Status Header -->
-            <div class="animate-fade-in mb-8 text-center">
-                <div
-                    class="{{ $clocking ? 'bg-orange-100' : 'bg-orange-100' }} mb-4 inline-flex h-20 w-20 items-center justify-center rounded-full transition-colors duration-300">
-                    <svg class="{{ $clocking ? 'text-black-600' : 'text-black-600' }} h-10 w-10 transition-colors duration-300"
-                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                </div>
-                <h2 class="mb-2 text-3xl font-bold text-black-900 transition-all duration-300 sm:text-4xl">
-                    {{ $clocking ? 'تسجيل الانصراف' : 'تسجيل الحضور' }}
-                </h2>
-                <p class="text-lg text-black-500 transition-all duration-300">
-                    {{ $clocking ? 'سجل تفاصيل نهاية دوامك' : 'ابدأ تسجيل دوامك' }}
-                </p>
+    <div class="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 py-8" dir="{{ getDirection() }}">
+        <div class="mx-auto max-w-md px-4">
+            <div class="mb-8 text-center">
+                <h1 class="text-3xl font-bold text-black-900">{{ __('messages.attendance') }}</h1>
             </div>
 
             {{-- Clock-Out Form --}}
-            @if ($clocking)
+            @if($clocking)
+                <div class="mb-6 rounded-lg bg-orange-100 p-4 text-center">
+                    <h2 class="text-xl font-semibold text-black-800">{{ __('messages.clock_out_registration') }}</h2>
+                    <p class="text-black-600">{{ __('messages.record_end_shift_details') }}</p>
+                </div>
+
                 <form class="animate-fade-in space-y-6" id="clockOutForm" action="{{ route('clocking.clockOut') }}"
                       method="POST" enctype="multipart/form-data">
                     @csrf
@@ -37,21 +23,78 @@
                         <!-- Will be populated by JS if there's an error -->
                     </div>
 
-                    @if ($using_car)
-                        <div class="rounded-lg transition-all duration-300 hover:shadow-md" id="miles_out_container">
-                            <label class="mb-1 block text-sm font-medium text-black-700" for="miles_out">
-                                أميال الانصراف
-                            </label>
-                            <div class="relative rounded-md ring-1 ring-orange-900/5">
-                                <input
-                                    class="block w-full rounded-lg border border-orange-200 py-3 pl-10 pr-3 transition-all duration-300 focus:border-orange-500 focus:ring-orange-500"
-                                    id="miles_out" name="miles_out" type="number" placeholder="أدخل عدد الأميال" required>
+                    <div class="space-y-4">
+                        @if($using_car)
+                            <!-- Clock Out Miles -->
+                            <div class="rounded-lg transition-all duration-300 hover:shadow-md">
+                                <label class="mb-1 block text-sm font-medium text-black-700" for="miles_out">
+                                    {{ __('messages.clock_out_miles') }}
+                                </label>
+                                <div class="relative rounded-md ring-1 ring-orange-900/5">
+                                    <input
+                                        class="block w-full rounded-lg border border-orange-200 py-3 {{ isRtl() ? 'pr-10 pl-3' : 'pl-10 pr-3' }} transition-all duration-300 focus:border-orange-500 focus:ring-orange-500"
+                                        id="miles_out" name="miles_out" type="number" placeholder="{{ __('messages.enter_miles_placeholder') }}" required>
+                                </div>
+                            </div>
+
+                            <!-- Clock Out Image -->
+                            <div class="rounded-lg transition-all duration-300 hover:shadow-md">
+                                <label class="mb-1 block text-sm font-medium text-black-700" for="image_out">{{ __('messages.upload_image') }}</label>
+                                <div class="mt-1">
+                                    <div
+                                        class="flex justify-center rounded-lg border-2 border-dashed border-orange-200 px-6 pb-6 pt-5 transition-all duration-300 hover:border-orange-500">
+                                        <div class="text-center">
+                                            <label
+                                                class="relative cursor-pointer rounded-md font-medium text-black-600 transition-colors duration-300 focus-within:outline-none focus-within:ring-2 focus-within:ring-orange-500 focus-within:ring-offset-2 hover:text-black-500"
+                                                for="image_out">
+                                                <span>{{ __('messages.upload_file') }}</span>
+                                                <input class="sr-only" id="image_out" name="image_out" type="file"
+                                                       accept="image/*" capture="environment" required>
+                                            </label>
+                                            <p class="mt-1 {{ isRtl() ? 'pr-1' : 'pl-1' }}">{{ __('messages.or_drag_drop') }}</p>
+                                            <p class="mt-2 text-xs text-black-500">{{ __('messages.camera_gallery_instruction') }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+
+                        <!-- Purchase Question -->
+                        <div class="mb-4">
+                            <label class="mb-2 block text-sm font-medium text-black-700">{{ __('messages.purchase_question') }}</label>
+                            <div class="flex items-center {{ isRtl() ? 'space-x-reverse' : '' }} space-x-4">
+                                <div class="flex items-center">
+                                    <input class="h-4 w-4 border-orange-200 text-black-600 focus:ring-orange-500"
+                                           id="didBuyYes" name="did_buy" type="radio" value="1">
+                                    <label class="{{ isRtl() ? 'mr-2' : 'ml-2' }}" for="didBuyYes">{{ __('messages.yes') }}</label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input class="h-4 w-4 border-orange-200 text-black-600 focus:ring-orange-500"
+                                           id="didBuyNo" name="did_buy" type="radio" value="0" checked>
+                                    <label class="{{ isRtl() ? 'mr-2' : 'ml-2' }}" for="didBuyNo">{{ __('messages.no') }}</label>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="rounded-lg transition-all duration-300 hover:shadow-md" id="image_out_container">
-                            <label class="mb-1 block text-sm font-medium text-black-700" for="image_out">
-                                رفع صورة
+                        <!-- Purchase Cost (hidden by default) -->
+                        <div class="hidden rounded-lg transition-all duration-300 hover:shadow-md"
+                             id="purchase_cost_container">
+                            <label class="mb-1 block text-sm font-medium text-black-700" for="purchase_cost">
+                                {{ __('messages.purchase_cost') }}
+                            </label>
+                            <div class="relative rounded-md ring-1 ring-orange-900/5">
+                                <input
+                                    class="block w-full rounded-lg border border-orange-200 py-3 {{ isRtl() ? 'pr-10 pl-3' : 'pl-10 pr-3' }} transition-all duration-300 focus:border-orange-500 focus:ring-orange-500"
+                                    id="purchase_cost" name="purchase_cost" type="number" step="0.01"
+                                    placeholder="{{ __('messages.purchase_cost_example') }}">
+                            </div>
+                        </div>
+
+                        <!-- NEW: Purchase receipt container -->
+                        <div class="hidden rounded-lg transition-all duration-300 hover:shadow-md"
+                             id="purchase_receipt_container">
+                            <label class="mb-1 block text-sm font-medium text-black-700" for="purchase_receipt">
+                                {{ __('messages.receipt_image') }}
                             </label>
                             <div class="mt-1">
                                 <div
@@ -59,91 +102,38 @@
                                     <div class="text-center">
                                         <label
                                             class="relative cursor-pointer rounded-md font-medium text-black-600 transition-colors duration-300 focus-within:outline-none focus-within:ring-2 focus-within:ring-orange-500 focus-within:ring-offset-2 hover:text-black-500"
-                                            for="image_out">
-                                            <span>رفع ملف</span>
-                                            <input class="sr-only" id="image_out" name="image_out" type="file"
-                                                   accept="image/*" capture="environment" required>
+                                            for="purchase_receipt">
+                                            <span>{{ __('messages.upload_file') }}</span>
+                                            <input class="sr-only" id="purchase_receipt" name="purchase_receipt" type="file"
+                                                   accept="image/*" capture="environment">
                                         </label>
-                                        <p class="mt-1 pl-1">أو اسحب وأفلت</p>
-                                        <p class="mt-2 text-xs text-black-500">يمكنك التقاط صورة مباشرة من الكاميرا أو اختيار
-                                            صورة من المعرض</p>
+                                        <p class="mt-1 {{ isRtl() ? 'pr-1' : 'pl-1' }}">{{ __('messages.or_drag_drop') }}</p>
+                                        <p class="mt-2 text-xs text-black-500">{{ __('messages.camera_gallery_instruction') }}</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    @endif
 
-                    <!-- NEW: Radio Buttons => Did you buy anything for the company? -->
-                    <div class="mb-4">
-                        <label class="mb-2 block text-sm font-medium text-black-700">
-                            هل اشتريت أي شيء لصالح الشركة؟
-                        </label>
-                        <div class="flex items-center space-x-4">
-                            <div class="flex items-center">
-                                <input class="h-4 w-4 border-orange-200 text-black-600 focus:ring-orange-500" id="didBuyYes"
-                                       name="bought_something" type="radio" value="1">
-                                <label class="mr-2" for="didBuyYes">نعم</label>
-                            </div>
-                            <div class="flex items-center">
-                                <input class="h-4 w-4 border-orange-200 text-black-600 focus:ring-orange-500" id="didBuyNo"
-                                       name="bought_something" type="radio" value="0" checked>
-                                <label class="mr-2" for="didBuyNo">لا</label>
-                            </div>
-                        </div>
+                        <button
+                            class="flex w-full transform items-center justify-center rounded-lg border border-transparent bg-orange-600 px-4 py-3 text-base font-medium text-white transition-all duration-300 hover:scale-105 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+                            type="button" onclick="handleClockOutClicked()">
+                            <svg class="{{ isRtl() ? 'ml-2' : 'mr-2' }} h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1">
+                                </path>
+                            </svg>
+                            {{ __('messages.clock_out_registration') }}
+                        </button>
                     </div>
-
-                    <!-- NEW: Purchase cost container -->
-                    <div class="hidden rounded-lg transition-all duration-300 hover:shadow-md" id="purchase_cost_container">
-                        <label class="mb-1 block text-sm font-medium text-black-700" for="purchase_cost">
-                            تكلفة المشتريات
-                        </label>
-                        <div class="relative rounded-md ring-1 ring-orange-900/5">
-                            <input
-                                class="block w-full rounded-lg border border-orange-200 py-3 pl-10 pr-3 transition-all duration-300 focus:border-orange-500 focus:ring-orange-500"
-                                id="purchase_cost" name="purchase_cost" type="number" step="0.01"
-                                placeholder="مثال: 150.00">
-                        </div>
-                    </div>
-
-                    <!-- NEW: Purchase receipt container -->
-                    <div class="hidden rounded-lg transition-all duration-300 hover:shadow-md"
-                         id="purchase_receipt_container">
-                        <label class="mb-1 block text-sm font-medium text-black-700" for="purchase_receipt">
-                            صورة الفاتورة / الإيصال
-                        </label>
-                        <div class="mt-1">
-                            <div
-                                class="flex justify-center rounded-lg border-2 border-dashed border-orange-200 px-6 pb-6 pt-5 transition-all duration-300 hover:border-orange-500">
-                                <div class="text-center">
-                                    <label
-                                        class="relative cursor-pointer rounded-md font-medium text-black-600 transition-colors duration-300 focus-within:outline-none focus-within:ring-2 focus-within:ring-orange-500 focus-within:ring-offset-2 hover:text-black-500"
-                                        for="purchase_receipt">
-                                        <span>رفع ملف</span>
-                                        <input class="sr-only" id="purchase_receipt" name="purchase_receipt" type="file"
-                                               accept="image/*" capture="environment">
-                                    </label>
-                                    <p class="mt-1 pl-1">أو اسحب وأفلت</p>
-                                    <p class="mt-2 text-xs text-black-500">يمكنك التقاط صورة مباشرة من الكاميرا أو اختيار
-                                        صورة من المعرض</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <button
-                        class="flex w-full transform items-center justify-center rounded-lg border border-transparent bg-orange-600 px-4 py-3 text-base font-medium text-white transition-all duration-300 hover:scale-105 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
-                        type="button" onclick="handleClockOutClicked()">
-                        <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1">
-                            </path>
-                        </svg>
-                        تسجيل الانصراف
-                    </button>
                 </form>
 
                 {{-- Clock-In Form --}}
             @else
+                <div class="mb-6 rounded-lg bg-orange-100 p-4 text-center">
+                    <h2 class="text-xl font-semibold text-black-800">{{ __('messages.clock_in_registration') }}</h2>
+                    <p class="text-black-600">{{ __('messages.start_shift_registration') }}</p>
+                </div>
+
                 <form class="animate-fade-in space-y-6" id="clockInForm" action="{{ route('clocking.clockIn') }}"
                       method="POST" enctype="multipart/form-data">
                     @csrf
@@ -156,17 +146,17 @@
                     <div class="space-y-4">
                         <!-- Radio button to check if car is used -->
                         <div class="mb-4">
-                            <label class="mb-2 block text-sm font-medium text-black-700">هل تستخدم سيارتك؟</label>
-                            <div class="flex items-center space-x-4">
+                            <label class="mb-2 block text-sm font-medium text-black-700">{{ __('messages.using_car_question') }}</label>
+                            <div class="flex items-center {{ isRtl() ? 'space-x-reverse' : '' }} space-x-4">
                                 <div class="flex items-center">
                                     <input class="h-4 w-4 border-orange-200 text-black-600 focus:ring-orange-500"
                                            id="using_car_yes" name="using_car" type="radio" value="1">
-                                    <label class="mr-2" for="using_car_yes">نعم</label>
+                                    <label class="{{ isRtl() ? 'mr-2' : 'ml-2' }}" for="using_car_yes">{{ __('messages.yes') }}</label>
                                 </div>
                                 <div class="flex items-center">
                                     <input class="h-4 w-4 border-orange-200 text-black-600 focus:ring-orange-500"
                                            id="using_car_no" name="using_car" type="radio" value="0" checked>
-                                    <label class="mr-2" for="using_car_no">لا</label>
+                                    <label class="{{ isRtl() ? 'mr-2' : 'ml-2' }}" for="using_car_no">{{ __('messages.no') }}</label>
                                 </div>
                             </div>
                         </div>
@@ -175,19 +165,19 @@
                         <div class="rounded-lg transition-all duration-300 hover:shadow-md" id="miles_in_container"
                              style="display: none;">
                             <label class="mb-1 block text-sm font-medium text-black-700" for="miles_in">
-                                أميال الحضور
+                                {{ __('messages.clock_in_miles') }}
                             </label>
                             <div class="relative rounded-md ring-1 ring-orange-900/5">
                                 <input
-                                    class="block w-full rounded-lg border border-orange-200 py-3 pl-10 pr-3 transition-all duration-300 focus:border-orange-500 focus:ring-orange-500"
-                                    id="miles_in" name="miles_in" type="number" placeholder="أدخل عدد الأميال">
+                                    class="block w-full rounded-lg border border-orange-200 py-3 {{ isRtl() ? 'pr-10 pl-3' : 'pl-10 pr-3' }} transition-all duration-300 focus:border-orange-500 focus:ring-orange-500"
+                                    id="miles_in" name="miles_in" type="number" placeholder="{{ __('messages.enter_miles_placeholder') }}">
                             </div>
                         </div>
 
                         <!-- Clock In Image -->
                         <div class="rounded-lg transition-all duration-300 hover:shadow-md" id="image_in_container"
                              style="display: none;">
-                            <label class="mb-1 block text-sm font-medium text-black-700" for="image_in">رفع صورة</label>
+                            <label class="mb-1 block text-sm font-medium text-black-700" for="image_in">{{ __('messages.upload_image') }}</label>
                             <div class="mt-1">
                                 <div
                                     class="flex justify-center rounded-lg border-2 border-dashed border-orange-200 px-6 pb-6 pt-5 transition-all duration-300 hover:border-orange-500">
@@ -195,13 +185,12 @@
                                         <label
                                             class="relative cursor-pointer rounded-md font-medium text-black-600 transition-colors duration-300 focus-within:outline-none focus-within:ring-2 focus-within:ring-orange-500 focus-within:ring-offset-2 hover:text-black-500"
                                             for="image_in">
-                                            <span>رفع ملف</span>
+                                            <span>{{ __('messages.upload_file') }}</span>
                                             <input class="sr-only" id="image_in" name="image_in" type="file"
                                                    accept="image/*" capture="environment">
                                         </label>
-                                        <p class="mt-1 pl-1">أو اسحب وأفلت</p>
-                                        <p class="mt-2 text-xs text-black-500">يمكنك التقاط صورة مباشرة من الكاميرا أو
-                                            اختيار صورة من المعرض</p>
+                                        <p class="mt-1 {{ isRtl() ? 'pr-1' : 'pl-1' }}">{{ __('messages.or_drag_drop') }}</p>
+                                        <p class="mt-2 text-xs text-black-500">{{ __('messages.camera_gallery_instruction') }}</p>
                                     </div>
                                 </div>
                             </div>
@@ -210,12 +199,12 @@
                         <button
                             class="flex w-full transform items-center justify-center rounded-lg border border-transparent bg-orange-600 px-4 py-3 text-base font-medium text-white transition-all duration-300 hover:scale-105 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
                             type="button" onclick="handleClockInClicked()">
-                            <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="{{ isRtl() ? 'ml-2' : 'mr-2' }} h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                       d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1">
                                 </path>
                             </svg>
-                            تسجيل الحضور
+                            {{ __('messages.clock_in_registration') }}
                         </button>
                     </div>
                 </form>
@@ -237,28 +226,28 @@
                                   d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                         </svg>
                     </div>
-                    <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">
+                    <div class="mt-3 text-center {{ isRtl() ? 'sm:mr-4' : 'sm:ml-4' }} sm:mt-0 {{ isRtl() ? 'sm:text-right' : 'sm:text-left' }}">
                         <h3 class="text-lg font-medium leading-6 text-black-900" id="modal-title">
-                            تأكيد الإجراء
+                            {{ __('messages.confirm_action') }}
                         </h3>
                         <div class="mt-2">
                             <p class="text-sm text-black-500" id="confirmationMessage">
-                                هل أنت متأكد أنك تريد المتابعة؟
+                                {{ __('messages.confirm_proceed') }}
                             </p>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="bg-orange-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+            <div class="bg-orange-50 px-4 py-3 sm:flex {{ isRtl() ? 'sm:flex-row' : 'sm:flex-row-reverse' }} sm:px-6">
                 <button
-                    class="inline-flex w-full justify-center rounded-md border border-transparent bg-orange-600 px-4 py-2 text-base font-medium text-white ring-1 ring-orange-900/5 transition-colors duration-300 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 sm:ml-3 sm:w-auto sm:text-sm"
+                    class="inline-flex w-full justify-center rounded-md border border-transparent bg-orange-600 px-4 py-2 text-base font-medium text-white ring-1 ring-orange-900/5 transition-colors duration-300 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 {{ isRtl() ? 'sm:mr-3' : 'sm:ml-3' }} sm:w-auto sm:text-sm"
                     id="confirmButton" type="button">
-                    تأكيد
+                    {{ __('messages.confirm') }}
                 </button>
                 <button
-                    class="mt-3 inline-flex w-full justify-center rounded-md border border-orange-200 bg-orange-50 px-4 py-2 text-base font-medium text-black-700 ring-1 ring-orange-900/5 transition-colors duration-300 hover:bg-orange-100 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 sm:ml-3 sm:mt-0 sm:w-auto sm:text-sm"
+                    class="mt-3 inline-flex w-full justify-center rounded-md border border-orange-200 bg-orange-50 px-4 py-2 text-base font-medium text-black-700 ring-1 ring-orange-900/5 transition-colors duration-300 hover:bg-orange-100 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 {{ isRtl() ? 'sm:mr-3' : 'sm:ml-3' }} sm:mt-0 sm:w-auto sm:text-sm"
                     type="button" onclick="hideConfirmation()">
-                    إلغاء
+                    {{ __('messages.cancel') }}
                 </button>
             </div>
         </div>
@@ -299,17 +288,20 @@
             const receiptContainer = document.getElementById('purchase_receipt_container');
             const costInput = document.getElementById('purchase_cost');
             const receiptInput = document.getElementById('purchase_receipt');
-
-            if (didBuy) {
-                costContainer.classList.remove('hidden');
-                receiptContainer.classList.remove('hidden');
-                costInput.setAttribute('required', 'required');
-                receiptInput.setAttribute('required', 'required');
-            } else {
-                costContainer.classList.add('hidden');
-                receiptContainer.classList.add('hidden');
-                costInput.removeAttribute('required');
-                receiptInput.removeAttribute('required');
+        
+            // Add null checks to prevent errors
+            if (costContainer && receiptContainer && costInput && receiptInput) {
+                if (didBuy) {
+                    costContainer.classList.remove('hidden');
+                    receiptContainer.classList.remove('hidden');
+                    costInput.setAttribute('required', 'required');
+                    receiptInput.setAttribute('required', 'required');
+                } else {
+                    costContainer.classList.add('hidden');
+                    receiptContainer.classList.add('hidden');
+                    costInput.removeAttribute('required');
+                    receiptInput.removeAttribute('required');
+                }
             }
         }
 
@@ -322,10 +314,10 @@
             const message = document.getElementById('confirmationMessage');
 
             if (action === 'in') {
-                message.textContent = 'هل أنت متأكد أنك تريد تسجيل الحضور؟';
+                message.textContent = '{{ __('messages.confirm_clock_in') }}';
                 confirmButton.onclick = () => document.getElementById('clockInForm').submit();
             } else {
-                message.textContent = 'هل أنت متأكد أنك تريد تسجيل الانصراف؟';
+                message.textContent = '{{ __('messages.confirm_clock_out') }}';
                 confirmButton.onclick = () => document.getElementById('clockOutForm').submit();
             }
 
@@ -361,8 +353,7 @@
                 const imageIn = document.getElementById('image_in').value; // the file path
 
                 if (!milesIn || !imageIn) {
-                    clockInErrorBox.innerText =
-                        'عند اختيار "نعم" لاستخدام السيارة، يجب إدخال الأميال ورفع الصورة.';
+                    clockInErrorBox.innerText = '{{ __('messages.car_usage_validation') }}';
                     clockInErrorBox.classList.remove('hidden');
                     return;
                 }
@@ -388,8 +379,7 @@
                 const imageOut = document.getElementById('image_out').value; // file path
 
                 if (!milesOut || !imageOut) {
-                    clockOutErrorBox.innerText =
-                        'عند الانصراف باستخدام السيارة، يجب إدخال الأميال ورفع الصورة.';
+                    clockOutErrorBox.innerText = '{{ __('messages.car_clock_out_validation') }}';
                     clockOutErrorBox.classList.remove('hidden');
                     return;
                 }
@@ -402,8 +392,7 @@
                 const receiptVal = document.getElementById('purchase_receipt').value;
 
                 if (!costVal || !receiptVal) {
-                    clockOutErrorBox.innerText =
-                        'عند اختيار "نعم" للشراء، يجب إدخال تكلفة المشتريات ورفع صورة الفاتورة.';
+                    clockOutErrorBox.innerText = '{{ __('messages.purchase_validation') }}';
                     clockOutErrorBox.classList.remove('hidden');
                     return;
                 }

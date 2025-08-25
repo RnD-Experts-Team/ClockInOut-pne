@@ -14,10 +14,14 @@ use App\Http\Middleware\RoleMiddleware;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\MaintenanceRequestController;
+use App\Http\Controllers\LanguageController;
 
 Route::get('/', function () {
     return view('auth.login');
 });
+
+// Language switching route
+Route::post('/language/switch', [LanguageController::class, 'switch'])->name('language.switch');
 Route::get('/leases/landlord-contact', [LeaseController::class, 'landlordContact'])->name('leases.landlord-contact');
 Route::get('/leases/cost-breakdown', [LeaseController::class, 'costBreakdown'])->name('leases.cost-breakdown');
 Route::get('/leases/lease-tracker', [LeaseController::class, 'leaseTracker'])->name('leases.lease-tracker');

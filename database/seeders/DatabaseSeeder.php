@@ -25,10 +25,10 @@ class DatabaseSeeder extends Seeder
         // ]);
 
         User::factory()->create([
-            'name' => 'Robert',
-            'email' => 'robert@pnefoods.com',
+            'name' => 'Jaden',
+            'email' => 'jaden@pnefoods.com',
             'role' => 'admin',
-            'password' => Hash::make('Rob123456'),
+            'password' => Hash::make('Jaden123456'),
         ]);
     }
 }
