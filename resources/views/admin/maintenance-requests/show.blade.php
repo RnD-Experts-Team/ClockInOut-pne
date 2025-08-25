@@ -65,6 +65,22 @@
                             </dd>
                         </div>
                         <div>
+                            <dt class="text-sm font-medium text-black-500">Assigned To</dt>
+                            <dd class="mt-1 text-sm text-black-900">
+                                @if($maintenanceRequest->assignedTo)
+                                    {{ $maintenanceRequest->assignedTo->name }}
+                                @else
+                                    Not Assigned
+                                @endif
+                            </dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm font-medium text-black-500">Due Date</dt>
+                            <dd class="mt-1 text-sm text-black-900">
+                                {{ $maintenanceRequest->due_date ? $maintenanceRequest->due_date->format('M d, Y') : 'N/A' }}
+                            </dd>
+                        </div>
+                        <div>
                             <dt class="text-sm font-medium text-black-500">Urgency Level</dt>
                             <dd class="mt-1">
                                 @if($maintenanceRequest->urgencyLevel)
@@ -278,50 +294,56 @@
                 </div>
 
                 <!-- Status Update Actions -->
-                @if(!in_array($maintenanceRequest->status, ['done', 'canceled']))
-                    <div class="bg-orange-50 ring-1 ring-orange-900/5 rounded-lg p-6 border border-orange-200">
-                        <h2 class="text-lg font-semibold text-black-900 mb-4 flex items-center">
-                            <svg class="w-5 h-5 mr-2 text-black-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                            </svg>
-                            Update Status
-                        </h2>
-                        <form action="{{ route('maintenance-requests.update-status', $maintenanceRequest) }}" method="POST">
-                            @csrf
-                            @method('PATCH')
-                            <div class="space-y-4">
-                                <div>
-                                    <label for="status" class="block text-sm font-medium text-black-700 mb-2">New Status</label>
-                                    <select name="status" id="status" class="block w-full rounded-lg border-orange-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm">
-                                        @if($maintenanceRequest->status === 'on_hold')
-                                            <option value="in_progress">In Progress</option>
-                                            <option value="done">Done</option>
-                                            <option value="canceled">Canceled</option>
-                                        @elseif($maintenanceRequest->status === 'in_progress')
-                                            <option value="on_hold">On Hold</option>
-                                            <option value="done">Done</option>
-                                            <option value="canceled">Canceled</option>
-                                        @endif
-                                    </select>
-                                </div>
-                                <div id="costsField" style="display: none;">
-                                    <label for="costs" class="block text-sm font-medium text-black-700 mb-2">Costs *</label>
-                                    <input type="number" name="costs" id="costs" step="0.01" min="0" class="block w-full rounded-lg border-orange-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm" placeholder="0.00">
-                                </div>
-                                <div id="fixField" style="display: none;">
-                                    <label for="how_we_fixed_it" class="block text-sm font-medium text-black-700 mb-2">How We Fixed It *</label>
-                                    <textarea name="how_we_fixed_it" id="how_we_fixed_it" rows="4" class="block w-full rounded-lg border-orange-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm" placeholder="Please describe how the issue was fixed..."></textarea>
-                                </div>
-                                <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors duration-200 font-medium">
-                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                    </svg>
-                                    Update Status
-                                </button>
+                <div class="bg-orange-50 ring-1 ring-orange-900/5 rounded-lg p-6 border border-orange-200">
+                    <h2 class="text-lg font-semibold text-black-900 mb-4 flex items-center">
+                        <svg class="w-5 h-5 mr-2 text-black-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        Update Status
+                    </h2>
+                    <form action="{{ route('maintenance-requests.update-status', $maintenanceRequest) }}" method="POST">
+                        @csrf
+                        @method('PATCH')
+                        <div class="space-y-4">
+                            <div>
+                                <label for="status" class="block text-sm font-medium text-black-700 mb-2">New Status</label>
+                                <select name="status" id="status" class="block w-full rounded-lg border-orange-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm">
+                                    <option value="on_hold" {{ $maintenanceRequest->status === 'on_hold' ? 'selected' : '' }}>On Hold</option>
+                                    <option value="in_progress" {{ $maintenanceRequest->status === 'in_progress' ? 'selected' : '' }}>In Progress</option>
+                                    <option value="done" {{ $maintenanceRequest->status === 'done' ? 'selected' : '' }}>Done</option>
+                                    <option value="canceled" {{ $maintenanceRequest->status === 'canceled' ? 'selected' : '' }}>Canceled</option>
+                                </select>
                             </div>
-                        </form>
-                    </div>
-                @endif
+                            <div id="assignedToField" style="display: {{ $maintenanceRequest->status === 'in_progress' ? 'block' : 'none' }};">
+                                <label for="assigned_to" class="block text-sm font-medium text-black-700 mb-2">Assigned To *</label>
+                                <select name="assigned_to" id="assigned_to" class="block w-full rounded-lg border-orange-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm">
+                                    <option value="">Select User</option>
+                                    @foreach($users as $user)
+                                        <option value="{{ $user->id }}">{{ $user->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div id="dueDateField" style="display: {{ $maintenanceRequest->status === 'in_progress' ? 'block' : 'none' }};">
+                                <label for="due_date" class="block text-sm font-medium text-black-700 mb-2">Due Date</label>
+                                <input type="date" name="due_date" id="due_date" class="block w-full rounded-lg border-orange-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm" value="{{ $maintenanceRequest->due_date ? $maintenanceRequest->due_date->format('Y-m-d') : '' }}">
+                            </div>
+                            <div id="costsField" style="display: {{ $maintenanceRequest->status === 'done' ? 'block' : 'none' }};">
+                                <label for="costs" class="block text-sm font-medium text-black-700 mb-2">Costs *</label>
+                                <input type="number" name="costs" id="costs" step="0.01" min="0" class="block w-full rounded-lg border-orange-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm" placeholder="0.00" value="{{ $maintenanceRequest->costs ?? '' }}">
+                            </div>
+                            <div id="fixField" style="display: {{ $maintenanceRequest->status === 'done' ? 'block' : 'none' }};">
+                                <label for="how_we_fixed_it" class="block text-sm font-medium text-black-700 mb-2">How We Fixed It *</label>
+                                <textarea name="how_we_fixed_it" id="how_we_fixed_it" rows="4" class="block w-full rounded-lg border-orange-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm" placeholder="Please describe how the issue was fixed...">{{ $maintenanceRequest->how_we_fixed_it ?? '' }}</textarea>
+                            </div>
+                            <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors duration-200 font-medium">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                                Update Status
+                            </button>
+                        </div>
+                    </form>
+                </div>
 
                 <!-- Delete Action -->
                 <div class="bg-orange-50 ring-1 ring-orange-900/5 rounded-lg p-6 border border-orange-200">
@@ -430,21 +452,32 @@
             const statusSelect = document.getElementById('status');
             const costsField = document.getElementById('costsField');
             const fixField = document.getElementById('fixField');
+            const assignedToField = document.getElementById('assignedToField');
+            const dueDateField = document.getElementById('dueField');
             const costsInput = document.getElementById('costs');
             const fixTextarea = document.getElementById('how_we_fixed_it');
+            const assignedToSelect = document.getElementById('assigned_to');
 
             if (statusSelect) {
                 statusSelect.addEventListener('change', function() {
-                    if (this.value === 'done') {
+                    const value = this.value;
+                    costsField.style.display = 'none';
+                    fixField.style.display = 'none';
+                    assignedToField.style.display = 'none';
+                    dueDateField.style.display = 'none';
+                    costsInput.required = false;
+                    fixTextarea.required = false;
+                    assignedToSelect.required = false;
+
+                    if (value === 'done') {
                         costsField.style.display = 'block';
                         fixField.style.display = 'block';
                         costsInput.required = true;
                         fixTextarea.required = true;
-                    } else {
-                        costsField.style.display = 'none';
-                        fixField.style.display = 'none';
-                        costsInput.required = false;
-                        fixTextarea.required = false;
+                    } else if (value === 'in_progress') {
+                        assignedToField.style.display = 'block';
+                        dueDateField.style.display = 'block';
+                        assignedToSelect.required = true;
                     }
                 });
             }

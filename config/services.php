@@ -34,5 +34,8 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
+    'cognito_forms' => [
+        'api_token' => env('COGNITO_FORMS_API_TOKEN', ''),
+    ],
 
 ];
