@@ -1,6 +1,6 @@
-const CACHE_NAME = 'pne-clockin-v1';
-const STATIC_CACHE_NAME = 'pne-static-v1';
-const DYNAMIC_CACHE_NAME = 'pne-dynamic-v1';
+const CACHE_NAME = 'pne-clockin-v3';
+const STATIC_CACHE_NAME = 'pne-static-v3';
+const DYNAMIC_CACHE_NAME = 'pne-dynamic-v3';
 
 // Assets to cache immediately
 const STATIC_ASSETS = [
@@ -24,6 +24,8 @@ const API_ENDPOINTS = [
 // Install event - cache static assets
 self.addEventListener('install', event => {
   console.log('Service Worker: Installing...');
+  // Force immediate activation
+  self.skipWaiting();
   event.waitUntil(
     caches.open(STATIC_CACHE_NAME)
       .then(cache => {
@@ -43,22 +45,25 @@ self.addEventListener('install', event => {
 // Activate event - clean up old caches
 self.addEventListener('activate', event => {
   console.log('Service Worker: Activating...');
+  // Take control of all clients immediately
   event.waitUntil(
-    caches.keys()
-      .then(cacheNames => {
-        return Promise.all(
-          cacheNames.map(cacheName => {
-            if (cacheName !== STATIC_CACHE_NAME && cacheName !== DYNAMIC_CACHE_NAME) {
-              console.log('Service Worker: Deleting old cache:', cacheName);
-              return caches.delete(cacheName);
-            }
-          })
-        );
-      })
-      .then(() => {
-        console.log('Service Worker: Activated');
-        return self.clients.claim();
-      })
+    Promise.all([
+      self.clients.claim(),
+      caches.keys()
+        .then(cacheNames => {
+          return Promise.all(
+            cacheNames.map(cacheName => {
+              if (cacheName !== STATIC_CACHE_NAME && cacheName !== DYNAMIC_CACHE_NAME) {
+                console.log('Service Worker: Deleting old cache:', cacheName);
+                return caches.delete(cacheName);
+              }
+            })
+          );
+        })
+        .then(() => {
+          console.log('Service Worker: Activated');
+        })
+    ])
   );
 });
 
@@ -69,6 +74,12 @@ self.addEventListener('fetch', event => {
 
   // Skip non-GET requests
   if (request.method !== 'GET') {
+    return;
+  }
+
+  // Skip unsupported URL schemes
+  if (!isSupportedScheme(url.protocol)) {
+    console.log('Service Worker: Skipping unsupported URL scheme:', url.protocol, 'for URL:', request.url);
     return;
   }
 
@@ -93,6 +104,11 @@ self.addEventListener('fetch', event => {
   // Default: network-first strategy
   event.respondWith(networkFirstStrategy(request));
 });
+
+// Check if URL scheme is supported for caching
+function isSupportedScheme(protocol) {
+  return protocol === 'http:' || protocol === 'https:';
+}
 
 // Check if request is for API endpoint
 function isApiRequest(pathname) {
@@ -124,8 +140,18 @@ async function cacheFirstStrategy(request) {
 
     const networkResponse = await fetch(request);
     if (networkResponse.ok) {
-      const cache = await caches.open(STATIC_CACHE_NAME);
-      cache.put(request, networkResponse.clone());
+      const url = new URL(request.url);
+      // Only cache requests with supported schemes
+      if (isSupportedScheme(url.protocol)) {
+        try {
+          const cache = await caches.open(STATIC_CACHE_NAME);
+          await cache.put(request, networkResponse.clone());
+        } catch (cacheError) {
+          console.error('Service Worker: Failed to cache in cacheFirstStrategy:', cacheError, 'URL:', request.url);
+        }
+      } else {
+        console.log('Service Worker: Skipping cache for unsupported scheme in cacheFirstStrategy:', url.protocol);
+      }
     }
     return networkResponse;
   } catch (error) {
@@ -139,8 +165,18 @@ async function networkFirstStrategy(request) {
   try {
     const networkResponse = await fetch(request);
     if (networkResponse.ok) {
-      const cache = await caches.open(DYNAMIC_CACHE_NAME);
-      cache.put(request, networkResponse.clone());
+      const url = new URL(request.url);
+      // Only cache requests with supported schemes
+      if (isSupportedScheme(url.protocol)) {
+        try {
+          const cache = await caches.open(DYNAMIC_CACHE_NAME);
+          await cache.put(request, networkResponse.clone());
+        } catch (cacheError) {
+          console.error('Service Worker: Failed to cache in networkFirstStrategy:', cacheError, 'URL:', request.url);
+        }
+      } else {
+        console.log('Service Worker: Skipping cache for unsupported scheme in networkFirstStrategy:', url.protocol);
+      }
     }
     return networkResponse;
   } catch (error) {
@@ -158,8 +194,18 @@ async function navigationStrategy(request) {
   try {
     const networkResponse = await fetch(request);
     if (networkResponse.ok) {
-      const cache = await caches.open(DYNAMIC_CACHE_NAME);
-      cache.put(request, networkResponse.clone());
+      const url = new URL(request.url);
+      // Only cache requests with supported schemes
+      if (isSupportedScheme(url.protocol)) {
+        try {
+          const cache = await caches.open(DYNAMIC_CACHE_NAME);
+          await cache.put(request, networkResponse.clone());
+        } catch (cacheError) {
+          console.error('Service Worker: Failed to cache in navigationStrategy:', cacheError, 'URL:', request.url);
+        }
+      } else {
+        console.log('Service Worker: Skipping cache for unsupported scheme in navigationStrategy:', url.protocol);
+      }
     }
     return networkResponse;
   } catch (error) {
