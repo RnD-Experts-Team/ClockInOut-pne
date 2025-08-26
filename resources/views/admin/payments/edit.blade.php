@@ -192,11 +192,16 @@
                     <select name="payment_method" id="payment_method"
                             class="form-select block w-full border-orange-300 rounded-lg shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm">
                         <option value="">Select Payment Method</option>
-                        <option value="CC" {{ old('payment_method', $payment->payment_method) === 'CC' ? 'selected' : '' }}>Credit Card (CC)</option>
-                        <option value="Cash" {{ old('payment_method', $payment->payment_method) === 'Cash' ? 'selected' : '' }}>Cash</option>
-                        <option value="Check" {{ old('payment_method', $payment->payment_method) === 'Check' ? 'selected' : '' }}>Check</option>
-                        <option value="ACH" {{ old('payment_method', $payment->payment_method) === 'ACH' ? 'selected' : '' }}>ACH</option>
-                        <option value="Wire" {{ old('payment_method', $payment->payment_method) === 'Wire' ? 'selected' : '' }}>Wire Transfer</option>
+                        <option value="CC" {{ old('payment_method') === 'CC' ? 'selected' : '' }}>Credit Card (CC)</option>
+                        <option value="Cash" {{ old('payment_method') === 'Cash' ? 'selected' : '' }}>Cash</option>
+                        <option value="Check" {{ old('payment_method') === 'Check' ? 'selected' : '' }}>Check</option>
+                        <option value="ACH" {{ old('payment_method') === 'ACH' ? 'selected' : '' }}>ACH</option>
+                        <option value="Wire" {{ old('payment_method') === 'Wire' ? 'selected' : '' }}>Wire Transfer</option>
+                        <option value="Zelle" {{ old('payment_method') === 'Zelle' ? 'selected' : '' }}>Zelle</option>
+                        <option value="Bill Payment" {{ old('payment_method') === 'Bill Payment' ? 'selected' : '' }}>Bill Payment / Check</option>
+                        <option value="Paychex" {{ old('payment_method') === 'Paychex' ? 'selected' : '' }}>Paychex</option>
+                        <option value="DashCard" {{ old('payment_method') === 'DashCard' ? 'selected' : '' }}>DashCard</option>
+
                     </select>
                 </div>
 
