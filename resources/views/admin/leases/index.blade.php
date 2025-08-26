@@ -254,12 +254,12 @@
                                 <!-- Financial -->
                                 <td class="px-3 py-4 text-sm">
                                     <div class="space-y-1">
-                                        <div class="font-semibold text-green-600">${{ number_format($lease->total_rent, 0) }}/mo</div>
+                                        <div class="font-semibold text-green-600">${{ number_format($lease->total_rent, 2) }}/mo</div>
                                         @if($lease->aws)
-                                            <div class="text-xs text-black-600">AWS: ${{ number_format($lease->aws, 0) }}</div>
+                                            <div class="text-xs text-black-600">AWS: ${{ number_format($lease->aws, 2) }}</div>
                                         @endif
                                         @if($lease->base_rent)
-                                            <div class="text-xs text-black-700">Base: ${{ number_format($lease->base_rent, 0) }}</div>
+                                            <div class="text-xs text-black-700">Base: ${{ number_format($lease->base_rent, 2) }}</div>
                                         @endif
                                     </div>
                                 </td>
@@ -488,7 +488,7 @@
                                     class="text-black-700 hover:text-black-600 text-xl font-bold">&times;</button>
                         </div>
                     </div>
-                    <div id="leaseTrackerContent" class="modal-content">
+                    <div id="leaseTrackerContent" class="modal-content no-scrollbar">
                         <!-- Content will be loaded here -->
                     </div>
                 </div>
@@ -592,188 +592,188 @@
             </div>
         </div>
     </div>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Modal controls
-        const portfolioModal = document.getElementById('portfolioModal');
-        const openModalBtn = document.getElementById('openPortfolioModal');
-        const closeModalBtn = document.getElementById('closePortfolioModal');
-        const modalBackdrop = document.getElementById('modalBackdrop');
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Modal controls
+            const portfolioModal = document.getElementById('portfolioModal');
+            const openModalBtn = document.getElementById('openPortfolioModal');
+            const closeModalBtn = document.getElementById('closePortfolioModal');
+            const modalBackdrop = document.getElementById('modalBackdrop');
 
-        // Filter toggle
-        const toggleFilters = document.getElementById('toggleFilters');
-        const filterForm = document.getElementById('filterForm');
-        const toggleText = document.getElementById('toggleText');
-        const toggleIcon = document.getElementById('toggleIcon');
+            // Filter toggle
+            const toggleFilters = document.getElementById('toggleFilters');
+            const filterForm = document.getElementById('filterForm');
+            const toggleText = document.getElementById('toggleText');
+            const toggleIcon = document.getElementById('toggleIcon');
 
-        // Portfolio controls
-        const modalStoreSelect = document.getElementById('modal_portfolio_stores');
-        const modalSelectAllBtn = document.getElementById('modalSelectAllStores');
-        const modalClearBtn = document.getElementById('modalClearStoreSelection');
-        const updateStatsBtn = document.getElementById('updatePortfolioStats');
-        const portfolioLoading = document.getElementById('portfolioLoading');
-        const portfolioStatsContainer = document.getElementById('portfolioStatsContainer');
+            // Portfolio controls
+            const modalStoreSelect = document.getElementById('modal_portfolio_stores');
+            const modalSelectAllBtn = document.getElementById('modalSelectAllStores');
+            const modalClearBtn = document.getElementById('modalClearStoreSelection');
+            const updateStatsBtn = document.getElementById('updatePortfolioStats');
+            const portfolioLoading = document.getElementById('portfolioLoading');
+            const portfolioStatsContainer = document.getElementById('portfolioStatsContainer');
 
-        // Report Views Dropdown
-        const reportsDropdown = document.getElementById('reportsDropdown');
-        const reportsMenu = document.getElementById('reportsMenu');
+            // Report Views Dropdown
+            const reportsDropdown = document.getElementById('reportsDropdown');
+            const reportsMenu = document.getElementById('reportsMenu');
 
-        // Functions to control body scroll
-        function disableBodyScroll() {
-            const scrollY = window.scrollY;
-            document.body.style.position = 'fixed';
-            document.body.style.top = `-${scrollY}px`;
-            document.body.style.width = '100%';
-            document.body.setAttribute('data-scroll-position', scrollY);
-        }
-
-        function enableBodyScroll() {
-            const scrollY = document.body.getAttribute('data-scroll-position');
-            document.body.style.position = '';
-            document.body.style.top = '';
-            document.body.style.width = '';
-            document.body.removeAttribute('data-scroll-position');
-            window.scrollTo(0, parseInt(scrollY || '0'));
-        }
-
-        // Open portfolio modal
-        if (openModalBtn) {
-            openModalBtn.addEventListener('click', function() {
-                portfolioModal.classList.remove('hidden');
-                disableBodyScroll();
-                loadInitialPortfolioStats();
-            });
-        }
-
-        // Close modal function
-        function closeModal() {
-            if (portfolioModal) {
-                portfolioModal.classList.add('hidden');
-                enableBodyScroll();
+            // Functions to control body scroll
+            function disableBodyScroll() {
+                const scrollY = window.scrollY;
+                document.body.style.position = 'fixed';
+                document.body.style.top = `-${scrollY}px`;
+                document.body.style.width = '100%';
+                document.body.setAttribute('data-scroll-position', scrollY);
             }
-        }
 
-        if (closeModalBtn) {
-            closeModalBtn.addEventListener('click', closeModal);
-        }
-        if (modalBackdrop) {
-            modalBackdrop.addEventListener('click', closeModal);
-        }
-
-        // Close modal on Escape key
-        document.addEventListener('keydown', function(event) {
-            if (event.key === 'Escape' && portfolioModal && !portfolioModal.classList.contains('hidden')) {
-                closeModal();
+            function enableBodyScroll() {
+                const scrollY = document.body.getAttribute('data-scroll-position');
+                document.body.style.position = '';
+                document.body.style.top = '';
+                document.body.style.width = '';
+                document.body.removeAttribute('data-scroll-position');
+                window.scrollTo(0, parseInt(scrollY || '0'));
             }
-        });
 
-        // Prevent modal content clicks from closing modal
-        const modalContent = document.querySelector('#portfolioModal .inline-block');
-        if (modalContent) {
-            modalContent.addEventListener('click', function(event) {
-                event.stopPropagation();
-            });
-        }
-
-        // Reports Dropdown functionality
-        if (reportsDropdown && reportsMenu) {
-            reportsDropdown.addEventListener('click', function(e) {
-                e.preventDefault();
-                reportsMenu.classList.toggle('hidden');
-            });
-
-            // Close dropdown when clicking outside
-            document.addEventListener('click', function(e) {
-                if (!reportsDropdown.contains(e.target) && !reportsMenu.contains(e.target)) {
-                    reportsMenu.classList.add('hidden');
-                }
-            });
-        }
-
-        // Filter toggle
-        if (toggleFilters && filterForm && toggleText && toggleIcon) {
-            toggleFilters.addEventListener('click', function() {
-                const isHidden = filterForm.style.display === 'none';
-                filterForm.style.display = isHidden ? 'block' : 'none';
-                toggleText.textContent = isHidden ? 'Hide Filters' : 'Show Filters';
-                toggleIcon.style.transform = isHidden ? 'rotate(0deg)' : 'rotate(-90deg)';
-            });
-        }
-
-        // Portfolio store selection
-        if (modalSelectAllBtn && modalStoreSelect) {
-            modalSelectAllBtn.addEventListener('click', function() {
-                for (let i = 0; i < modalStoreSelect.options.length; i++) {
-                    modalStoreSelect.options[i].selected = true;
-                }
-            });
-        }
-
-        if (modalClearBtn && modalStoreSelect) {
-            modalClearBtn.addEventListener('click', function() {
-                for (let i = 0; i < modalStoreSelect.options.length; i++) {
-                    modalStoreSelect.options[i].selected = false;
-                }
-            });
-        }
-
-        // Update portfolio statistics
-        if (updateStatsBtn && modalStoreSelect) {
-            updateStatsBtn.addEventListener('click', function() {
-                const selectedStores = Array.from(modalStoreSelect.selectedOptions).map(option => option.value);
-                updatePortfolioStatistics(selectedStores);
-            });
-        }
-
-        function loadInitialPortfolioStats() {
-            updatePortfolioStatistics([]);
-        }
-
-        function updatePortfolioStatistics(stores) {
-            if (portfolioLoading) portfolioLoading.classList.remove('hidden');
-            if (portfolioStatsContainer) portfolioStatsContainer.classList.add('hidden');
-
-            fetch('{{ route("leases.portfolio-stats") }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                },
-                body: JSON.stringify({ stores: stores })
-            })
-                .then(response => response.json())
-                .then(data => {
-                    updatePortfolioDisplay(data);
-                    if (portfolioLoading) portfolioLoading.classList.add('hidden');
-                    if (portfolioStatsContainer) portfolioStatsContainer.classList.remove('hidden');
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    if (portfolioLoading) portfolioLoading.classList.add('hidden');
-                    if (portfolioStatsContainer) portfolioStatsContainer.classList.remove('hidden');
+            // Open portfolio modal
+            if (openModalBtn) {
+                openModalBtn.addEventListener('click', function() {
+                    portfolioModal.classList.remove('hidden');
+                    disableBodyScroll();
+                    loadInitialPortfolioStats();
                 });
-        }
-
-        function updatePortfolioDisplay(data) {
-            // Update selected stores info
-            const selectedStoresInfo = document.getElementById('selectedStoresInfo');
-            const selectedStoresList = document.getElementById('selectedStoresList');
-
-            if (data.selected_stores && data.selected_stores.length > 0) {
-                if (selectedStoresInfo) selectedStoresInfo.classList.remove('hidden');
-                if (selectedStoresList) {
-                    selectedStoresList.innerHTML = data.selected_stores.map(store =>
-                        `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">${store}</span>`
-                    ).join('');
-                }
-            } else {
-                if (selectedStoresInfo) selectedStoresInfo.classList.add('hidden');
             }
 
-            // Update totals
-            const portfolioTotals = document.getElementById('portfolioTotals');
-            if (portfolioTotals && data.totals) {
-                portfolioTotals.innerHTML = `
+            // Close modal function
+            function closeModal() {
+                if (portfolioModal) {
+                    portfolioModal.classList.add('hidden');
+                    enableBodyScroll();
+                }
+            }
+
+            if (closeModalBtn) {
+                closeModalBtn.addEventListener('click', closeModal);
+            }
+            if (modalBackdrop) {
+                modalBackdrop.addEventListener('click', closeModal);
+            }
+
+            // Close modal on Escape key
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape' && portfolioModal && !portfolioModal.classList.contains('hidden')) {
+                    closeModal();
+                }
+            });
+
+            // Prevent modal content clicks from closing modal
+            const modalContent = document.querySelector('#portfolioModal .inline-block');
+            if (modalContent) {
+                modalContent.addEventListener('click', function(event) {
+                    event.stopPropagation();
+                });
+            }
+
+            // Reports Dropdown functionality
+            if (reportsDropdown && reportsMenu) {
+                reportsDropdown.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    reportsMenu.classList.toggle('hidden');
+                });
+
+                // Close dropdown when clicking outside
+                document.addEventListener('click', function(e) {
+                    if (!reportsDropdown.contains(e.target) && !reportsMenu.contains(e.target)) {
+                        reportsMenu.classList.add('hidden');
+                    }
+                });
+            }
+
+            // Filter toggle
+            if (toggleFilters && filterForm && toggleText && toggleIcon) {
+                toggleFilters.addEventListener('click', function() {
+                    const isHidden = filterForm.style.display === 'none';
+                    filterForm.style.display = isHidden ? 'block' : 'none';
+                    toggleText.textContent = isHidden ? 'Hide Filters' : 'Show Filters';
+                    toggleIcon.style.transform = isHidden ? 'rotate(0deg)' : 'rotate(-90deg)';
+                });
+            }
+
+            // Portfolio store selection
+            if (modalSelectAllBtn && modalStoreSelect) {
+                modalSelectAllBtn.addEventListener('click', function() {
+                    for (let i = 0; i < modalStoreSelect.options.length; i++) {
+                        modalStoreSelect.options[i].selected = true;
+                    }
+                });
+            }
+
+            if (modalClearBtn && modalStoreSelect) {
+                modalClearBtn.addEventListener('click', function() {
+                    for (let i = 0; i < modalStoreSelect.options.length; i++) {
+                        modalStoreSelect.options[i].selected = false;
+                    }
+                });
+            }
+
+            // Update portfolio statistics
+            if (updateStatsBtn && modalStoreSelect) {
+                updateStatsBtn.addEventListener('click', function() {
+                    const selectedStores = Array.from(modalStoreSelect.selectedOptions).map(option => option.value);
+                    updatePortfolioStatistics(selectedStores);
+                });
+            }
+
+            function loadInitialPortfolioStats() {
+                updatePortfolioStatistics([]);
+            }
+
+            function updatePortfolioStatistics(stores) {
+                if (portfolioLoading) portfolioLoading.classList.remove('hidden');
+                if (portfolioStatsContainer) portfolioStatsContainer.classList.add('hidden');
+
+                fetch('{{ route("leases.portfolio-stats") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({ stores: stores })
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        updatePortfolioDisplay(data);
+                        if (portfolioLoading) portfolioLoading.classList.add('hidden');
+                        if (portfolioStatsContainer) portfolioStatsContainer.classList.remove('hidden');
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        if (portfolioLoading) portfolioLoading.classList.add('hidden');
+                        if (portfolioStatsContainer) portfolioStatsContainer.classList.remove('hidden');
+                    });
+            }
+
+            function updatePortfolioDisplay(data) {
+                // Update selected stores info
+                const selectedStoresInfo = document.getElementById('selectedStoresInfo');
+                const selectedStoresList = document.getElementById('selectedStoresList');
+
+                if (data.selected_stores && data.selected_stores.length > 0) {
+                    if (selectedStoresInfo) selectedStoresInfo.classList.remove('hidden');
+                    if (selectedStoresList) {
+                        selectedStoresList.innerHTML = data.selected_stores.map(store =>
+                            `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">${store}</span>`
+                        ).join('');
+                    }
+                } else {
+                    if (selectedStoresInfo) selectedStoresInfo.classList.add('hidden');
+                }
+
+                // Update totals
+                const portfolioTotals = document.getElementById('portfolioTotals');
+                if (portfolioTotals && data.totals) {
+                    portfolioTotals.innerHTML = `
                     <div class="text-center p-4 bg-blue-50 rounded-lg">
                         <p class="text-sm font-medium text-gray-600">Total AWS</p>
                         <p class="text-xl font-bold text-[#3B82F6]">$${Number(data.totals.aws || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
@@ -795,12 +795,12 @@
                         <p class="text-xl font-bold text-gray-600">${Number(data.totals.percent_increase_per_year || 0).toFixed(2)}%</p>
                     </div>
                 `;
-            }
+                }
 
-            // Update averages
-            const portfolioAverages = document.getElementById('portfolioAverages');
-            if (portfolioAverages && data.averages) {
-                portfolioAverages.innerHTML = `
+                // Update averages
+                const portfolioAverages = document.getElementById('portfolioAverages');
+                if (portfolioAverages && data.averages) {
+                    portfolioAverages.innerHTML = `
                     <div class="text-center p-4 bg-blue-50 rounded-lg">
                         <p class="text-sm font-medium text-gray-600">Average AWS</p>
                         <p class="text-lg font-bold text-[#3B82F6]">$${Number(data.averages.aws || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
@@ -822,190 +822,351 @@
                         <p class="text-lg font-bold text-gray-600">${Number(data.averages.percent_increase_per_year || 0).toFixed(2)}%</p>
                     </div>
                 `;
+                }
             }
-        }
-    });
-
-    // Modal functionality for reports
-    function openModal(modalId) {
-        // Close dropdown
-        const reportsMenu = document.getElementById('reportsMenu');
-        if (reportsMenu) {
-            reportsMenu.classList.add('hidden');
-        }
-
-        // Show modal
-        document.getElementById(modalId).classList.remove('hidden');
-
-        // Load content based on modal type
-        if (modalId === 'landlordContactModal') {
-            loadLandlordContact();
-        } else if (modalId === 'costBreakdownModal') {
-            loadCostBreakdown();
-        } else if (modalId === 'leaseTrackerModal') {
-            loadLeaseTracker();
-        }
-
-        // Prevent body scrolling
-        document.body.style.overflow = 'hidden';
-    }
-
-    function closeModal(modalId) {
-        document.getElementById(modalId).classList.add('hidden');
-        // Restore body scrolling
-        document.body.style.overflow = 'auto';
-    }
-
-    // Load content functions
-    function loadLandlordContact() {
-        fetch('{{ route("leases.landlord-contact") }}')
-            .then(response => response.text())
-            .then(html => {
-                // Extract just the table content
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
-                const content = doc.querySelector('.bg-white.shadow-lg');
-                document.getElementById('landlordContactContent').innerHTML = content ? content.outerHTML : '<p>Error loading content</p>';
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                document.getElementById('landlordContactContent').innerHTML = '<p>Error loading content</p>';
-            });
-    }
-
-    function loadCostBreakdown() {
-        fetch('{{ route("leases.cost-breakdown") }}')
-            .then(response => response.text())
-            .then(html => {
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
-                const content = doc.querySelector('.bg-white.shadow-lg');
-                document.getElementById('costBreakdownContent').innerHTML = content ? content.outerHTML : '<p>Error loading content</p>';
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                document.getElementById('costBreakdownContent').innerHTML = '<p>Error loading content</p>';
-            });
-    }
-
-    function loadLeaseTracker() {
-        fetch('{{ route("leases.lease-tracker") }}')
-            .then(response => response.text())
-            .then(html => {
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
-                const content = doc.querySelector('.bg-white.shadow-lg');
-                document.getElementById('leaseTrackerContent').innerHTML = content ? content.outerHTML : '<p>Error loading content</p>';
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                document.getElementById('leaseTrackerContent').innerHTML = '<p>Error loading content</p>';
-            });
-    }
-
-    // Load html2canvas library dynamically
-    function loadHtml2Canvas() {
-        return new Promise((resolve, reject) => {
-            if (window.html2canvas) {
-                resolve(window.html2canvas);
-                return;
-            }
-
-            const script = document.createElement('script');
-            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-            script.onload = () => resolve(window.html2canvas);
-            script.onerror = reject;
-            document.head.appendChild(script);
         });
-    }
 
-    // Vanilla JavaScript Screenshot functionality
-    function generateScreenshot(modalId, type) {
-        showScreenshotLoading(modalId);
-
-        loadHtml2Canvas().then(html2canvas => {
-            const modal = document.getElementById(modalId);
-            const contentElement = modal.querySelector('.modal-content');
-
-            if (!contentElement) {
-                showScreenshotError(modalId, 'Content not found for screenshot');
-                return;
+        // Modal functionality for reports
+        function openModal(modalId) {
+            // Close dropdown
+            const reportsMenu = document.getElementById('reportsMenu');
+            if (reportsMenu) {
+                reportsMenu.classList.add('hidden');
             }
 
-            // Configure html2canvas options
-            const options = {
-                backgroundColor: '#ffffff',
-                scale: 2, // Higher quality
-                useCORS: true,
-                allowTaint: true,
-                scrollX: 0,
-                scrollY: 0,
-                width: contentElement.scrollWidth,
-                height: contentElement.scrollHeight,
-                logging: false
-            };
+            // Show modal
+            document.getElementById(modalId).classList.remove('hidden');
 
-            html2canvas(contentElement, options).then(canvas => {
-                // Convert canvas to blob
-                canvas.toBlob(blob => {
-                    if (!blob) {
-                        showScreenshotError(modalId, 'Failed to generate screenshot');
-                        return;
+            // Load content based on modal type
+            if (modalId === 'landlordContactModal') {
+                loadLandlordContact();
+            } else if (modalId === 'costBreakdownModal') {
+                loadCostBreakdown();
+            } else if (modalId === 'leaseTrackerModal') {
+                loadLeaseTracker();
+            }
+
+            // Prevent body scrolling
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+            // Restore body scrolling
+            document.body.style.overflow = 'auto';
+        }
+
+        // Load content functions
+        function loadLandlordContact() {
+            fetch('{{ route("leases.landlord-contact") }}')
+                .then(response => response.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    let content = doc.querySelector('main') || doc.querySelector('.container') || doc.body;
+
+                    // Remove navigation elements
+                    if (content === doc.body) {
+                        content = content.cloneNode(true);
+                        const navElements = content.querySelectorAll('[role="menu"], .dropdown, #payments-dropdown');
+                        navElements.forEach(nav => nav.remove());
                     }
 
-                    // Create download URL
-                    const url = URL.createObjectURL(blob);
+                    document.getElementById('landlordContactContent').innerHTML = content ? content.outerHTML : '<p>Error loading content</p>';
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('landlordContactContent').innerHTML = '<p>Error loading content</p>';
+                });
+        }
 
-                    // Generate filename based on type and current date
-                    const now = new Date();
-                    const dateStr = now.toISOString().split('T')[0];
-                    const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-');
-                    const filename = `${type}-${dateStr}-${timeStr}.png`;
+        function loadCostBreakdown() {
+            fetch('{{ route("leases.cost-breakdown") }}')
+                .then(response => response.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    let content = doc.querySelector('main') || doc.querySelector('.container') || doc.body;
 
-                    hideScreenshotLoading(modalId);
-                    showScreenshotReady(modalId, url, url, filename);
-                }, 'image/png', 0.95);
-            }).catch(error => {
-                console.error('html2canvas error:', error);
-                showScreenshotError(modalId, 'Failed to capture screenshot');
+                    // Remove navigation elements
+                    if (content === doc.body) {
+                        content = content.cloneNode(true);
+                        const navElements = content.querySelectorAll('[role="menu"], .dropdown, #payments-dropdown');
+                        navElements.forEach(nav => nav.remove());
+                    }
+
+                    document.getElementById('costBreakdownContent').innerHTML = content ? content.outerHTML : '<p>Error loading content</p>';
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('costBreakdownContent').innerHTML = '<p>Error loading content</p>';
+                });
+        }
+
+        function loadLeaseTracker() {
+            fetch('{{ route("leases.lease-tracker") }}')
+                .then(response => response.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    let content = doc.querySelector('main') || doc.querySelector('.container') || doc.body;
+
+                    // Remove navigation elements
+                    if (content === doc.body) {
+                        content = content.cloneNode(true);
+                        const navElements = content.querySelectorAll('[role="menu"], .dropdown, #payments-dropdown');
+                        navElements.forEach(nav => nav.remove());
+                    }
+
+                    document.getElementById('leaseTrackerContent').innerHTML = content ? content.outerHTML : '<p>Error loading content</p>';
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('leaseTrackerContent').innerHTML = '<p>Error loading content</p>';
+                });
+        }
+
+        // Load html2canvas library dynamically
+        function loadHtml2Canvas() {
+            return new Promise((resolve, reject) => {
+                if (window.html2canvas) {
+                    resolve(window.html2canvas);
+                    return;
+                }
+
+                const script = document.createElement('script');
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+                script.onload = () => resolve(window.html2canvas);
+                script.onerror = reject;
+                document.head.appendChild(script);
             });
-        }).catch(error => {
-            console.error('Failed to load html2canvas:', error);
-            showScreenshotError(modalId, 'Failed to load screenshot library');
-        });
-    }
-
-    function showScreenshotLoading(modalId) {
-        const modal = document.getElementById(modalId);
-        const screenshotButton = modal.querySelector('button[onclick*="generateScreenshot"]');
-
-        if (screenshotButton) {
-            screenshotButton.innerHTML = `
-                <svg class="animate-spin w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Generating...
-            `;
-            screenshotButton.disabled = true;
         }
-    }
 
-    function hideScreenshotLoading(modalId) {
-        const modal = document.getElementById(modalId);
-        const screenshotButton = modal.querySelector('button[onclick*="generateScreenshot"]');
-
-        if (screenshotButton) {
-            screenshotButton.innerHTML = '📸 Screenshot';
-            screenshotButton.disabled = false;
+        // Enhanced screenshot functionality with language selection
+        function generateScreenshot(modalId, type) {
+            showLanguageSelection(modalId, type);
         }
-    }
 
-    function showScreenshotReady(modalId, screenshotUrl, downloadUrl, filename) {
-        const instructionDiv = document.createElement('div');
-        instructionDiv.id = 'screenshotInstructions';
-        instructionDiv.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-6 py-4 rounded-lg shadow-lg z-[100] max-w-md';
-        instructionDiv.innerHTML = `
+        function showLanguageSelection(modalId, type) {
+            const languageModal = document.createElement('div');
+            languageModal.id = 'languageSelectionModal';
+            languageModal.className = 'fixed inset-0 bg-black bg-opacity-50 z-[110] flex items-center justify-center';
+            languageModal.innerHTML = `
+            <div class="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+                <div class="text-center mb-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Select Language for Screenshot</h3>
+                    <p class="text-sm text-gray-600">Choose the language for your screenshot export</p>
+                </div>
+
+                <div class="space-y-3">
+                    <button onclick="proceedWithScreenshot('${modalId}', '${type}', 'en')"
+                            class="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors">
+                        <span class="text-2xl mr-3">🇺🇸</span>
+                        <span class="font-medium">English</span>
+                    </button>
+
+                    <button onclick="proceedWithScreenshot('${modalId}', '${type}', 'ar')"
+                            class="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors">
+                        <span class="text-2xl mr-3">🇸🇦</span>
+                        <span class="font-medium">العربية (Arabic)</span>
+                    </button>
+                </div>
+
+                <div class="mt-6 text-center">
+                    <button onclick="hideLanguageSelection()"
+                            class="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 focus:outline-none">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        `;
+
+            document.body.appendChild(languageModal);
+        }
+
+        function hideLanguageSelection() {
+            const languageModal = document.getElementById('languageSelectionModal');
+            if (languageModal) {
+                languageModal.remove();
+            }
+        }
+
+        function proceedWithScreenshot(modalId, type, language) {
+            hideLanguageSelection();
+
+            // Apply language-specific styling before screenshot
+            applyLanguageStyles(language, modalId);
+
+            showScreenshotLoading(modalId);
+
+            loadHtml2Canvas().then(html2canvas => {
+                const modal = document.getElementById(modalId);
+                const contentElement = modal.querySelector('.modal-content');
+
+                if (!contentElement) {
+                    showScreenshotError(modalId, 'Content not found for screenshot');
+                    return;
+                }
+
+                const options = {
+                    backgroundColor: '#ffffff',
+                    scale: 2,
+                    useCORS: true,
+                    allowTaint: true,
+                    scrollX: 0,
+                    scrollY: 0,
+                    width: contentElement.scrollWidth,
+                    height: contentElement.scrollHeight,
+                    logging: false
+                };
+
+                html2canvas(contentElement, options).then(canvas => {
+                    canvas.toBlob(blob => {
+                        if (!blob) {
+                            showScreenshotError(modalId, 'Failed to generate screenshot');
+                            return;
+                        }
+
+                        const url = URL.createObjectURL(blob);
+                        const now = new Date();
+                        const dateStr = now.toISOString().split('T')[0];
+                        const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-');
+                        const languageSuffix = language === 'ar' ? '-arabic' : '-english';
+                        const filename = `${type}${languageSuffix}-${dateStr}-${timeStr}.png`;
+
+                        hideScreenshotLoading(modalId);
+                        showScreenshotReady(modalId, url, url, filename);
+
+                        // Reset language styles after screenshot
+                        resetLanguageStyles(modalId);
+                    }, 'image/png', 0.95);
+                }).catch(error => {
+                    console.error('html2canvas error:', error);
+                    showScreenshotError(modalId, 'Failed to capture screenshot');
+                    resetLanguageStyles(modalId);
+                });
+            }).catch(error => {
+                console.error('Failed to load html2canvas:', error);
+                showScreenshotError(modalId, 'Failed to load screenshot library');
+                resetLanguageStyles(modalId);
+            });
+        }
+
+        function applyLanguageStyles(language, modalId) {
+            const contentElement = document.querySelector(`#${modalId} .modal-content`);
+            if (!contentElement) return;
+
+            if (language === 'ar') {
+                // Apply Arabic styling
+                contentElement.style.direction = 'rtl';
+                contentElement.style.textAlign = 'right';
+
+                // Update header text to Arabic based on modal type
+                const header = contentElement.querySelector('h1');
+                if (header) {
+                    header.setAttribute('data-original-text', header.textContent);
+
+                    // Set Arabic title based on modal type
+                    const arabicTitles = {
+                        'landlordContactModal': 'دليل جهات الاتصال لأصحاب العقارات',
+                        'costBreakdownModal': 'تحليل تفصيل التكلفة',
+                        'leaseTrackerModal': 'لوحة متابعة الإيجارات'
+                    };
+
+                    if (arabicTitles[modalId]) {
+                        header.textContent = arabicTitles[modalId];
+                    }
+                }
+
+                // Apply Arabic translations to common table headers and elements
+                const elementsToTranslate = {
+                    'Store #': 'رقم المتجر',
+                    'Store Number': 'رقم المتجر',
+                    'Store Name': 'اسم المتجر',
+                    'Landlord': 'المالك',
+                    'Contact Info': 'معلومات الاتصال',
+                    'Phone': 'الهاتف',
+                    'Email': 'البريد الإلكتروني',
+                    'Address': 'العنوان',
+                    'AWS': 'المساحة المؤجرة',
+                    'Total Rent': 'إجمالي الإيجار',
+                    'Base Rent': 'الإيجار الأساسي',
+                    'L2S Ratio': 'نسبة الإيجار للمبيعات',
+                    'SQF': 'المساحة بالقدم المربع',
+                    'Term': 'المدة',
+                    'Status': 'الحالة',
+                    'Current Term': 'المدة الحالية',
+                    'Expiration Date': 'تاريخ انتهاء الصلاحية',
+                    'Generated on': 'تم الإنشاء في',
+                    'TOTAL': 'المجموع'
+                };
+
+                // Translate table headers and common elements
+                Object.keys(elementsToTranslate).forEach(englishText => {
+                    const elements = contentElement.querySelectorAll('th, td, p, span');
+                    elements.forEach(el => {
+                        if (el.textContent.includes(englishText)) {
+                            el.setAttribute('data-original-text', el.textContent);
+                            el.textContent = el.textContent.replace(englishText, elementsToTranslate[englishText]);
+                        }
+                    });
+                });
+
+            } else {
+                // English is default, reset any previous Arabic styling
+                resetLanguageStyles(modalId);
+            }
+        }
+
+        function resetLanguageStyles(modalId) {
+            const contentElement = document.querySelector(`#${modalId} .modal-content`);
+            if (!contentElement) return;
+
+            // Reset direction and text alignment
+            contentElement.style.direction = '';
+            contentElement.style.textAlign = '';
+
+            // Restore original text content
+            contentElement.querySelectorAll('[data-original-text]').forEach(element => {
+                const originalText = element.getAttribute('data-original-text');
+                if (originalText) {
+                    element.textContent = originalText;
+                    element.removeAttribute('data-original-text');
+                }
+            });
+        }
+
+        function showScreenshotLoading(modalId) {
+            const modal = document.getElementById(modalId);
+            const screenshotButton = modal.querySelector('button[onclick*="generateScreenshot"]');
+
+            if (screenshotButton) {
+                screenshotButton.innerHTML = `
+            <svg class="animate-spin w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Generating...
+        `;
+                screenshotButton.disabled = true;
+            }
+        }
+
+        function hideScreenshotLoading(modalId) {
+            const modal = document.getElementById(modalId);
+            const screenshotButton = modal.querySelector('button[onclick*="generateScreenshot"]');
+
+            if (screenshotButton) {
+                screenshotButton.innerHTML = '📸 Screenshot';
+                screenshotButton.disabled = false;
+            }
+        }
+
+        function showScreenshotReady(modalId, screenshotUrl, downloadUrl, filename) {
+            const instructionDiv = document.createElement('div');
+            instructionDiv.id = 'screenshotInstructions';
+            instructionDiv.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-6 py-4 rounded-lg shadow-lg z-[100] max-w-md';
+            instructionDiv.innerHTML = `
             <div class="text-center">
                 <div class="flex items-center justify-center mb-3">
                     <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1033,33 +1194,33 @@
                 </div>
             </div>
         `;
-        document.body.appendChild(instructionDiv);
+            document.body.appendChild(instructionDiv);
 
-        // Auto-hide after 15 seconds
-        setTimeout(() => {
-            hideScreenshotInstructions();
-        }, 15000);
-    }
+            // Auto-hide after 15 seconds
+            setTimeout(() => {
+                hideScreenshotInstructions();
+            }, 15000);
+        }
 
-    function downloadScreenshot(url, filename) {
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        function downloadScreenshot(url, filename) {
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
 
-        // Clean up the blob URL after download
-        setTimeout(() => {
-            URL.revokeObjectURL(url);
-        }, 1000);
-    }
+            // Clean up the blob URL after download
+            setTimeout(() => {
+                URL.revokeObjectURL(url);
+            }, 1000);
+        }
 
-    function showScreenshotError(modalId, message = 'Screenshot generation failed') {
-        const instructionDiv = document.createElement('div');
-        instructionDiv.id = 'screenshotInstructions';
-        instructionDiv.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-red-600 text-white px-6 py-4 rounded-lg shadow-lg z-[100]';
-        instructionDiv.innerHTML = `
+        function showScreenshotError(modalId, message = 'Screenshot generation failed') {
+            const instructionDiv = document.createElement('div');
+            instructionDiv.id = 'screenshotInstructions';
+            instructionDiv.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-red-600 text-white px-6 py-4 rounded-lg shadow-lg z-[100]';
+            instructionDiv.innerHTML = `
             <div class="text-center">
                 <div class="flex items-center justify-center mb-2">
                     <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1074,245 +1235,240 @@
                 </button>
             </div>
         `;
-        document.body.appendChild(instructionDiv);
-    }
-
-    function hideScreenshotInstructions() {
-        const instructions = document.getElementById('screenshotInstructions');
-        if (instructions) {
-            instructions.remove();
+            document.body.appendChild(instructionDiv);
         }
-    }
 
-    // Close modal when clicking outside
-    window.onclick = function(event) {
-        const modals = ['landlordContactModal', 'costBreakdownModal', 'leaseTrackerModal'];
-        modals.forEach(modalId => {
-            const modal = document.getElementById(modalId);
-            if (event.target === modal) {
-                closeModal(modalId);
+        function hideScreenshotInstructions() {
+            const instructions = document.getElementById('screenshotInstructions');
+            if (instructions) {
+                instructions.remove();
             }
-        });
-    }
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modals = ['landlordContactModal', 'costBreakdownModal', 'leaseTrackerModal'];
+            modals.forEach(modalId => {
+                const modal = document.getElementById(modalId);
+                if (event.target === modal) {
+                    closeModal(modalId);
+                }
+            });
+        }
+
+        // Landlord Table Sorting
         document.addEventListener('DOMContentLoaded', function() {
-        let landlordSortDirection = {};
+            let landlordSortDirection = {};
 
-        // Make sortLandlordTable function globally available
-        window.sortLandlordTable = function(columnIndex, type) {
-        const table = document.getElementById('landlordDirectoryTable');
-        const tbody = document.getElementById('landlordTableBody');
+            window.sortLandlordTable = function(columnIndex, type) {
+                const table = document.getElementById('landlordDirectoryTable');
+                const tbody = document.getElementById('landlordTableBody');
 
-        if (!table || !tbody) return; // Elements not found
+                if (!table || !tbody) return;
 
-        const rows = Array.from(tbody.querySelectorAll('tr'));
+                const rows = Array.from(tbody.querySelectorAll('tr'));
+                if (rows.length === 0) return;
 
-        if (rows.length === 0) return; // No data to sort
+                const currentDirection = landlordSortDirection[columnIndex] || 'asc';
+                const newDirection = currentDirection === 'asc' ? 'desc' : 'asc';
+                landlordSortDirection[columnIndex] = newDirection;
 
-        // Toggle sort direction
-        const currentDirection = landlordSortDirection[columnIndex] || 'asc';
-        const newDirection = currentDirection === 'asc' ? 'desc' : 'asc';
-        landlordSortDirection[columnIndex] = newDirection;
-
-        // Clear all sort indicators
-        for (let i = 0; i < 9; i++) {
-        const indicator = document.getElementById(`landlord-sort-indicator-${i}`);
-        if (indicator) {
-        if (i === 6 || i === 7) { // AWS and Total Rent (number)
-        indicator.textContent = '↑';
-    } else { // Text columns
-        indicator.textContent = 'A↓';
-    }
-        indicator.style.opacity = '0.5';
-    }
-    }
-
-        // Set active sort indicator
-        const activeIndicator = document.getElementById(`landlord-sort-indicator-${columnIndex}`);
-        if (activeIndicator) {
-        if (type === 'number') {
-        activeIndicator.textContent = newDirection === 'asc' ? '↑' : '↓';
-    } else {
-        activeIndicator.textContent = newDirection === 'asc' ? 'A↓' : 'Z↑';
-    }
-        activeIndicator.style.opacity = '1';
-    }
-
-        // Sort rows
-        rows.sort((a, b) => {
-        let aValue, bValue;
-
-        if (type === 'number') {
-        aValue = parseFloat(a.cells[columnIndex].getAttribute('data-sort')) || 0;
-        bValue = parseFloat(b.cells[columnIndex].getAttribute('data-sort')) || 0;
-    } else {
-        aValue = (a.cells[columnIndex].getAttribute('data-sort') || '').toLowerCase();
-        bValue = (b.cells[columnIndex].getAttribute('data-sort') || '').toLowerCase();
-    }
-
-        if (newDirection === 'asc') {
-        return aValue > bValue ? 1 : -1;
-    } else {
-        return aValue < bValue ? 1 : -1;
-    }
-    });
-
-        // Re-append sorted rows with alternating colors
-        rows.forEach((row, index) => {
-        row.className = (index % 2 === 0 ? 'bg-white' : 'bg-gray-50') + ' hover:bg-[#fff4ed]';
-        tbody.appendChild(row);
-    });
-    };
-    });
-
-    document.addEventListener('DOMContentLoaded', function() {
-        let costBreakdownSortDirection = {};
-
-        // Make sortCostBreakdownTable function globally available
-        window.sortCostBreakdownTable = function(columnIndex, type) {
-            const table = document.getElementById('costBreakdownTable');
-            const tbody = document.getElementById('costBreakdownBody');
-
-            if (!table || !tbody) return; // Elements not found
-
-            const rows = Array.from(tbody.querySelectorAll('tr'));
-
-            if (rows.length === 0) return; // No data to sort
-
-            // Toggle sort direction
-            const currentDirection = costBreakdownSortDirection[columnIndex] || 'asc';
-            const newDirection = currentDirection === 'asc' ? 'desc' : 'asc';
-            costBreakdownSortDirection[columnIndex] = newDirection;
-
-            // Clear all sort indicators
-            for (let i = 0; i < 12; i++) {
-                const indicator = document.getElementById(`costbreakdown-sort-indicator-${i}`);
-                if (indicator) {
-                    if (i === 0 || i === 1) { // Store # and Store Name (text)
-                        indicator.textContent = 'A↓';
-                    } else { // Numeric columns
-                        indicator.textContent = '↑';
+                // Clear all sort indicators
+                for (let i = 0; i < 9; i++) {
+                    const indicator = document.getElementById(`landlord-sort-indicator-${i}`);
+                    if (indicator) {
+                        if (i === 6 || i === 7) {
+                            indicator.textContent = '↑';
+                        } else {
+                            indicator.textContent = 'A↓';
+                        }
+                        indicator.style.opacity = '0.5';
                     }
-                    indicator.style.opacity = '0.5';
-                }
-            }
-
-            // Set active sort indicator
-            const activeIndicator = document.getElementById(`costbreakdown-sort-indicator-${columnIndex}`);
-            if (activeIndicator) {
-                if (type === 'number') {
-                    activeIndicator.textContent = newDirection === 'asc' ? '↑' : '↓';
-                } else {
-                    activeIndicator.textContent = newDirection === 'asc' ? 'A↓' : 'Z↑';
-                }
-                activeIndicator.style.opacity = '1';
-            }
-
-            // Sort rows
-            rows.sort((a, b) => {
-                let aValue, bValue;
-
-                if (type === 'number') {
-                    aValue = parseFloat(a.cells[columnIndex].getAttribute('data-sort')) || 0;
-                    bValue = parseFloat(b.cells[columnIndex].getAttribute('data-sort')) || 0;
-                } else {
-                    aValue = (a.cells[columnIndex].getAttribute('data-sort') || '').toLowerCase();
-                    bValue = (b.cells[columnIndex].getAttribute('data-sort') || '').toLowerCase();
                 }
 
-                if (newDirection === 'asc') {
-                    return aValue > bValue ? 1 : -1;
-                } else {
-                    return aValue < bValue ? 1 : -1;
-                }
-            });
-
-            // Re-append sorted rows with alternating colors
-            rows.forEach((row, index) => {
-                row.className = (index % 2 === 0 ? 'bg-white' : 'bg-gray-50') + ' hover:bg-[#fff4ed]';
-                tbody.appendChild(row);
-            });
-        };
-    });
-
-    document.addEventListener('DOMContentLoaded', function() {
-        let leaseTrackerSortDirection = {};
-
-        // Make sortLeaseTrackerTable function globally available
-        window.sortLeaseTrackerTable = function(columnIndex, type) {
-            const table = document.getElementById('leaseTrackerTable');
-            const tbody = document.getElementById('leaseTrackerBody');
-
-            if (!table || !tbody) return; // Elements not found
-
-            const rows = Array.from(tbody.querySelectorAll('tr'));
-
-            if (rows.length === 0) return; // No data to sort
-
-            // Toggle sort direction
-            const currentDirection = leaseTrackerSortDirection[columnIndex] || 'asc';
-            const newDirection = currentDirection === 'asc' ? 'desc' : 'asc';
-            leaseTrackerSortDirection[columnIndex] = newDirection;
-
-            // Clear all sort indicators
-            for (let i = 0; i < 13; i++) {
-                const indicator = document.getElementById(`leasetracker-sort-indicator-${i}`);
-                if (indicator) {
-                    if (i === 1 || i === 2 || i === 3) { // AWS, Total Rent, L2S Ratio (number)
-                        indicator.textContent = '↑';
-                    } else { // Text columns
-                        indicator.textContent = 'A↓';
+                // Set active sort indicator
+                const activeIndicator = document.getElementById(`landlord-sort-indicator-${columnIndex}`);
+                if (activeIndicator) {
+                    if (type === 'number') {
+                        activeIndicator.textContent = newDirection === 'asc' ? '↑' : '↓';
+                    } else {
+                        activeIndicator.textContent = newDirection === 'asc' ? 'A↓' : 'Z↑';
                     }
-                    indicator.style.opacity = '0.5';
-                }
-            }
-
-            // Set active sort indicator
-            const activeIndicator = document.getElementById(`leasetracker-sort-indicator-${columnIndex}`);
-            if (activeIndicator) {
-                if (type === 'number') {
-                    activeIndicator.textContent = newDirection === 'asc' ? '↑' : '↓';
-                } else {
-                    activeIndicator.textContent = newDirection === 'asc' ? 'A↓' : 'Z↑';
-                }
-                activeIndicator.style.opacity = '1';
-            }
-
-            // Sort rows
-            rows.sort((a, b) => {
-                let aValue, bValue;
-
-                if (type === 'number') {
-                    aValue = parseFloat(a.cells[columnIndex].getAttribute('data-sort')) || 0;
-                    bValue = parseFloat(b.cells[columnIndex].getAttribute('data-sort')) || 0;
-                } else {
-                    aValue = (a.cells[columnIndex].getAttribute('data-sort') || '').toLowerCase();
-                    bValue = (b.cells[columnIndex].getAttribute('data-sort') || '').toLowerCase();
+                    activeIndicator.style.opacity = '1';
                 }
 
-                if (newDirection === 'asc') {
-                    return aValue > bValue ? 1 : -1;
-                } else {
-                    return aValue < bValue ? 1 : -1;
-                }
-            });
+                // Sort rows
+                rows.sort((a, b) => {
+                    let aValue, bValue;
 
-            // Re-append sorted rows with updated row colors
-            rows.forEach((row, index) => {
-                const statusCell = row.cells[12].getAttribute('data-sort');
-                let rowClass = '';
-                if (statusCell === 'EXPIRED') {
-                    rowClass = 'bg-red-100';
-                } else if (statusCell === 'WARNING') {
-                    rowClass = 'bg-yellow-100';
-                } else {
-                    rowClass = index % 2 === 0 ? 'bg-white' : 'bg-gray-50';
+                    if (type === 'number') {
+                        aValue = parseFloat(a.cells[columnIndex].getAttribute('data-sort')) || 0;
+                        bValue = parseFloat(b.cells[columnIndex].getAttribute('data-sort')) || 0;
+                    } else {
+                        aValue = (a.cells[columnIndex].getAttribute('data-sort') || '').toLowerCase();
+                        bValue = (b.cells[columnIndex].getAttribute('data-sort') || '').toLowerCase();
+                    }
+
+                    if (newDirection === 'asc') {
+                        return aValue > bValue ? 1 : -1;
+                    } else {
+                        return aValue < bValue ? 1 : -1;
+                    }
+                });
+
+                // Re-append sorted rows with alternating colors
+                rows.forEach((row, index) => {
+                    row.className = (index % 2 === 0 ? 'bg-white' : 'bg-gray-50') + ' hover:bg-[#fff4ed]';
+                    tbody.appendChild(row);
+                });
+            };
+        });
+
+        // Cost Breakdown Table Sorting
+        document.addEventListener('DOMContentLoaded', function() {
+            let costBreakdownSortDirection = {};
+
+            window.sortCostBreakdownTable = function(columnIndex, type) {
+                const table = document.getElementById('costBreakdownTable');
+                const tbody = document.getElementById('costBreakdownBody');
+
+                if (!table || !tbody) return;
+
+                const rows = Array.from(tbody.querySelectorAll('tr'));
+                if (rows.length === 0) return;
+
+                const currentDirection = costBreakdownSortDirection[columnIndex] || 'asc';
+                const newDirection = currentDirection === 'asc' ? 'desc' : 'asc';
+                costBreakdownSortDirection[columnIndex] = newDirection;
+
+                // Clear all sort indicators
+                for (let i = 0; i < 12; i++) {
+                    const indicator = document.getElementById(`costbreakdown-sort-indicator-${i}`);
+                    if (indicator) {
+                        if (i === 0 || i === 1) {
+                            indicator.textContent = 'A↓';
+                        } else {
+                            indicator.textContent = '↑';
+                        }
+                        indicator.style.opacity = '0.5';
+                    }
                 }
-                row.className = `${rowClass} hover:bg-[#fff4ed]`;
-                tbody.appendChild(row);
-            });
-        };
-    });
-</script>
+
+                // Set active sort indicator
+                const activeIndicator = document.getElementById(`costbreakdown-sort-indicator-${columnIndex}`);
+                if (activeIndicator) {
+                    if (type === 'number') {
+                        activeIndicator.textContent = newDirection === 'asc' ? '↑' : '↓';
+                    } else {
+                        activeIndicator.textContent = newDirection === 'asc' ? 'A↓' : 'Z↑';
+                    }
+                    activeIndicator.style.opacity = '1';
+                }
+
+                // Sort rows
+                rows.sort((a, b) => {
+                    let aValue, bValue;
+
+                    if (type === 'number') {
+                        aValue = parseFloat(a.cells[columnIndex].getAttribute('data-sort')) || 0;
+                        bValue = parseFloat(b.cells[columnIndex].getAttribute('data-sort')) || 0;
+                    } else {
+                        aValue = (a.cells[columnIndex].getAttribute('data-sort') || '').toLowerCase();
+                        bValue = (b.cells[columnIndex].getAttribute('data-sort') || '').toLowerCase();
+                    }
+
+                    if (newDirection === 'asc') {
+                        return aValue > bValue ? 1 : -1;
+                    } else {
+                        return aValue < bValue ? 1 : -1;
+                    }
+                });
+
+                // Re-append sorted rows with alternating colors
+                rows.forEach((row, index) => {
+                    row.className = (index % 2 === 0 ? 'bg-white' : 'bg-gray-50') + ' hover:bg-[#fff4ed]';
+                    tbody.appendChild(row);
+                });
+            };
+        });
+
+        // Lease Tracker Table Sorting
+        document.addEventListener('DOMContentLoaded', function() {
+            let leaseTrackerSortDirection = {};
+
+            window.sortLeaseTrackerTable = function(columnIndex, type) {
+                const table = document.getElementById('leaseTrackerTable');
+                const tbody = document.getElementById('leaseTrackerBody');
+
+                if (!table || !tbody) return;
+
+                const rows = Array.from(tbody.querySelectorAll('tr'));
+                if (rows.length === 0) return;
+
+                const currentDirection = leaseTrackerSortDirection[columnIndex] || 'asc';
+                const newDirection = currentDirection === 'asc' ? 'desc' : 'asc';
+                leaseTrackerSortDirection[columnIndex] = newDirection;
+
+                // Clear all sort indicators
+                for (let i = 0; i < 13; i++) {
+                    const indicator = document.getElementById(`leasetracker-sort-indicator-${i}`);
+                    if (indicator) {
+                        if (i === 1 || i === 2 || i === 3) {
+                            indicator.textContent = '↑';
+                        } else {
+                            indicator.textContent = 'A↓';
+                        }
+                        indicator.style.opacity = '0.5';
+                    }
+                }
+
+                // Set active sort indicator
+                const activeIndicator = document.getElementById(`leasetracker-sort-indicator-${columnIndex}`);
+                if (activeIndicator) {
+                    if (type === 'number') {
+                        activeIndicator.textContent = newDirection === 'asc' ? '↑' : '↓';
+                    } else {
+                        activeIndicator.textContent = newDirection === 'asc' ? 'A↓' : 'Z↑';
+                    }
+                    activeIndicator.style.opacity = '1';
+                }
+
+                // Sort rows
+                rows.sort((a, b) => {
+                    let aValue, bValue;
+
+                    if (type === 'number') {
+                        aValue = parseFloat(a.cells[columnIndex].getAttribute('data-sort')) || 0;
+                        bValue = parseFloat(b.cells[columnIndex].getAttribute('data-sort')) || 0;
+                    } else {
+                        aValue = (a.cells[columnIndex].getAttribute('data-sort') || '').toLowerCase();
+                        bValue = (b.cells[columnIndex].getAttribute('data-sort') || '').toLowerCase();
+                    }
+
+                    if (newDirection === 'asc') {
+                        return aValue > bValue ? 1 : -1;
+                    } else {
+                        return aValue < bValue ? 1 : -1;
+                    }
+                });
+
+                // Re-append sorted rows with updated row colors
+                rows.forEach((row, index) => {
+                    const statusCell = row.cells[12].getAttribute('data-sort');
+                    let rowClass = '';
+                    if (statusCell === 'EXPIRED') {
+                        rowClass = 'bg-red-100';
+                    } else if (statusCell === 'WARNING') {
+                        rowClass = 'bg-yellow-100';
+                    } else {
+                        rowClass = index % 2 === 0 ? 'bg-white' : 'bg-gray-50';
+                    }
+                    row.className = `${rowClass} hover:bg-[#fff4ed]`;
+                    tbody.appendChild(row);
+                });
+            };
+        });
+    </script>
 
 
 @endsection

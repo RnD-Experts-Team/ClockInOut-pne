@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'PNE Maintenance')</title>
-    
+
     <!-- PWA Meta Tags -->
     <meta name="application-name" content="PNE ClockIn">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -18,10 +18,10 @@
     <meta name="msapplication-TileColor" content="#ff671b">
     <meta name="msapplication-tap-highlight" content="no">
     <meta name="theme-color" content="#ff671b">
-    
+
     <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json">
-    
+
     <!-- PWA Icons -->
     <link rel="apple-touch-icon" href="/icons/icon-152x152.svg">
     <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152x152.svg">
@@ -37,7 +37,7 @@
     <link rel="icon" type="image/svg+xml" sizes="512x512" href="/icons/icon-512x512.svg">
     <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#ff671b">
     <link rel="shortcut icon" href="/favicon.ico">
-    
+
     <script src="https://cdn.tailwindcss.com"></script>
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -217,7 +217,7 @@
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
-                            {{ __('messages.clock_in_registration') }} 
+                            {{ __('messages.clock_in_registration') }}
                         </a>
                     @endif
 
@@ -250,7 +250,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"></path>
                         </svg>
                     </button>
-                    
+
                     <!-- Mobile Menu Toggle -->
                     <button onclick="toggleMobileMenu()" class="inline-flex items-center p-2 rounded-lg text-orange-600 bg-orange-100 hover:bg-orange-200 focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all duration-300" aria-expanded="false">
                         <span class="sr-only">Open main menu</span>
@@ -287,7 +287,7 @@
                         </svg>
                         Maintenance
                     </a>
-                    
+
                     <!-- Mobile Payments Section -->
                     <div class="border-t border-gray-200 pt-2 mt-2">
                         <div class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Payments</div>
@@ -304,7 +304,7 @@
                             Companies
                         </a>
                     </div>
-                    
+
                     <!-- Mobile Leases Section -->
                     <div class="border-t border-gray-200 pt-2 mt-2">
                         <div class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Leases</div>
@@ -321,7 +321,7 @@
                             Apartment Leases
                         </a>
                     </div>
-                    
+
                     <!-- Mobile Settings Section -->
                     <div class="border-t border-gray-200 pt-2 mt-2">
                         <div class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Settings</div>
@@ -353,7 +353,7 @@
                         {{ __('messages.clock_in_registration') }}
                     </a>
                 @endif
-                
+
                 <!-- Mobile Logout -->
                 <div class="border-t border-gray-200 pt-2 mt-2">
                     <form method="POST" action="{{ route('logout') }}" class="block">
@@ -375,7 +375,7 @@
 <main class="container mx-auto px-4 py-8">
     <div class="bg-orange-50 shadow-md rounded-lg p-6">
         @yield('content')
-        
+
         <!-- Language Selector Modal -->
         @include('components.language-selector')
     </div>
@@ -398,7 +398,7 @@
             navigator.serviceWorker.register('/sw.js')
                 .then(registration => {
                     console.log('SW registered: ', registration);
-                    
+
                     // Check for updates
                     registration.addEventListener('updatefound', () => {
                         const newWorker = registration.installing;
@@ -415,18 +415,18 @@
                 });
         });
     }
-    
+
     // PWA Install Prompt
     let deferredPrompt;
     let installButton = null;
-    
+
     window.addEventListener('beforeinstallprompt', (e) => {
         console.log('PWA install prompt triggered');
         e.preventDefault();
         deferredPrompt = e;
         showInstallButton();
     });
-    
+
     function showInstallButton() {
         // Create install button if it doesn't exist
         if (!installButton) {
@@ -443,7 +443,7 @@
         }
         installButton.style.display = 'flex';
     }
-    
+
     function installPWA() {
         if (deferredPrompt) {
             deferredPrompt.prompt();
@@ -460,7 +460,7 @@
             });
         }
     }
-    
+
     // Hide install button when app is installed
     window.addEventListener('appinstalled', (evt) => {
         console.log('PWA was installed');
@@ -468,7 +468,7 @@
             installButton.style.display = 'none';
         }
     });
-    
+
     // Show update notification
     function showUpdateNotification() {
         const updateBanner = document.createElement('div');
@@ -485,7 +485,7 @@
         `;
         document.body.appendChild(updateBanner);
     }
-    
+
     function updateApp() {
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.getRegistration().then(registration => {
@@ -496,7 +496,7 @@
             });
         }
     }
-    
+
     // Handle offline/online status
     function updateOnlineStatus() {
         const statusIndicator = document.getElementById('online-status');
@@ -506,7 +506,7 @@
             indicator.className = 'fixed top-4 right-4 px-3 py-1 rounded-full text-sm font-medium z-40';
             document.body.appendChild(indicator);
         }
-        
+
         const indicator = document.getElementById('online-status');
         if (navigator.onLine) {
             indicator.textContent = 'Online';
@@ -520,12 +520,113 @@
             indicator.style.display = 'block';
         }
     }
-    
+
     window.addEventListener('online', updateOnlineStatus);
     window.addEventListener('offline', updateOnlineStatus);
-    
+
     // Initialize online status
     document.addEventListener('DOMContentLoaded', updateOnlineStatus);
+
+    // Dropdown functionality
+    function toggleDropdown(dropdownId, buttonId) {
+        const dropdown = document.getElementById(dropdownId);
+        const button = document.getElementById(buttonId);
+        const isHidden = dropdown.classList.contains('hidden');
+
+        // Close all other dropdowns
+        document.querySelectorAll('[id$="-dropdown"]').forEach(dd => {
+            if (dd.id !== dropdownId) {
+                dd.classList.add('hidden');
+            }
+        });
+
+        // Toggle current dropdown
+        if (isHidden) {
+            dropdown.classList.remove('hidden');
+            button.setAttribute('aria-expanded', 'true');
+        } else {
+            dropdown.classList.add('hidden');
+            button.setAttribute('aria-expanded', 'false');
+        }
+    }
+
+    // Mobile menu toggle
+    function toggleMobileMenu() {
+        const mobileMenu = document.getElementById('mobileMenu');
+        const menuIcon = document.getElementById('menuIcon');
+        const closeIcon = document.getElementById('closeIcon');
+
+        if (mobileMenu.classList.contains('hidden')) {
+            mobileMenu.classList.remove('hidden');
+            menuIcon.classList.add('hidden');
+            closeIcon.classList.remove('hidden');
+        } else {
+            mobileMenu.classList.add('hidden');
+            menuIcon.classList.remove('hidden');
+            closeIcon.classList.add('hidden');
+        }
+    }
+
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', function(event) {
+        const dropdowns = document.querySelectorAll('[id$="-dropdown"]');
+        const buttons = document.querySelectorAll('[id$="-menu"]');
+
+        let clickedInsideDropdown = false;
+
+        // Check if click was inside any dropdown or button
+        dropdowns.forEach(dropdown => {
+            if (dropdown.contains(event.target)) {
+                clickedInsideDropdown = true;
+            }
+        });
+
+        buttons.forEach(button => {
+            if (button.contains(event.target)) {
+                clickedInsideDropdown = true;
+            }
+        });
+
+        // Close all dropdowns if click was outside
+        if (!clickedInsideDropdown) {
+            dropdowns.forEach(dropdown => {
+                dropdown.classList.add('hidden');
+            });
+            buttons.forEach(button => {
+                button.setAttribute('aria-expanded', 'false');
+            });
+        }
+    });
+
+    // Add click event listeners to dropdown buttons
+    document.addEventListener('DOMContentLoaded', function() {
+        // Payments dropdown
+        const paymentsButton = document.getElementById('payments-menu');
+        if (paymentsButton) {
+            paymentsButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                toggleDropdown('payments-dropdown', 'payments-menu');
+            });
+        }
+
+        // Leases dropdown
+        const leasesButton = document.getElementById('leases-menu');
+        if (leasesButton) {
+            leasesButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                toggleDropdown('leases-dropdown', 'leases-menu');
+            });
+        }
+
+        // Settings dropdown
+        const settingsButton = document.getElementById('settings-menu');
+        if (settingsButton) {
+            settingsButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                toggleDropdown('settings-dropdown', 'settings-menu');
+            });
+        }
+    });
 </script>
 
 </body>

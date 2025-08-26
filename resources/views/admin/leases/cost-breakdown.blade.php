@@ -8,12 +8,12 @@
             <!-- Simple Header -->
             <div class="text-center mb-8">
                 <h1 class="text-3xl font-bold text-gray-900 mb-2">Cost Breakdown Analysis</h1>
-                <p class="text-gray-600">Generated on {{ now()->format('F j, Y \a\t g:i A') }}</p>
+                <p class="text-gray-600">Generated on {{ now()->format('F j, Y \\a\\t g:i A') }}</p>
             </div>
 
             <!-- Excel-like Table -->
             <div class="bg-white shadow-lg rounded-lg overflow-hidden">
-                <div class="overflow-x-auto">
+                <div class="overflow-x-auto no-scrollbar">
                     <table class="min-w-full border-collapse" id="costBreakdownTable">
                         <thead>
                         <tr class="bg-[#ff671b] text-white">
@@ -21,7 +21,7 @@
                                 onclick="sortCostBreakdownTable(0, 'text')" id="costbreakdown-header-0">
                                 <div class="flex items-center justify-center">
                                     Store #
-                                    <span class="ml-2 text-xs opacity-75" utilizzator="costbreakdown-sort-indicator-0">A↓</span>
+                                    <span class="ml-2 text-xs opacity-75" id="costbreakdown-sort-indicator-0">A↓</span>
                                 </div>
                             </th>
                             <th class="border border-gray-300 px-3 py-3 text-left text-sm font-semibold cursor-pointer hover:bg-[#e55b17] transition-colors select-none"
@@ -108,16 +108,16 @@
                             <tr class="{{ $index % 2 == 0 ? 'bg-white' : 'bg-gray-50' }} hover:bg-[#fff4ed]">
                                 <td class="border border-gray-300 px-3 py-3 text-sm text-center" data-sort="{{ $lease->store_number ?: 'N/A' }}">{{ $lease->store_number ?: 'N/A' }}</td>
                                 <td class="border border-gray-300 px-3 py-3 text-sm" data-sort="{{ $lease->name ?: 'N/A' }}">{{ $lease->name ?: 'N/A' }}</td>
-                                <td class="border border-gray-300 px-3 py-3 text-sm text-right" data-sort="{{ $lease->aws ?: 0 }}">${{ number_format($lease->aws ?: 0, 0) }}</td>
-                                <td class="border border-gray-300 px-3 py-3 text-sm text-right" data-sort="{{ $lease->total_rent ?: 0 }}">${{ number_format($lease->total_rent ?: 0, 0) }}</td>
+                                <td class="border border-gray-300 px-3 py-3 text-sm text-right" data-sort="{{ $lease->aws ?: 0 }}">${{ number_format($lease->aws ?: 0, 2) }}</td>
+                                <td class="border border-gray-300 px-3 py-3 text-sm text-right" data-sort="{{ $lease->total_rent ?: 0 }}">${{ number_format($lease->total_rent ?: 0, 2) }}</td>
                                 <td class="border border-gray-300 px-3 py-3 text-sm text-right" data-sort="{{ $lease->lease_to_sales_ratio ?: 0 }}">{{ $lease->lease_to_sales_ratio ? number_format($lease->lease_to_sales_ratio * 100, 2) . '%' : 'N/A' }}</td>
-                                <td class="border border-gray-300 px-3 py-3 text-sm text-right" data-sort="{{ $lease->base_rent ?: 0 }}">${{ number_format($lease->base_rent ?: 0, 0) }}</td>
-                                <td class="border border-gray-300 px-3 py-3 text-sm text-right" data-sort="{{ $lease->percent_increase_per_year ?: 0 }}">{{ $lease->percent_increase_per_year ? number_format($lease->percent_increase_per_year, 1) . '%' : 'N/A' }}</td>
-                                <td class="border border-gray-300 px-3 py-3 text-sm text-right" data-sort="{{ $lease->insurance ?: 0 }}">${{ number_format($lease->insurance ?: 0, 0) }}</td>
-                                <td class="border border-gray-300 px-3 py-3 text-sm text-right" data-sort="{{ $lease->cam ?: 0 }}">${{ number_format($lease->cam ?: 0, 0) }}</td>
-                                <td class="border border-gray-300 px-3 py-3 text-sm text-right" data-sort="{{ $lease->re_taxes ?: 0 }}">${{ number_format($lease->re_taxes ?: 0, 0) }}</td>
-                                <td class="border border-gray-300 px-3 py-3 text-sm text-right" data-sort="{{ $lease->others ?: 0 }}">${{ number_format($lease->others ?: 0, 0) }}</td>
-                                <td class="border border-gray-300 px-3 py-3 text-sm text-right" data-sort="{{ $lease->security_deposit ?: 0 }}">${{ number_format($lease->security_deposit ?: 0, 0) }}</td>
+                                <td class="border border-gray-300 px-3 py-3 text-sm text-right" data-sort="{{ $lease->base_rent ?: 0 }}">${{ number_format($lease->base_rent ?: 0, 2) }}</td>
+                                <td class="border border-gray-300 px-3 py-3 text-sm text-right" data-sort="{{ $lease->percent_increase_per_year ?: 0 }}">{{ $lease->percent_increase_per_year ? number_format($lease->percent_increase_per_year, 2) . '%' : 'N/A' }}</td>
+                                <td class="border border-gray-300 px-3 py-3 text-sm text-right" data-sort="{{ $lease->insurance ?: 0 }}">${{ number_format($lease->insurance ?: 0, 2) }}</td>
+                                <td class="border border-gray-300 px-3 py-3 text-sm text-right" data-sort="{{ $lease->cam ?: 0 }}">${{ number_format($lease->cam ?: 0, 2) }}</td>
+                                <td class="border border-gray-300 px-3 py-3 text-sm text-right" data-sort="{{ $lease->re_taxes ?: 0 }}">${{ number_format($lease->re_taxes ?: 0, 2) }}</td>
+                                <td class="border border-gray-300 px-3 py-3 text-sm text-right" data-sort="{{ $lease->others ?: 0 }}">${{ number_format($lease->others ?: 0, 2) }}</td>
+                                <td class="border border-gray-300 px-3 py-3 text-sm text-right" data-sort="{{ $lease->security_deposit ?: 0 }}">${{ number_format($lease->security_deposit ?: 0, 2) }}</td>
                             </tr>
                         @endforeach
                         </tbody>
@@ -125,8 +125,8 @@
                         <tr class="bg-[#e55b17] text-white font-semibold">
                             <td class="border border-gray-300 px-3 py-3 text-sm text-center">TOTAL</td>
                             <td class="border border-gray-300 px-3 py-3 text-sm">{{ $leases->count() }} Stores</td>
-                            <td class="border border-gray-300 px-3 py-3 text-sm text-right">${{ number_format($leases->sum('aws'), 0) }}</td>
-                            <td class="border border-gray-300 px-3 py-3 text-sm text-right">${{ number_format($leases->sum(fn($lease) => $lease->total_rent), 0) }}</td>
+                            <td class="border border-gray-300 px-3 py-3 text-sm text-right">${{ number_format($leases->sum('aws'), 2) }}</td>
+                            <td class="border border-gray-300 px-3 py-3 text-sm text-right">${{ number_format($leases->sum(fn($lease) => $lease->total_rent), 2) }}</td>
                             <td class="border border-gray-300 px-3 py-3 text-sm text-right">
                                 @php
                                     $totalAws = $leases->sum('aws');
@@ -135,13 +135,19 @@
                                 @endphp
                                 {{ number_format($totalRatio * 100, 2) }}%
                             </td>
-                            <td class="border border-gray-300 px-3 py-3 text-sm text-right">${{ number_format($leases->sum('base_rent'), 0) }}</td>
-                            <td class="border border-gray-300 px-3 py-3 text-sm text-right">Avg</td>
-                            <td class="border border-gray-300 px-3 py-3 text-sm text-right">${{ number_format($leases->sum('insurance'), 0) }}</td>
-                            <td class="border border-gray-300 px-3 py-3 text-sm text-right">${{ number_format($leases->sum('cam'), 0) }}</td>
-                            <td class="border border-gray-300 px-3 py-3 text-sm text-right">${{ number_format($leases->sum('re_taxes'), 0) }}</td>
-                            <td class="border border-gray-300 px-3 py-3 text-sm text-right">${{ number_format($leases->sum('others'), 0) }}</td>
-                            <td class="border border-gray-300 px-3 py-3 text-sm text-right">${{ number_format($leases->sum('security_deposit'), 0) }}</td>
+                            <td class="border border-gray-300 px-3 py-3 text-sm text-right">${{ number_format($leases->sum('base_rent'), 2) }}</td>
+                            <td class="border border-gray-300 px-3 py-3 text-sm text-right">
+                                @php
+                                    $leasesWithIncrease = $leases->filter(fn($lease) => $lease->percent_increase_per_year > 0);
+                                    $avgIncrease = $leasesWithIncrease->count() > 0 ? $leasesWithIncrease->avg('percent_increase_per_year') : 0;
+                                @endphp
+                                {{ number_format($avgIncrease, 2) }}%
+                            </td>
+                            <td class="border border-gray-300 px-3 py-3 text-sm text-right">${{ number_format($leases->sum('insurance'), 2) }}</td>
+                            <td class="border border-gray-300 px-3 py-3 text-sm text-right">${{ number_format($leases->sum('cam'), 2) }}</td>
+                            <td class="border border-gray-300 px-3 py-3 text-sm text-right">${{ number_format($leases->sum('re_taxes'), 2) }}</td>
+                            <td class="border border-gray-300 px-3 py-3 text-sm text-right">${{ number_format($leases->sum('others'), 2) }}</td>
+                            <td class="border border-gray-300 px-3 py-3 text-sm text-right">${{ number_format($leases->sum('security_deposit'), 2) }}</td>
                         </tr>
                         </tfoot>
                     </table>
@@ -157,6 +163,4 @@
             </div>
         </div>
     </div>
-
-
 @endsection

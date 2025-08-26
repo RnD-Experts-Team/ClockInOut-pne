@@ -1,15 +1,17 @@
 <?php
-// app/Http/Controllers/MaintenanceRequestController.php
 
 namespace App\Http\Controllers;
 
 use App\Models\MaintenanceRequest;
 use App\Models\UrgencyLevel;
 use App\Models\Store;
+use App\Models\User;
+use App\Services\CognitoFormsService;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\View\View;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
 
 class MaintenanceRequestController extends Controller
 {
@@ -21,41 +23,103 @@ class MaintenanceRequestController extends Controller
             'urgencyLevel',
             'attachments',
             'links',
-            'store' // Add store relationship
+            'store',
+            'assignedTo'
         ]);
 
-        // Filter by status if provided
-        if ($request->has('status') && $request->status !== 'all') {
-            $query->where('status', $request->status);
-        }
+        // Create a base query for status counts
+        $baseQuery = clone $query;
 
         // Filter by urgency if provided
         if ($request->has('urgency') && $request->urgency !== 'all') {
             $query->where('urgency_level_id', $request->urgency);
+            $baseQuery->where('urgency_level_id', $request->urgency);
         }
 
-        // Filter by store if provided - Updated to use store_id
-        if ($request->has('store_id') && $request->store_id !== 'all') {
-            $query->where('store_id', $request->store_id);
+        // Filter by store if provided
+        if ($request->has('store') && $request->store !== 'all') {
+            if ($request->store) {
+                $storeFilter = function($q) use ($request) {
+                    $q->where('store', 'LIKE', '%' . $request->store . '%')
+                        ->orWhereHas('store', function($subQ) use ($request) {
+                            $subQ->where('store_number', 'LIKE', '%' . $request->store . '%')
+                                ->orWhere('name', 'LIKE', '%' . $request->store . '%');
+                        });
+                };
+
+                $query->where($storeFilter);
+                $baseQuery->where($storeFilter);
+            }
+        }
+
+        // Date range filter
+        if ($request->has('date_range') && $request->date_range !== 'all') {
+            $dateFilter = function($q) use ($request) {
+                switch ($request->date_range) {
+                    case 'this_week':
+                        $q->whereBetween('created_at', [
+                            Carbon::now()->startOfWeek(),
+                            Carbon::now()->endOfWeek()
+                        ]);
+                        break;
+                    case 'this_month':
+                        $q->whereBetween('created_at', [
+                            Carbon::now()->startOfMonth(),
+                            Carbon::now()->endOfMonth()
+                        ]);
+                        break;
+                    case 'this_year':
+                        $q->whereBetween('created_at', [
+                            Carbon::now()->startOfYear(),
+                            Carbon::now()->endOfYear()
+                        ]);
+                        break;
+                    case 'custom':
+                        if ($request->has('start_date') && $request->has('end_date')) {
+                            $q->whereBetween('created_at', [
+                                Carbon::parse($request->start_date)->startOfDay(),
+                                Carbon::parse($request->end_date)->endOfDay()
+                            ]);
+                        }
+                        break;
+                }
+            };
+
+            $query->where($dateFilter);
+            $baseQuery->where($dateFilter);
         }
 
         // Search functionality
         if ($request->has('search') && $request->search) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('store', 'like', "%{$search}%") // Keep old store field for webhook compatibility
-                ->orWhere('description_of_issue', 'like', "%{$search}%")
+            $searchFilter = function($q) use ($request) {
+                $search = $request->search;
+                $q->where('store', 'like', "%{$search}%")
+                    ->orWhere('description_of_issue', 'like', "%{$search}%")
                     ->orWhere('equipment_with_issue', 'like', "%{$search}%")
                     ->orWhere('entry_number', 'like', "%{$search}%")
                     ->orWhereHas('requester', function($q) use ($search) {
-                        $q->where('first_name', 'like', "%{$search}%")
-                            ->orWhere('last_name', 'like', "%{$search}%");
+                        $q->where('name', 'like', "%{$search}%");
                     })
                     ->orWhereHas('store', function($q) use ($search) {
                         $q->where('store_number', 'like', "%{$search}%")
                             ->orWhere('name', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('assignedTo', function($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%");
                     });
-            });
+            };
+
+            $query->where($searchFilter);
+            $baseQuery->where($searchFilter);
+        }
+
+        // Apply status filter to main query
+        $selectedStatus = null;
+        if ($request->has('status') && $request->status !== 'all') {
+            $selectedStatus = $request->status;
+            $query->where('status', $selectedStatus);
+            // Also apply to baseQuery for consistent counting
+            $baseQuery->where('status', $selectedStatus);
         }
 
         // Sort by urgency priority and created date
@@ -65,36 +129,57 @@ class MaintenanceRequestController extends Controller
         $maintenanceRequests = $query->paginate(15)->withQueryString();
 
         $urgencyLevels = UrgencyLevel::orderBy('priority_order')->get();
-
-        // Get all stores for filter dropdown
         $stores = Store::orderBy('store_number')->get();
+        $users = User::where('role', 'user')->orderBy('name')->get();
 
-        $statusCounts = [
-            'all' => MaintenanceRequest::count(),
-            'on_hold' => MaintenanceRequest::where('status', 'on_hold')->count(),
-            'in_progress' => MaintenanceRequest::where('status', 'in_progress')->count(),
-            'done' => MaintenanceRequest::where('status', 'done')->count(),
-            'canceled' => MaintenanceRequest::where('status', 'canceled')->count(),
-        ];
+        // Calculate status counts based on whether status is filtered or not
+        if ($selectedStatus) {
+            // When status is filtered, show count for selected status only
+            $totalCount = $baseQuery->count();
+            $statusCounts = [
+                'all' => $totalCount,
+                'on_hold' => $selectedStatus === 'on_hold' ? $totalCount : 0,
+                'in_progress' => $selectedStatus === 'in_progress' ? $totalCount : 0,
+                'done' => $selectedStatus === 'done' ? $totalCount : 0,
+                'canceled' => $selectedStatus === 'canceled' ? $totalCount : 0,
+            ];
+        } else {
+            // When no status filter, show all status counts
+            $statusCounts = [
+                'all' => $baseQuery->count(),
+                'on_hold' => (clone $baseQuery)->where('status', 'on_hold')->count(),
+                'in_progress' => (clone $baseQuery)->where('status', 'in_progress')->count(),
+                'done' => (clone $baseQuery)->where('status', 'done')->count(),
+                'canceled' => (clone $baseQuery)->where('status', 'canceled')->count(),
+            ];
+        }
+        $urgencyLevels = UrgencyLevel::orderBy('priority_order')->get();
+        $stores = Store::orderBy('store_number')->get();
+        $users = User::where('role', 'user')->orderBy('name')->get();
 
+        // Add this line to get assigned users for filtering
+        $assignedUsers = User::whereHas('assignedMaintenanceRequests')
+            ->orderBy('name')
+            ->get();
         return view('admin.maintenance-requests.index', compact(
             'maintenanceRequests',
             'urgencyLevels',
             'stores',
-            'statusCounts'
+            'statusCounts',
+            'users',
+            'assignedUsers'
         ));
     }
 
-    // Add create method for manual creation
     public function create(): View
     {
         $urgencyLevels = UrgencyLevel::orderBy('priority_order')->get();
         $stores = Store::orderBy('store_number')->get();
+        $users = User::where('role', 'user')->orderBy('name')->get();
 
-        return view('admin.maintenance-requests.create', compact('urgencyLevels', 'stores'));
+        return view('admin.maintenance-requests.create', compact('urgencyLevels', 'stores', 'users'));
     }
 
-    // Add store method for manual creation
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
@@ -106,11 +191,12 @@ class MaintenanceRequestController extends Controller
             'equipment_with_issue' => 'required|string',
             'basic_troubleshoot_done' => 'boolean',
             'request_date' => 'required|date',
+            'assigned_to' => 'nullable|exists:users,id',
+            'due_date' => 'nullable|date|after_or_equal:request_date',
         ]);
 
         DB::beginTransaction();
         try {
-            // Handle store creation if needed
             if (!$validated['store_id'] && $validated['new_store_number']) {
                 $store = Store::create([
                     'store_number' => $validated['new_store_number'],
@@ -118,20 +204,19 @@ class MaintenanceRequestController extends Controller
                     'is_active' => true,
                 ]);
                 $validated['store_id'] = $store->id;
-                $validated['store'] = $store->store_number; // For webhook compatibility
+                $validated['store'] = $store->store_number;
             } elseif ($validated['store_id']) {
                 $store = Store::find($validated['store_id']);
-                $validated['store'] = $store->store_number; // For webhook compatibility
+                $validated['store'] = $store->store_number;
             }
 
-            // Create maintenance request
             $validated['form_id'] = 'MANUAL-' . time();
             $validated['date_submitted'] = now();
             $validated['entry_number'] = MaintenanceRequest::max('entry_number') + 1;
             $validated['webhook_id'] = 'MANUAL-' . uniqid();
             $validated['status'] = 'on_hold';
-            $validated['requester_id'] = 1; // Default or current user
-            $validated['reviewed_by_manager_id'] = 1; // Default or current user
+            $validated['requester_id'] = auth()->id() ?? 1;
+            $validated['reviewed_by_manager_id'] = 1;
 
             unset($validated['new_store_number'], $validated['new_store_name']);
 
@@ -141,14 +226,12 @@ class MaintenanceRequestController extends Controller
 
             return redirect()->route('maintenance-requests.index')
                 ->with('success', 'Maintenance request created successfully.');
-
         } catch (\Exception $e) {
             DB::rollback();
             return back()->withErrors(['error' => 'Failed to create maintenance request: ' . $e->getMessage()]);
         }
     }
 
-    // Rest of the methods remain the same...
     public function show(MaintenanceRequest $maintenanceRequest): View
     {
         $maintenanceRequest->load([
@@ -157,11 +240,14 @@ class MaintenanceRequestController extends Controller
             'urgencyLevel',
             'attachments',
             'links',
-            'store', // Add store relationship
-            'statusHistories.changedByUser'
+            'store',
+            'statusHistories.changedByUser',
+            'assignedTo'
         ]);
 
-        return view('admin.maintenance-requests.show', compact('maintenanceRequest'));
+        $users = User::where('role', 'user')->orderBy('name')->get();
+
+        return view('admin.maintenance-requests.show', compact('maintenanceRequest', 'users'));
     }
 
     public function updateStatus(Request $request, MaintenanceRequest $maintenanceRequest): RedirectResponse
@@ -169,7 +255,9 @@ class MaintenanceRequestController extends Controller
         $request->validate([
             'status' => 'required|in:on_hold,in_progress,done,canceled',
             'costs' => 'required_if:status,done|nullable|numeric|min:0',
-            'how_we_fixed_it' => 'required_if:status,done|nullable|string|max:1000'
+            'how_we_fixed_it' => 'required_if:status,done|nullable|string|max:1000',
+            'assigned_to' => 'required_if:status,in_progress|nullable|exists:users,id',
+            'due_date' => 'nullable|date|after_or_equal:request_date'
         ]);
 
         try {
@@ -178,7 +266,9 @@ class MaintenanceRequestController extends Controller
             $newStatus = $request->input('status');
             $costs = $request->input('costs');
             $howWeFixedIt = $request->input('how_we_fixed_it');
-            $userId = auth()->id();
+            $assignedTo = $request->input('assigned_to');
+            $dueDate = $request->input('due_date');
+            $userId = auth()->id() ?? 1;
 
             if ($newStatus === 'done' && (empty($costs) || empty($howWeFixedIt))) {
                 return back()->withErrors([
@@ -186,28 +276,61 @@ class MaintenanceRequestController extends Controller
                 ]);
             }
 
-            if (!$maintenanceRequest->canMoveToStatus($newStatus)) {
+            if ($newStatus === 'in_progress' && empty($assignedTo)) {
                 return back()->withErrors([
-                    'status' => "Cannot change status from {$maintenanceRequest->status} to {$newStatus}."
+                    'assigned_to' => 'Assigned to is required when marking as in progress.'
                 ]);
             }
 
-            $maintenanceRequest->updateStatus($newStatus, $costs, $howWeFixedIt, $userId);
+            $maintenanceRequest->update([
+                'status' => $newStatus,
+                'costs' => $costs,
+                'how_we_fixed_it' => $howWeFixedIt,
+                'assigned_to' => $newStatus === 'in_progress' ? $assignedTo : null,
+                'due_date' => $newStatus === 'in_progress' ? $dueDate : null,
+            ]);
+
+            $maintenanceRequest->statusHistories()->create([
+                'old_status' => $maintenanceRequest->getOriginal('status'),
+                'new_status' => $newStatus,
+                'changed_by' => $userId,
+                'changed_at' => now(),
+                'notes' => $newStatus === 'done' ? $howWeFixedIt : null,
+            ]);
+
+            $cognitoService = app(CognitoFormsService::class);
+            $formId = '1219';
+            $entryId = $maintenanceRequest->entry_number;
+
+            $cognitoStatusMap = [
+                'on_hold' => 'On Hold',
+                'in_progress' => 'In Progress',
+                'done' => 'Done',
+                'canceled' => 'Canceled'
+            ];
+
+            $cognitoData = [
+                'CorrespondenceInternalUseOnly' => [
+                    'Status' => $cognitoStatusMap[$newStatus] ?? $newStatus,
+                    'NotesFromMaintenanceTeam' => $howWeFixedIt,
+                ],
+                'Entry' => [
+                    'Action' => 'Update',
+                    'Role' => 'Internal',
+                ]
+            ];
+
+            $cognitoService->updateEntry($formId, $entryId, $cognitoData);
 
             DB::commit();
 
-            return back()->with('success', 'Status updated successfully.');
-
+            return back()->with('success', 'Status updated successfully in both local database and Cognito Forms.');
         } catch (\Exception $e) {
             DB::rollback();
-
-            return back()->withErrors([
-                'error' => 'Failed to update status: ' . $e->getMessage()
-            ]);
+            return back()->withErrors(['error' => 'Failed to update status: ' . $e->getMessage()]);
         }
     }
 
-    // Keep all other methods exactly the same...
     public function destroy(MaintenanceRequest $maintenanceRequest): RedirectResponse
     {
         try {
@@ -216,33 +339,28 @@ class MaintenanceRequestController extends Controller
             $maintenanceRequest->attachments()->delete();
             $maintenanceRequest->links()->delete();
             $maintenanceRequest->statusHistories()->delete();
-
             $maintenanceRequest->delete();
 
             DB::commit();
 
             return redirect()->route('maintenance-requests.index')
                 ->with('success', 'Maintenance request deleted successfully.');
-
         } catch (\Exception $e) {
             DB::rollback();
-
-            return back()->withErrors([
-                'error' => 'Failed to delete request: ' . $e->getMessage()
-            ]);
+            return back()->withErrors(['error' => 'Failed to delete request: ' . $e->getMessage()]);
         }
     }
 
-    // Keep all other methods exactly the same as in your original file...
     public function bulkUpdateStatus(Request $request): RedirectResponse
     {
-        // Keep the same implementation
         $request->validate([
             'request_ids' => 'required|array',
             'request_ids.*' => 'exists:maintenance_requests,id',
             'status' => 'required|in:on_hold,in_progress,done,canceled',
             'costs' => 'required_if:status,done|nullable|numeric|min:0',
-            'how_we_fixed_it' => 'required_if:status,done|nullable|string|max:1000'
+            'how_we_fixed_it' => 'required_if:status,done|nullable|string|max:1000',
+            'assigned_to' => 'required_if:status,in_progress|nullable|exists:users,id',
+            'due_date' => 'nullable|date'
         ]);
 
         try {
@@ -252,7 +370,9 @@ class MaintenanceRequestController extends Controller
             $newStatus = $request->input('status');
             $costs = $request->input('costs');
             $howWeFixedIt = $request->input('how_we_fixed_it');
-            $userId = auth()->id();
+            $assignedTo = $request->input('assigned_to');
+            $dueDate = $request->input('due_date');
+            $userId = auth()->id() ?? 1;
 
             $requests = MaintenanceRequest::whereIn('id', $requestIds)->get();
 
@@ -261,24 +381,30 @@ class MaintenanceRequestController extends Controller
                     continue;
                 }
 
-                if (!$maintenanceRequest->canMoveToStatus($newStatus)) {
-                    continue;
-                }
+                $maintenanceRequest->update([
+                    'status' => $newStatus,
+                    'costs' => $newStatus === 'done' ? $costs : null,
+                    'how_we_fixed_it' => $newStatus === 'done' ? $howWeFixedIt : null,
+                    'assigned_to' => $newStatus === 'in_progress' ? $assignedTo : null,
+                    'due_date' => $newStatus === 'in_progress' ? $dueDate : null,
+                ]);
 
-                $maintenanceRequest->updateStatus($newStatus, $costs, $howWeFixedIt, $userId);
+                $maintenanceRequest->statusHistories()->create([
+                    'old_status' => $maintenanceRequest->getOriginal('status'),
+                    'new_status' => $newStatus,
+                    'changed_by' => $userId,
+                    'changed_at' => now(),
+                    'notes' => $newStatus === 'done' ? $howWeFixedIt : null,
+                ]);
             }
 
             DB::commit();
 
             $count = count($requestIds);
             return back()->with('success', "Successfully updated {$count} maintenance requests.");
-
         } catch (\Exception $e) {
             DB::rollback();
-
-            return back()->withErrors([
-                'error' => 'Failed to update requests: ' . $e->getMessage()
-            ]);
+            return back()->withErrors(['error' => 'Failed to update requests: ' . $e->getMessage()]);
         }
     }
 
@@ -288,10 +414,10 @@ class MaintenanceRequestController extends Controller
             'requester',
             'reviewedByManager',
             'urgencyLevel',
-            'store'
+            'store',
+            'assignedTo'
         ]);
 
-        // Apply same filters as index
         if ($request->has('status') && $request->status !== 'all') {
             $query->where('status', $request->status);
         }
@@ -304,13 +430,44 @@ class MaintenanceRequestController extends Controller
             $query->where('store_id', $request->store_id);
         }
 
+        if ($request->has('date_range') && $request->date_range !== 'all') {
+            switch ($request->date_range) {
+                case 'this_week':
+                    $query->whereBetween('created_at', [
+                        Carbon::now()->startOfWeek(),
+                        Carbon::now()->endOfWeek()
+                    ]);
+                    break;
+                case 'this_month':
+                    $query->whereBetween('created_at', [
+                        Carbon::now()->startOfMonth(),
+                        Carbon::now()->endOfMonth()
+                    ]);
+                    break;
+                case 'this_year':
+                    $query->whereBetween('created_at', [
+                        Carbon::now()->startOfYear(),
+                        Carbon::now()->endOfYear()
+                    ]);
+                    break;
+                case 'custom':
+                    if ($request->has('start_date') && $request->has('end_date')) {
+                        $query->whereBetween('created_at', [
+                            Carbon::parse($request->start_date)->startOfDay(),
+                            Carbon::parse($request->end_date)->endOfDay()
+                        ]);
+                    }
+                    break;
+            }
+        }
+
         $requests = $query->get();
 
         $csvData = [];
         $csvData[] = [
             'ID', 'Entry Number', 'Store Number', 'Store Name', 'Requester', 'Manager', 'Equipment',
-            'Description', 'Urgency', 'Status', 'Request Date', 'Submitted Date',
-            'Costs', 'How We Fixed It', 'Created At'
+            'Description', 'Urgency', 'Status', 'Assigned To', 'Due Date', 'Request Date',
+            'Submitted Date', 'Costs', 'How We Fixed It', 'Created At'
         ];
 
         foreach ($requests as $request) {
@@ -319,12 +476,14 @@ class MaintenanceRequestController extends Controller
                 $request->entry_number,
                 $request->store ? $request->store->store_number : $request->store,
                 $request->store ? $request->store->name : 'N/A',
-                $request->requester->full_name,
-                $request->reviewedByManager->full_name,
+                $request->requester ? $request->requester->name : 'N/A',
+                $request->reviewedByManager ? $request->reviewedByManager->name : 'N/A',
                 $request->equipment_with_issue,
                 substr($request->description_of_issue, 0, 100) . (strlen($request->description_of_issue) > 100 ? '...' : ''),
-                $request->urgencyLevel->name,
+                $request->urgencyLevel ? $request->urgencyLevel->name : 'N/A',
                 ucfirst(str_replace('_', ' ', $request->status)),
+                $request->assignedTo ? $request->assignedTo->name : 'N/A',
+                $request->due_date ? $request->due_date->format('Y-m-d') : 'N/A',
                 $request->request_date->format('Y-m-d'),
                 $request->date_submitted->format('Y-m-d H:i:s'),
                 $request->costs ?? '',
@@ -350,4 +509,64 @@ class MaintenanceRequestController extends Controller
 
         return response()->stream($callback, 200, $headers);
     }
+    public function ticketReport(Request $request)
+    {
+        try {
+            // Get the same filtered data as index
+            $query = MaintenanceRequest::with(['store', 'requester', 'assignedTo', 'urgencyLevel']);
+
+            // Apply the same filters as index
+            if ($request->filled('status') && $request->status !== 'all') {
+                $query->where('status', $request->status);
+            }
+
+            if ($request->filled('urgency') && $request->urgency !== 'all') {
+                $query->where('urgency_level_id', $request->urgency);
+            }
+
+            if ($request->filled('store') && $request->store !== 'all') {
+                $query->where('store', 'LIKE', '%' . $request->store . '%');
+            }
+
+            if ($request->filled('search')) {
+                $query->where(function ($q) use ($request) {
+                    $q->where('store', 'LIKE', '%' . $request->search . '%')
+                        ->orWhere('equipment_with_issue', 'LIKE', '%' . $request->search . '%')
+                        ->orWhere('description_of_issue', 'LIKE', '%' . $request->search . '%');
+                });
+            }
+
+            // Date range filters
+            if ($request->filled('date_range') && $request->date_range !== 'all') {
+                switch ($request->date_range) {
+                    case 'this_week':
+                        $query->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()]);
+                        break;
+                    case 'this_month':
+                        $query->whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()]);
+                        break;
+                    case 'this_year':
+                        $query->whereBetween('created_at', [now()->startOfYear(), now()->endOfYear()]);
+                        break;
+                    case 'custom':
+                        if ($request->filled('start_date')) {
+                            $query->whereDate('created_at', '>=', $request->start_date);
+                        }
+                        if ($request->filled('end_date')) {
+                            $query->whereDate('created_at', '<=', $request->end_date);
+                        }
+                        break;
+                }
+            }
+
+            $maintenanceRequests = $query->get();
+
+            return view('admin.maintenance-requests.ticket-report', compact('maintenanceRequests'));
+
+        } catch (\Exception $e) {
+            \Log::error('Ticket Report Error: ' . $e->getMessage());
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
 }

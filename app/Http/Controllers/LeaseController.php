@@ -18,10 +18,13 @@ class LeaseController extends Controller
     {
         $query = Lease::with('store');
 
+        // Create a base query for stats calculation
+        $baseQuery = clone $query;
+
         // Search functionality
         if ($request->has('search') && $request->search) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $searchFilter = function($q) use ($search) {
                 $q->where('store_number', 'like', "%{$search}%")
                     ->orWhere('name', 'like', "%{$search}%")
                     ->orWhere('store_address', 'like', "%{$search}%")
@@ -29,21 +32,74 @@ class LeaseController extends Controller
                         $q->where('store_number', 'like', "%{$search}%")
                             ->orWhere('name', 'like', "%{$search}%");
                     });
-            });
+            };
+
+            $query->where($searchFilter);
+            $baseQuery->where($searchFilter);
         }
 
         // Filter by HVAC
         if ($request->has('hvac') && $request->hvac !== 'all') {
-            $query->where('hvac', $request->hvac === '1');
+            $hvacFilter = function($q) use ($request) {
+                $q->where('hvac', $request->hvac === '1');
+            };
+
+            $query->where($hvacFilter);
+            $baseQuery->where($hvacFilter);
         }
 
         // Filter by expiring soon
         if ($request->has('expiring') && $request->expiring !== 'all') {
-            if ($request->expiring === 'franchise') {
-                $query->expiringFranchiseSoon();
-            } elseif ($request->expiring === 'lease') {
-                $query->expiringLeaseSoon();
-            }
+            $expiringFilter = function($q) use ($request) {
+                if ($request->expiring === 'franchise') {
+                    $q->expiringFranchiseSoon();
+                } elseif ($request->expiring === 'lease') {
+                    $q->expiringLeaseSoon();
+                }
+            };
+
+            $query->where($expiringFilter);
+            $baseQuery->where($expiringFilter);
+        }
+
+        // Additional filters
+        if ($request->has('lease_status') && $request->lease_status !== 'all') {
+            $statusFilter = function($q) use ($request) {
+                switch ($request->lease_status) {
+                    case 'active':
+                        $q->where('initial_lease_expiration_date', '>', now());
+                        break;
+                    case 'expiring_soon':
+                        $q->whereBetween('initial_lease_expiration_date', [now(), now()->addMonths(6)]);
+                        break;
+                    case 'expired':
+                        $q->where('initial_lease_expiration_date', '<', now());
+                        break;
+                }
+            };
+
+            $query->where($statusFilter);
+            $baseQuery->where($statusFilter);
+        }
+
+        // Rent range filter
+        if ($request->has('rent_range') && $request->rent_range !== 'all') {
+            $rentFilter = function($q) use ($request) {
+                switch ($request->rent_range) {
+                    case 'low':
+                        $q->where('base_rent', '<', 5000);
+                        break;
+                    case 'medium':
+                        $q->whereBetween('base_rent', [5000, 15000]);
+                        break;
+                    case 'high':
+                        $q->where('base_rent', '>', 15000);
+                        break;
+                }
+            };
+
+            $query->where($rentFilter);
+            $baseQuery->where($rentFilter);
         }
 
         // Sort
@@ -71,13 +127,9 @@ class LeaseController extends Controller
 
         $overallStats = Lease::getScopedStatistics($selectedStores);
         $availableStores = Store::orderBy('store_number')->get();
-        $stats = [
-            'total' => Lease::count(),
-            'with_hvac' => Lease::where('hvac', true)->count(),
-            'franchise_expiring_soon' => Lease::expiringFranchiseSoon()->count(),
-            'lease_expiring_soon' => Lease::expiringLeaseSoon()->count(),
-            'total_sqf' => Lease::sum('sqf'),
-        ];
+
+        // Calculate filtered stats using baseQuery
+        $stats = $this->calculateFilteredStats($baseQuery);
 
         return view('admin.leases.index', compact(
             'leases',
@@ -87,6 +139,38 @@ class LeaseController extends Controller
             'selectedStores'
         ));
     }
+
+    /**
+     * Calculate statistics based on filtered query
+     */
+    private function calculateFilteredStats($query)
+    {
+        $total = $query->count();
+        $withHvac = $query->where('hvac', true)->count();
+        $franchiseExpiringSoon = $query->expiringFranchiseSoon()->count();
+        $leaseExpiringSoon = $query->expiringLeaseSoon()->count();
+        $totalSqf = $query->sum('sqf');
+        $totalBaseRent = $query->sum('base_rent');
+        $averageRent = $total > 0 ? $totalBaseRent / $total : 0;
+        $averageSqf = $total > 0 ? $totalSqf / $total : 0;
+
+        return [
+            'total' => $total,
+            'with_hvac' => $withHvac,
+            'franchise_expiring_soon' => $franchiseExpiringSoon,
+            'lease_expiring_soon' => $leaseExpiringSoon,
+            'total_sqf' => $totalSqf,
+            'total_base_rent' => $totalBaseRent,
+            'average_rent' => $averageRent,
+            'average_sqf' => $averageSqf,
+            // Additional stats
+            'active_leases' => $query->where('initial_lease_expiration_date', '>', now())->count(),
+            'expired_leases' => $query->where('initial_lease_expiration_date', '<', now())->count(),
+            'high_rent_count' => $query->where('base_rent', '>', 15000)->count(),
+            'low_rent_count' => $query->where('base_rent', '<', 5000)->count(),
+        ];
+    }
+
 
     public function create(): View
     {
