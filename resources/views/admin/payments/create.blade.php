@@ -164,6 +164,11 @@
                         <option value="Check" {{ old('payment_method') === 'Check' ? 'selected' : '' }}>Check</option>
                         <option value="ACH" {{ old('payment_method') === 'ACH' ? 'selected' : '' }}>ACH</option>
                         <option value="Wire" {{ old('payment_method') === 'Wire' ? 'selected' : '' }}>Wire Transfer</option>
+                        <option value="Zelle" {{ old('payment_method') === 'Zelle' ? 'selected' : '' }}>Zelle</option>
+                        <option value="Bill Payment" {{ old('payment_method') === 'Bill Payment' ? 'selected' : '' }}>Bill Payment / Check</option>
+                        <option value="Paychex" {{ old('payment_method') === 'Paychex' ? 'selected' : '' }}>Paychex</option>
+                        <option value="DashCard" {{ old('payment_method') === 'DashCard' ? 'selected' : '' }}>DashCard</option>
+
                     </select>
                 </div>
 
