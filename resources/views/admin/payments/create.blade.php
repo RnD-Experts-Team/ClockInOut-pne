@@ -144,13 +144,40 @@
                 <!-- What Got Fixed -->
                 <div>
                     <label for="what_got_fixed" class="form-label block text-sm font-medium text-black-700 mb-2">What Got Fixed</label>
-                    <select id="what_got_fixed" name="what_got_fixed"
-                            class="form-select block w-full border-orange-300 rounded-md py-2 px-3 shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm">
-                        <option value="">Select or type to add new option</option>
-                        @foreach($fixedOptions as $option)
-                            <option value="{{ $option }}" {{ old('what_got_fixed') == $option ? 'selected' : '' }}>{{ $option }}</option>
-                        @endforeach
-                    </select>
+
+                    <!-- Custom Dropdown Container -->
+                    <div class="custom-select-container relative">
+                        <!-- Hidden select for form submission -->
+                        <select id="what_got_fixed" name="what_got_fixed" class="hidden">
+                            <option value="">Select or type to add new option</option>
+                            @foreach($fixedOptions as $option)
+                                <option value="{{ $option }}" {{ old('what_got_fixed') == $option ? 'selected' : '' }}>{{ $option }}</option>
+                            @endforeach
+                        </select>
+
+                        <!-- Custom input/display -->
+                        <div class="custom-select-input relative">
+                            <input type="text"
+                                   id="custom_what_got_fixed"
+                                   class="form-field block w-full pr-10 border-orange-300 rounded-lg shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
+                                   placeholder="Select or type to add new option..."
+                                   autocomplete="off">
+
+                            <!-- Dropdown arrow -->
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                <svg class="w-4 h-4 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </div>
+                        </div>
+
+                        <!-- Dropdown options -->
+                        <div class="custom-select-dropdown absolute z-50 w-full mt-1 bg-white border border-orange-300 rounded-lg shadow-lg max-h-60 overflow-auto hidden">
+                            <div class="py-1">
+                                <!-- Options will be populated here -->
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Payment Method -->
@@ -208,14 +235,11 @@
         </div>
     </div>
 
-    <!-- TomSelect CSS and JS -->
-    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.0.0/dist/css/tom-select.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.0.0/dist/js/tom-select.complete.min.js"></script>
-
-    <!-- JavaScript for store selection toggle and TomSelect -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Store selection toggle
+            console.log('=== FORM JAVASCRIPT STARTING ===');
+
+            // Store selection toggle (keep your existing code)
             const storeOptions = document.querySelectorAll('input[name="store_option"]');
             const existingStoreSection = document.getElementById('existing-store-section');
             const newStoreSection = document.getElementById('new-store-section');
@@ -223,9 +247,9 @@
             const newStoreNumber = document.getElementById('new_store_number');
 
             function toggleStoreOptions() {
-                const selectedOption = document.querySelector('input[name="store_option"]:checked').value;
+                const selectedOption = document.querySelector('input[name="store_option"]:checked');
 
-                if (selectedOption === 'existing') {
+                if (selectedOption && selectedOption.value === 'existing') {
                     existingStoreSection.classList.remove('hidden');
                     newStoreSection.classList.add('hidden');
                     storeSelect.required = true;
@@ -242,32 +266,232 @@
                 option.addEventListener('change', toggleStoreOptions);
             });
 
-            // Initialize on page load
             toggleStoreOptions();
 
-            // Initialize TomSelect for "What Got Fixed"
-            new TomSelect('#what_got_fixed', {
-                create: true,
-                placeholder: 'Start typing to select or add new option',
-                sortField: {
-                    field: "text",
-                    direction: "asc"
-                },
-                render: {
-                    option: function(data, escape) {
-                        return '<div class="flex items-center">' + escape(data.text) + '</div>';
-                    },
-                    item: function(data, escape) {
-                        return '<div>' + escape(data.text) + '</div>';
+            // CUSTOM TOMSELECT-STYLE DROPDOWN
+            console.log('Setting up custom dropdown...');
+
+            const hiddenSelect = document.getElementById('what_got_fixed');
+            const customInput = document.getElementById('custom_what_got_fixed');
+            const dropdown = document.querySelector('.custom-select-dropdown');
+            const dropdownContent = dropdown.querySelector('.py-1');
+
+            if (!hiddenSelect || !customInput || !dropdown) {
+                console.error('❌ Custom dropdown elements not found');
+                return;
+            }
+
+            let options = [];
+            let filteredOptions = [];
+            let selectedIndex = -1;
+
+            // Load initial options from the select element
+            function loadInitialOptions() {
+                options = [];
+                Array.from(hiddenSelect.options).forEach(option => {
+                    if (option.value) { // Skip empty option
+                        options.push({
+                            value: option.value,
+                            text: option.textContent,
+                            selected: option.selected
+                        });
                     }
-                },
-                onInitialize: function() {
-                    // Force show placeholder if no value is selected
-                    if(!this.getValue()) {
-                        this.inputState();
+                });
+
+                // Set initial value if there's a selected option
+                const selectedOption = options.find(opt => opt.selected);
+                if (selectedOption) {
+                    customInput.value = selectedOption.text;
+                    hiddenSelect.value = selectedOption.value;
+                }
+
+                console.log('✅ Loaded', options.length, 'initial options');
+            }
+
+            // Render options in dropdown
+            function renderOptions(optionsToRender = options) {
+                dropdownContent.innerHTML = '';
+                filteredOptions = optionsToRender;
+
+                if (filteredOptions.length === 0) {
+                    // Show "Add new" option when no matches
+                    const addNewDiv = document.createElement('div');
+                    addNewDiv.className = 'px-3 py-2 text-orange-600 cursor-pointer hover:bg-orange-50 font-medium';
+                    addNewDiv.innerHTML = `<strong>+ Add:</strong> "${customInput.value.trim()}"`;
+                    addNewDiv.addEventListener('click', () => {
+                        selectNewOption(customInput.value.trim());
+                    });
+                    dropdownContent.appendChild(addNewDiv);
+                } else {
+                    // Render existing options
+                    filteredOptions.forEach((option, index) => {
+                        const optionDiv = document.createElement('div');
+                        optionDiv.className = 'px-3 py-2 cursor-pointer hover:bg-orange-50 text-sm';
+                        optionDiv.textContent = option.text;
+                        optionDiv.addEventListener('click', () => {
+                            selectOption(option);
+                        });
+                        dropdownContent.appendChild(optionDiv);
+                    });
+
+                    // Add "Add new" option if user is typing something new
+                    const inputValue = customInput.value.trim();
+                    if (inputValue && !filteredOptions.some(opt => opt.text.toLowerCase() === inputValue.toLowerCase())) {
+                        const addNewDiv = document.createElement('div');
+                        addNewDiv.className = 'px-3 py-2 text-orange-600 cursor-pointer hover:bg-orange-50 font-medium border-t border-gray-200';
+                        addNewDiv.innerHTML = `<strong>+ Add:</strong> "${inputValue}"`;
+                        addNewDiv.addEventListener('click', () => {
+                            selectNewOption(inputValue);
+                        });
+                        dropdownContent.appendChild(addNewDiv);
                     }
                 }
+
+                selectedIndex = -1; // Reset selection
+            }
+
+            // Filter options based on input
+            function filterOptions(searchTerm) {
+                if (!searchTerm) {
+                    return options;
+                }
+
+                return options.filter(option =>
+                    option.text.toLowerCase().includes(searchTerm.toLowerCase())
+                );
+            }
+
+            // Select an existing option
+            function selectOption(option) {
+                customInput.value = option.text;
+                hiddenSelect.value = option.value;
+                closeDropdown();
+                console.log('✅ Selected option:', option.text);
+            }
+
+            // Select/create a new option
+            function selectNewOption(text) {
+                if (!text) return;
+
+                // Add to options array
+                const newOption = { value: text, text: text, selected: false };
+                options.push(newOption);
+
+                // Add to hidden select
+                const newSelectOption = document.createElement('option');
+                newSelectOption.value = text;
+                newSelectOption.textContent = text;
+                newSelectOption.selected = true;
+                hiddenSelect.appendChild(newSelectOption);
+
+                // Set values
+                customInput.value = text;
+                hiddenSelect.value = text;
+                closeDropdown();
+
+                console.log('✅ Added new option:', text);
+            }
+
+            // Open dropdown
+            function openDropdown() {
+                const filteredOpts = filterOptions(customInput.value);
+                renderOptions(filteredOpts);
+                dropdown.classList.remove('hidden');
+                console.log('Dropdown opened');
+            }
+
+            // Close dropdown
+            function closeDropdown() {
+                dropdown.classList.add('hidden');
+                selectedIndex = -1;
+                console.log('Dropdown closed');
+            }
+
+            // Event listeners
+            customInput.addEventListener('focus', () => {
+                openDropdown();
             });
+
+            customInput.addEventListener('input', (e) => {
+                const filteredOpts = filterOptions(e.target.value);
+                renderOptions(filteredOpts);
+
+                if (dropdown.classList.contains('hidden')) {
+                    openDropdown();
+                }
+            });
+
+            customInput.addEventListener('keydown', (e) => {
+                const visibleOptions = dropdownContent.children;
+
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    selectedIndex = Math.min(selectedIndex + 1, visibleOptions.length - 1);
+                    updateHighlight();
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    selectedIndex = Math.max(selectedIndex - 1, 0);
+                    updateHighlight();
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (selectedIndex >= 0 && visibleOptions[selectedIndex]) {
+                        visibleOptions[selectedIndex].click();
+                    } else if (customInput.value.trim()) {
+                        selectNewOption(customInput.value.trim());
+                    }
+                } else if (e.key === 'Escape') {
+                    closeDropdown();
+                }
+            });
+
+            // Update keyboard navigation highlight
+            function updateHighlight() {
+                const visibleOptions = dropdownContent.children;
+                Array.from(visibleOptions).forEach((opt, index) => {
+                    if (index === selectedIndex) {
+                        opt.classList.add('bg-orange-100');
+                    } else {
+                        opt.classList.remove('bg-orange-100');
+                    }
+                });
+            }
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.custom-select-container')) {
+                    closeDropdown();
+                }
+            });
+
+            // Initialize
+            loadInitialOptions();
+            console.log('✅ Custom dropdown initialized');
+
+            // Form submission handler (keep your existing code)
+            const form = document.querySelector('form');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    console.log('Form submitting...');
+                    console.log('What Got Fixed value:', hiddenSelect.value);
+
+                    // Validation
+                    const storeOption = document.querySelector('input[name="store_option"]:checked').value;
+                    if (storeOption === 'existing' && !document.getElementById('store_id').value) {
+                        e.preventDefault();
+                        alert('Please select a store.');
+                        return false;
+                    }
+                    if (storeOption === 'new' && !document.getElementById('new_store_number').value.trim()) {
+                        e.preventDefault();
+                        alert('Please enter a store number.');
+                        return false;
+                    }
+                });
+            }
+
+            console.log('=== FORM JAVASCRIPT COMPLETE ===');
         });
     </script>
+
+
 @endsection
