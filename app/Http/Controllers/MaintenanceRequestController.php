@@ -183,7 +183,7 @@ class MaintenanceRequestController extends Controller
             'assignedUsers'
         ));
     }
-    
+
 
     public function create(): View
     {
@@ -312,29 +312,34 @@ class MaintenanceRequestController extends Controller
                 'notes' => $newStatus === 'done' ? $howWeFixedIt : null,
             ]);
 
-            $cognitoService = app(CognitoFormsService::class);
-            $formId = '1219';
+            // Get form ID dynamically from the maintenance request
+            $formId = $maintenanceRequest->form_id; // Use the stored form_id
             $entryId = $maintenanceRequest->entry_number;
 
-            $cognitoStatusMap = [
-                'on_hold' => 'On Hold',
-                'in_progress' => 'In Progress',
-                'done' => 'Done',
-                'canceled' => 'Canceled'
-            ];
+            // Only update Cognito if we have a form ID
+            if ($formId) {
+                $cognitoService = app(CognitoFormsService::class);
 
-            $cognitoData = [
-                'CorrespondenceInternalUseOnly' => [
-                    'Status' => $cognitoStatusMap[$newStatus] ?? $newStatus,
-                    'NotesFromMaintenanceTeam' => $howWeFixedIt,
-                ],
-                'Entry' => [
-                    'Action' => 'Update',
-                    'Role' => 'Internal',
-                ]
-            ];
+                $cognitoStatusMap = [
+                    'on_hold' => 'On Hold',
+                    'in_progress' => 'In Progress',
+                    'done' => 'Done',
+                    'canceled' => 'Canceled'
+                ];
 
-            $cognitoService->updateEntry($formId, $entryId, $cognitoData);
+                $cognitoData = [
+                    'CorrespondenceInternalUseOnly' => [
+                        'Status' => $cognitoStatusMap[$newStatus] ?? $newStatus,
+                        'NotesFromMaintenanceTeam' => $howWeFixedIt,
+                    ],
+                    'Entry' => [
+                        'Action' => 'Update',
+                        'Role' => 'Internal',
+                    ]
+                ];
+
+                $cognitoService->updateEntry($formId, $entryId, $cognitoData);
+            }
 
             DB::commit();
 
