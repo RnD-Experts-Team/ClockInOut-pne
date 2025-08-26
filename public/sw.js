@@ -214,13 +214,13 @@ async function navigationStrategy(request) {
     if (cachedResponse) {
       return cachedResponse;
     }
-    
+
     // Fallback to cached homepage
     const fallbackResponse = await caches.match('/');
     if (fallbackResponse) {
       return fallbackResponse;
     }
-    
+
     return new Response(`
       <!DOCTYPE html>
       <html>
@@ -254,7 +254,7 @@ async function navigationStrategy(request) {
 // Background sync for offline actions
 self.addEventListener('sync', event => {
   console.log('Service Worker: Background sync triggered:', event.tag);
-  
+
   if (event.tag === 'clock-sync') {
     event.waitUntil(syncClockData());
   }
@@ -265,7 +265,7 @@ async function syncClockData() {
   try {
     // Get pending clock actions from IndexedDB or localStorage
     const pendingActions = await getPendingClockActions();
-    
+
     for (const action of pendingActions) {
       try {
         const response = await fetch('/api/clockings', {
@@ -276,7 +276,7 @@ async function syncClockData() {
           },
           body: JSON.stringify(action)
         });
-        
+
         if (response.ok) {
           await removePendingAction(action.id);
           console.log('Synced clock action:', action);
@@ -314,7 +314,7 @@ async function getCSRFToken() {
 // Push notification handling
 self.addEventListener('push', event => {
   console.log('Service Worker: Push notification received');
-  
+
   const options = {
     body: event.data ? event.data.text() : 'New notification from PNE ClockIn',
     icon: '/icons/icon-192x192.png',
@@ -337,7 +337,7 @@ self.addEventListener('push', event => {
       }
     ]
   };
-  
+
   event.waitUntil(
     self.registration.showNotification('PNE ClockIn', options)
   );
@@ -346,9 +346,9 @@ self.addEventListener('push', event => {
 // Notification click handling
 self.addEventListener('notificationclick', event => {
   console.log('Service Worker: Notification clicked');
-  
+
   event.notification.close();
-  
+
   if (event.action === 'explore') {
     event.waitUntil(
       clients.openWindow('/')

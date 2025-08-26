@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 
 class Lease extends Model
 {
@@ -233,9 +234,8 @@ class Lease extends Model
                 if (!$this->aws || $this->aws == 0) {
                     return null;
                 }
-
-                $annualSales = $this->aws * 4; // AWS * 4 quarters
-                $annualRent = $this->total_rent;
+                $annualSales = $this->aws * 4; // AWS * 4 quarters = annual sales
+                $annualRent = $this->total_rent ;
 
                 return $annualRent / $annualSales;
             }
@@ -355,14 +355,21 @@ class Lease extends Model
     }
     public static function getScopedStatistics(array $storeNumbers = []): array
 {
-    $query = self::query();
+    $query = self::with('store');
 
-    // If specific stores are provided, filter by them
-    if (!empty($storeNumbers)) {
-        $query->whereIn('store_number', $storeNumbers);
+    if (!empty($storeNumbers) && count($storeNumbers) > 0) {
+        $storeNumbers = array_map('intval', array_filter($storeNumbers));
+        \Log::info('Filtering by store_id:', $storeNumbers);
+
+        // Changed from store_number to store_id
+        $query->whereIn('store_id', $storeNumbers);
     }
 
     $leases = $query->get();
+
+    // Debug the final result
+    Log::info('Final Query SQL:', [$query->toSql()]);
+    Log::info('Leases Found Count:', [$leases->count()]);
 
     $totals = [
         'aws' => $leases->sum('aws'),
@@ -404,6 +411,7 @@ class Lease extends Model
     $totalLeaseToSalesRatio = $totals['aws'] > 0 ? ($totals['total_rent']) / ($totals['aws'] * 4) : 0;
 
     return [
+
         'totals' => array_merge($totals, ['lease_to_sales_ratio' => $totalLeaseToSalesRatio]),
         'averages' => $averages,
         'count' => $leases->count(),

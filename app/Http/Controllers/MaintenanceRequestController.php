@@ -27,57 +27,72 @@ class MaintenanceRequestController extends Controller
             'assignedTo'
         ]);
 
-        // Filter by status if provided
-        if ($request->has('status') && $request->status !== 'all') {
-            $query->where('status', $request->status);
-        }
+        // Create a base query for status counts
+        $baseQuery = clone $query;
 
         // Filter by urgency if provided
         if ($request->has('urgency') && $request->urgency !== 'all') {
             $query->where('urgency_level_id', $request->urgency);
+            $baseQuery->where('urgency_level_id', $request->urgency);
         }
 
         // Filter by store if provided
-        if ($request->has('store_id') && $request->store_id !== 'all') {
-            $query->where('store_id', $request->store_id);
+        if ($request->has('store') && $request->store !== 'all') {
+            if ($request->store) {
+                $storeFilter = function($q) use ($request) {
+                    $q->where('store', 'LIKE', '%' . $request->store . '%')
+                        ->orWhereHas('store', function($subQ) use ($request) {
+                            $subQ->where('store_number', 'LIKE', '%' . $request->store . '%')
+                                ->orWhere('name', 'LIKE', '%' . $request->store . '%');
+                        });
+                };
+
+                $query->where($storeFilter);
+                $baseQuery->where($storeFilter);
+            }
         }
 
         // Date range filter
         if ($request->has('date_range') && $request->date_range !== 'all') {
-            switch ($request->date_range) {
-                case 'this_week':
-                    $query->whereBetween('created_at', [
-                        Carbon::now()->startOfWeek(),
-                        Carbon::now()->endOfWeek()
-                    ]);
-                    break;
-                case 'this_month':
-                    $query->whereBetween('created_at', [
-                        Carbon::now()->startOfMonth(),
-                        Carbon::now()->endOfMonth()
-                    ]);
-                    break;
-                case 'this_year':
-                    $query->whereBetween('created_at', [
-                        Carbon::now()->startOfYear(),
-                        Carbon::now()->endOfYear()
-                    ]);
-                    break;
-                case 'custom':
-                    if ($request->has('start_date') && $request->has('end_date')) {
-                        $query->whereBetween('created_at', [
-                            Carbon::parse($request->start_date)->startOfDay(),
-                            Carbon::parse($request->end_date)->endOfDay()
+            $dateFilter = function($q) use ($request) {
+                switch ($request->date_range) {
+                    case 'this_week':
+                        $q->whereBetween('created_at', [
+                            Carbon::now()->startOfWeek(),
+                            Carbon::now()->endOfWeek()
                         ]);
-                    }
-                    break;
-            }
+                        break;
+                    case 'this_month':
+                        $q->whereBetween('created_at', [
+                            Carbon::now()->startOfMonth(),
+                            Carbon::now()->endOfMonth()
+                        ]);
+                        break;
+                    case 'this_year':
+                        $q->whereBetween('created_at', [
+                            Carbon::now()->startOfYear(),
+                            Carbon::now()->endOfYear()
+                        ]);
+                        break;
+                    case 'custom':
+                        if ($request->has('start_date') && $request->has('end_date')) {
+                            $q->whereBetween('created_at', [
+                                Carbon::parse($request->start_date)->startOfDay(),
+                                Carbon::parse($request->end_date)->endOfDay()
+                            ]);
+                        }
+                        break;
+                }
+            };
+
+            $query->where($dateFilter);
+            $baseQuery->where($dateFilter);
         }
 
         // Search functionality
         if ($request->has('search') && $request->search) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $searchFilter = function($q) use ($request) {
+                $search = $request->search;
                 $q->where('store', 'like', "%{$search}%")
                     ->orWhere('description_of_issue', 'like', "%{$search}%")
                     ->orWhere('equipment_with_issue', 'like', "%{$search}%")
@@ -92,7 +107,19 @@ class MaintenanceRequestController extends Controller
                     ->orWhereHas('assignedTo', function($q) use ($search) {
                         $q->where('name', 'like', "%{$search}%");
                     });
-            });
+            };
+
+            $query->where($searchFilter);
+            $baseQuery->where($searchFilter);
+        }
+
+        // Apply status filter to main query
+        $selectedStatus = null;
+        if ($request->has('status') && $request->status !== 'all') {
+            $selectedStatus = $request->status;
+            $query->where('status', $selectedStatus);
+            // Also apply to baseQuery for consistent counting
+            $baseQuery->where('status', $selectedStatus);
         }
 
         // Sort by urgency priority and created date
@@ -105,20 +132,42 @@ class MaintenanceRequestController extends Controller
         $stores = Store::orderBy('store_number')->get();
         $users = User::where('role', 'user')->orderBy('name')->get();
 
-        $statusCounts = [
-            'all' => MaintenanceRequest::count(),
-            'on_hold' => MaintenanceRequest::where('status', 'on_hold')->count(),
-            'in_progress' => MaintenanceRequest::where('status', 'in_progress')->count(),
-            'done' => MaintenanceRequest::where('status', 'done')->count(),
-            'canceled' => MaintenanceRequest::where('status', 'canceled')->count(),
-        ];
+        // Calculate status counts based on whether status is filtered or not
+        if ($selectedStatus) {
+            // When status is filtered, show count for selected status only
+            $totalCount = $baseQuery->count();
+            $statusCounts = [
+                'all' => $totalCount,
+                'on_hold' => $selectedStatus === 'on_hold' ? $totalCount : 0,
+                'in_progress' => $selectedStatus === 'in_progress' ? $totalCount : 0,
+                'done' => $selectedStatus === 'done' ? $totalCount : 0,
+                'canceled' => $selectedStatus === 'canceled' ? $totalCount : 0,
+            ];
+        } else {
+            // When no status filter, show all status counts
+            $statusCounts = [
+                'all' => $baseQuery->count(),
+                'on_hold' => (clone $baseQuery)->where('status', 'on_hold')->count(),
+                'in_progress' => (clone $baseQuery)->where('status', 'in_progress')->count(),
+                'done' => (clone $baseQuery)->where('status', 'done')->count(),
+                'canceled' => (clone $baseQuery)->where('status', 'canceled')->count(),
+            ];
+        }
+        $urgencyLevels = UrgencyLevel::orderBy('priority_order')->get();
+        $stores = Store::orderBy('store_number')->get();
+        $users = User::where('role', 'user')->orderBy('name')->get();
 
+        // Add this line to get assigned users for filtering
+        $assignedUsers = User::whereHas('assignedMaintenanceRequests')
+            ->orderBy('name')
+            ->get();
         return view('admin.maintenance-requests.index', compact(
             'maintenanceRequests',
             'urgencyLevels',
             'stores',
             'statusCounts',
-            'users'
+            'users',
+            'assignedUsers'
         ));
     }
 
@@ -462,56 +511,62 @@ class MaintenanceRequestController extends Controller
     }
     public function ticketReport(Request $request)
     {
-        // Get the same filtered data as index
-        $query = MaintenanceRequest::with(['store', 'requester', 'assignedTo', 'urgencyLevel']);
+        try {
+            // Get the same filtered data as index
+            $query = MaintenanceRequest::with(['store', 'requester', 'assignedTo', 'urgencyLevel']);
 
-        // Apply the same filters as index
-        if ($request->filled('status') && $request->status !== 'all') {
-            $query->where('status', $request->status);
-        }
-
-        if ($request->filled('urgency') && $request->urgency !== 'all') {
-            $query->where('urgency_level_id', $request->urgency);
-        }
-
-        if ($request->filled('store') && $request->store !== 'all') {
-            $query->where('store', 'LIKE', '%' . $request->store . '%');
-        }
-
-        if ($request->filled('search')) {
-            $query->where(function ($q) use ($request) {
-                $q->where('store', 'LIKE', '%' . $request->search . '%')
-                    ->orWhere('equipment_with_issue', 'LIKE', '%' . $request->search . '%')
-                    ->orWhere('description', 'LIKE', '%' . $request->search . '%');
-            });
-        }
-
-        // Date range filters
-        if ($request->filled('date_range') && $request->date_range !== 'all') {
-            switch ($request->date_range) {
-                case 'this_week':
-                    $query->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()]);
-                    break;
-                case 'this_month':
-                    $query->whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()]);
-                    break;
-                case 'this_year':
-                    $query->whereBetween('created_at', [now()->startOfYear(), now()->endOfYear()]);
-                    break;
-                case 'custom':
-                    if ($request->filled('start_date')) {
-                        $query->whereDate('created_at', '>=', $request->start_date);
-                    }
-                    if ($request->filled('end_date')) {
-                        $query->whereDate('created_at', '<=', $request->end_date);
-                    }
-                    break;
+            // Apply the same filters as index
+            if ($request->filled('status') && $request->status !== 'all') {
+                $query->where('status', $request->status);
             }
+
+            if ($request->filled('urgency') && $request->urgency !== 'all') {
+                $query->where('urgency_level_id', $request->urgency);
+            }
+
+            if ($request->filled('store') && $request->store !== 'all') {
+                $query->where('store', 'LIKE', '%' . $request->store . '%');
+            }
+
+            if ($request->filled('search')) {
+                $query->where(function ($q) use ($request) {
+                    $q->where('store', 'LIKE', '%' . $request->search . '%')
+                        ->orWhere('equipment_with_issue', 'LIKE', '%' . $request->search . '%')
+                        ->orWhere('description_of_issue', 'LIKE', '%' . $request->search . '%');
+                });
+            }
+
+            // Date range filters
+            if ($request->filled('date_range') && $request->date_range !== 'all') {
+                switch ($request->date_range) {
+                    case 'this_week':
+                        $query->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()]);
+                        break;
+                    case 'this_month':
+                        $query->whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()]);
+                        break;
+                    case 'this_year':
+                        $query->whereBetween('created_at', [now()->startOfYear(), now()->endOfYear()]);
+                        break;
+                    case 'custom':
+                        if ($request->filled('start_date')) {
+                            $query->whereDate('created_at', '>=', $request->start_date);
+                        }
+                        if ($request->filled('end_date')) {
+                            $query->whereDate('created_at', '<=', $request->end_date);
+                        }
+                        break;
+                }
+            }
+
+            $maintenanceRequests = $query->get();
+
+            return view('admin.maintenance-requests.ticket-report', compact('maintenanceRequests'));
+
+        } catch (\Exception $e) {
+            \Log::error('Ticket Report Error: ' . $e->getMessage());
+            return response()->json(['error' => $e->getMessage()], 500);
         }
-
-        $maintenanceRequests = $query->get();
-
-        return view('admin.maintenance-requests.ticket-report', compact('maintenanceRequests'));
     }
 
 }

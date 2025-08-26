@@ -8,7 +8,22 @@
             <!-- Simple Header -->
             <div class="text-center mb-8">
                 <h1 class="text-3xl font-bold text-white bg-[#ff671b] py-4 px-8 rounded-lg inline-block mb-4">Monthly Report</h1>
-                <p class="text-gray-600">Generated on {{ now()->format('F j, Y \a\t g:i A') }}</p>
+                <p class="text-gray-600">Generated on {{ now()->format('F j, Y \\a\\t g:i A') }}</p>
+
+                <!-- Year Selector -->
+                @if(count($availableYears) > 1)
+                    <form method="GET" class="mt-4">
+                        <label for="year" class="text-sm text-gray-600 mr-2">Select Year:</label>
+                        <select name="year" id="year" onchange="this.form.submit()"
+                                class="rounded border-gray-300 text-sm">
+                            @foreach($availableYears as $year)
+                                <option value="{{ $year }}" {{ $targetYear == $year ? 'selected' : '' }}>
+                                    {{ $year }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </form>
+                @endif
             </div>
 
             <!-- Excel-like Table -->
@@ -44,37 +59,7 @@
                         </tr>
                         </thead>
                         <tbody id="monthlyReportBody">
-                        @php
-                            $monthlyData = [];
-                            $currentYear = now()->year;
-                            $availableYears = \App\Models\Payment::selectRaw('DISTINCT YEAR(date) as year')
-                                ->orderBy('year', 'desc')
-                                ->pluck('year')
-                                ->toArray();
-                            $targetYear = in_array($currentYear, $availableYears) ? $currentYear : ($availableYears[0] ?? $currentYear);
-                            for ($month = 1; $month <= 12; $month++) {
-                                $monthPayments = \App\Models\Payment::whereYear('date', $targetYear)
-                                                                  ->whereMonth('date', $month)
-                                                                  ->get();
-                                $paidAmount = $monthPayments->where('paid', true)->sum('cost');
-                                $totalAmount = $monthPayments->sum('cost');
-                                $unpaidAmount = $monthPayments->where('paid', false)->sum('cost');
-                                $paidPercentage = $totalAmount > 0 ? ($paidAmount / $totalAmount) * 100 : 0;
-                                $monthlyData[] = [
-                                    'month' => $month,
-                                    'month_name' => date('F', mktime(0, 0, 0, $month, 1)),
-                                    'paid_amount' => $paidAmount,
-                                    'total_amount' => $totalAmount,
-                                    'unpaid_amount' => $unpaidAmount,
-                                    'percentage' => $paidPercentage,
-                                    'payment_count' => $monthPayments->count()
-                                ];
-                            }
-                            $grandTotal = collect($monthlyData)->sum('paid_amount');
-                            $grandTotalAll = collect($monthlyData)->sum('total_amount');
-                            $avgPercentage = $grandTotalAll > 0 ? ($grandTotal / $grandTotalAll) * 100 : 0;
-                        @endphp
-                            <!-- Year Indicator -->
+                        <!-- Year Indicator -->
                         @if($targetYear != $currentYear)
                             <tr class="bg-yellow-50" data-row-type="indicator">
                                 <td colspan="3" class="border border-gray-300 px-6 py-2 text-center text-sm text-yellow-700">
@@ -88,14 +73,15 @@
                                 </td>
                             </tr>
                         @endif
+
                         @foreach($monthlyData as $index => $data)
                             <tr class="{{ $index % 2 == 0 ? 'bg-white' : 'bg-gray-50' }} hover:bg-[#fff4ed]" data-row-index="{{ $index }}">
                                 <td class="border border-gray-300 px-6 py-3 text-sm text-center font-medium" data-sort="{{ $data['month'] }}">
                                     <div class="flex items-center justify-center">
-                                    <span class="bg-[#fff4ed] text-[#ff671b] px-2 py-1 rounded mr-2"
-                                          style="background-color: #fff4ed !important; color: #ff671b !important; font-weight: 500;">
-                                        {{ $data['month'] }}
-                                    </span>
+                                            <span class="bg-[#fff4ed] text-[#ff671b] px-2 py-1 rounded mr-2"
+                                                  style="background-color: #fff4ed !important; color: #ff671b !important; font-weight: 500;">
+                                                {{ $data['month'] }}
+                                            </span>
                                         <span class="text-gray-600">{{ substr($data['month_name'], 0, 3) }}</span>
                                     </div>
                                     @if($data['payment_count'] > 0)
@@ -210,6 +196,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             let monthlySortDirection = {};
+
             window.sortMonthlyTable = function(columnIndex, type) {
                 const table = document.getElementById('monthlyReportTable');
                 const tbody = document.getElementById('monthlyReportBody');
@@ -269,6 +256,18 @@
                     row.className = (idx % 2 === 0 ? 'bg-white' : 'bg-gray-50') + ' hover:bg-[#fff4ed]';
                     tbody.appendChild(row);
                 });
+            };
+
+            // Close modal function
+            window.closeModal = function(modalId) {
+                const modal = document.getElementById(modalId);
+                if (modal) {
+                    modal.classList.add('hidden');
+                    document.body.style.overflow = 'auto';
+                } else {
+                    // If no modal, go back to previous page or close window
+                    window.history.back();
+                }
             };
         });
     </script>

@@ -35,9 +35,12 @@ class MaintenanceRequest extends Model
 
     protected $casts = [
         'basic_troubleshoot_done' => 'boolean',
-        'request_date' => 'date',
+        'costs' => 'decimal:2',
+        'due_date' => 'datetime',
+        'request_date' => 'datetime',
         'date_submitted' => 'datetime',
-        'costs' => 'decimal:2'
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
 
     public function assignedTo()

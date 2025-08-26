@@ -965,19 +965,75 @@
             generateScreenshot('storeImageModal', 'store-image');
         }
 
-        // Load content functions for each report
+        // Load content functions for each report - CORRECTED
         function loadCostByCompany() {
+            console.log('🔍 Starting loadCostByCompany function');
+
             fetch('{{ route("payments.cost-by-company") }}')
                 .then(response => response.text())
                 .then(html => {
+                    console.log('📝 HTML response received, length:', html.length);
+
                     const parser = new DOMParser();
                     const doc = parser.parseFromString(html, 'text/html');
-                    const content = doc.querySelector('.bg-white.shadow-lg') || doc.body;
-                    document.getElementById('costByCompanyContent').innerHTML = content ? content.outerHTML : '<p>Error loading content</p>';
+
+                    // Look for the main content container first, not navigation elements
+                    let content = null;
+
+                    // Try these selectors in order of preference
+                    const selectors = [
+                        'main',                    // Main content area
+                        '.container',              // Container div
+                        '.content',                // Content div
+                        '.report-content',         // Report specific content
+                        '[class*="report"]',       // Any element with "report" in class name
+                        '.bg-white.rounded-lg',    // Report cards
+                        '.bg-white.shadow',        // Any white card with shadow
+                        'body > div:not([role="menu"])'  // Direct body children, not menus
+                    ];
+
+                    for (let selector of selectors) {
+                        const element = doc.querySelector(selector);
+                        console.log(`Trying selector "${selector}":`, element ? 'Found' : 'Not found');
+
+                        if (element) {
+                            // Make sure it's not a navigation element
+                            const isNavigation = element.getAttribute('role') === 'menu' ||
+                                element.id === 'payments-dropdown' ||
+                                element.classList.contains('dropdown') ||
+                                element.closest('[role="menu"]');
+
+                            if (!isNavigation) {
+                                content = element;
+                                console.log(`✅ Selected content using: ${selector}`);
+                                break;
+                            } else {
+                                console.log(`❌ Skipped navigation element for: ${selector}`);
+                            }
+                        }
+                    }
+
+                    // Fallback: get the entire body but remove navigation elements
+                    if (!content) {
+                        content = doc.body.cloneNode(true);
+                        // Remove navigation dropdowns
+                        const navElements = content.querySelectorAll('[role="menu"], .dropdown, #payments-dropdown');
+                        navElements.forEach(nav => nav.remove());
+                        console.log('📦 Using cleaned body as fallback');
+                    }
+
+                    if (content) {
+                        console.log('✅ Content found, updating DOM');
+                        console.log('Content preview:', content.outerHTML.substring(0, 200));
+                        document.getElementById('costByCompanyContent').innerHTML = content.outerHTML;
+                    } else {
+                        console.log('❌ No content found');
+                        document.getElementById('costByCompanyContent').innerHTML = '<p>Error: No content found</p>';
+                    }
                 })
                 .catch(error => {
-                    console.error('Error:', error);
-                    document.getElementById('costByCompanyContent').innerHTML = '<p>Error loading content</p>';
+                    console.error('💥 Error:', error);
+                    document.getElementById('costByCompanyContent').innerHTML = `<p>Error loading content: ${error.message}</p>`;
                 });
         }
 
@@ -987,7 +1043,15 @@
                 .then(html => {
                     const parser = new DOMParser();
                     const doc = parser.parseFromString(html, 'text/html');
-                    const content = doc.querySelector('.bg-white.shadow-lg') || doc.body;
+                    let content = doc.querySelector('main') || doc.querySelector('.container') || doc.body;
+
+                    // Remove navigation elements
+                    if (content === doc.body) {
+                        content = content.cloneNode(true);
+                        const navElements = content.querySelectorAll('[role="menu"], .dropdown, #payments-dropdown');
+                        navElements.forEach(nav => nav.remove());
+                    }
+
                     document.getElementById('monthlyReportContent').innerHTML = content ? content.outerHTML : '<p>Error loading content</p>';
                 })
                 .catch(error => {
@@ -997,19 +1061,55 @@
         }
 
         function loadWeeklyMaintenance() {
-            fetch('{{ route("payments.weekly-maintenance") }}')
+            // Get current filter values from the payments page
+            const params = new URLSearchParams();
+            const form = document.getElementById('filterForm');
+
+            if (form) {
+                const formData = new FormData(form);
+                for (let [key, value] of formData.entries()) {
+                    if (value && value !== 'all' && value !== '') {
+                        params.append(key, value);
+                    }
+                }
+            }
+
+            // Debug: Log what filters are being sent
+            console.log('🔍 Filters being sent to Weekly Maintenance Report:');
+            for (let [key, value] of params.entries()) {
+                console.log(`${key}: ${value}`);
+            }
+
+            const contentDiv = document.getElementById('weeklyMaintenanceContent');
+            contentDiv.innerHTML = `
+        <div class="text-center py-12">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto"></div>
+            <p class="mt-4 text-gray-600 font-medium">Loading filtered report...</p>
+        </div>
+    `;
+
+            // Use the correct route with filters
+            fetch(`{{ route('payments.weekly-maintenance') }}?${params.toString()}`)
                 .then(response => response.text())
                 .then(html => {
                     const parser = new DOMParser();
                     const doc = parser.parseFromString(html, 'text/html');
-                    const content = doc.querySelector('.bg-white.shadow-lg') || doc.body;
-                    document.getElementById('weeklyMaintenanceContent').innerHTML = content ? content.outerHTML : '<p>Error loading content</p>';
+                    let content = doc.querySelector('main') || doc.querySelector('.container') || doc.body;
+
+                    if (content === doc.body) {
+                        content = content.cloneNode(true);
+                        const navElements = content.querySelectorAll('[role="menu"], .dropdown, #payments-dropdown');
+                        navElements.forEach(nav => nav.remove());
+                    }
+
+                    contentDiv.innerHTML = content ? content.outerHTML : '<p>Error loading content</p>';
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    document.getElementById('weeklyMaintenanceContent').innerHTML = '<p>Error loading content</p>';
+                    contentDiv.innerHTML = `<p>Error loading content: ${error.message}</p>`;
                 });
         }
+
 
         function loadCostPerStoreYearly() {
             fetch('{{ route("payments.cost-per-store-yearly") }}')
@@ -1017,7 +1117,15 @@
                 .then(html => {
                     const parser = new DOMParser();
                     const doc = parser.parseFromString(html, 'text/html');
-                    const content = doc.querySelector('.bg-white.shadow-lg') || doc.body;
+                    let content = doc.querySelector('main') || doc.querySelector('.container') || doc.body;
+
+                    // Remove navigation elements
+                    if (content === doc.body) {
+                        content = content.cloneNode(true);
+                        const navElements = content.querySelectorAll('[role="menu"], .dropdown, #payments-dropdown');
+                        navElements.forEach(nav => nav.remove());
+                    }
+
                     document.getElementById('costPerStoreYearlyContent').innerHTML = content ? content.outerHTML : '<p>Error loading content</p>';
                 })
                 .catch(error => {
@@ -1032,7 +1140,15 @@
                 .then(html => {
                     const parser = new DOMParser();
                     const doc = parser.parseFromString(html, 'text/html');
-                    const content = doc.querySelector('.bg-white.shadow-lg') || doc.body;
+                    let content = doc.querySelector('main') || doc.querySelector('.container') || doc.body;
+
+                    // Remove navigation elements
+                    if (content === doc.body) {
+                        content = content.cloneNode(true);
+                        const navElements = content.querySelectorAll('[role="menu"], .dropdown, #payments-dropdown');
+                        navElements.forEach(nav => nav.remove());
+                    }
+
                     document.getElementById('pendingProjectsContent').innerHTML = content ? content.outerHTML : '<p>Error loading content</p>';
                 })
                 .catch(error => {
@@ -1057,8 +1173,61 @@
             });
         }
 
-        // Screenshot functionality
+        // Enhanced screenshot functionality with language selection
         function generateScreenshot(modalId, type) {
+            showLanguageSelection(modalId, type);
+        }
+
+        function showLanguageSelection(modalId, type) {
+            const languageModal = document.createElement('div');
+            languageModal.id = 'languageSelectionModal';
+            languageModal.className = 'fixed inset-0 bg-black bg-opacity-50 z-[110] flex items-center justify-center';
+            languageModal.innerHTML = `
+            <div class="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+                <div class="text-center mb-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Select Language for Screenshot</h3>
+                    <p class="text-sm text-gray-600">Choose the language for your screenshot export</p>
+                </div>
+
+                <div class="space-y-3">
+                    <button onclick="proceedWithScreenshot('${modalId}', '${type}', 'en')"
+                            class="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors">
+                        <span class="text-2xl mr-3">🇺🇸</span>
+                        <span class="font-medium">English</span>
+                    </button>
+
+                    <button onclick="proceedWithScreenshot('${modalId}', '${type}', 'ar')"
+                            class="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors">
+                        <span class="text-2xl mr-3">🇸🇦</span>
+                        <span class="font-medium">العربية (Arabic)</span>
+                    </button>
+                </div>
+
+                <div class="mt-6 text-center">
+                    <button onclick="hideLanguageSelection()"
+                            class="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 focus:outline-none">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        `;
+
+            document.body.appendChild(languageModal);
+        }
+
+        function hideLanguageSelection() {
+            const languageModal = document.getElementById('languageSelectionModal');
+            if (languageModal) {
+                languageModal.remove();
+            }
+        }
+
+        function proceedWithScreenshot(modalId, type, language) {
+            hideLanguageSelection();
+
+            // Apply language-specific styling before screenshot
+            applyLanguageStyles(language, modalId);
+
             showScreenshotLoading(modalId);
 
             loadHtml2Canvas().then(html2canvas => {
@@ -1070,7 +1239,6 @@
                     return;
                 }
 
-                // Configure html2canvas options
                 const options = {
                     backgroundColor: '#ffffff',
                     scale: 2,
@@ -1080,45 +1248,116 @@
                     scrollY: 0,
                     width: contentElement.scrollWidth,
                     height: contentElement.scrollHeight,
-                    logging: false,
-                    ignoreElements: function(element) {
-                        return element.classList && element.classList.contains('screenshot-ignore');
-                    },
-                    onclone: function(clonedDoc) {
-                        clonedDoc.querySelectorAll('*').forEach(el => {
-                            const computedStyle = window.getComputedStyle(el);
-                            el.style.cssText = computedStyle.cssText;
-                        });
-                    }
+                    logging: false
                 };
 
                 html2canvas(contentElement, options).then(canvas => {
-                    // Convert canvas to blob
                     canvas.toBlob(blob => {
                         if (!blob) {
                             showScreenshotError(modalId, 'Failed to generate screenshot');
                             return;
                         }
 
-                        // Create download URL
                         const url = URL.createObjectURL(blob);
-
-                        // Generate filename based on type and current date
                         const now = new Date();
                         const dateStr = now.toISOString().split('T')[0];
-                        const timeStr = now.toLocaleTimeString('en-US', { hour12: false }).replace(/:/g, '-');
-                        const filename = `${type}-${dateStr}-${timeStr}.png`;
+                        const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-');
+                        const languageSuffix = language === 'ar' ? '-arabic' : '-english';
+                        const filename = `${type}${languageSuffix}-${dateStr}-${timeStr}.png`;
 
                         hideScreenshotLoading(modalId);
                         showScreenshotReady(modalId, url, url, filename);
+
+                        // Reset language styles after screenshot
+                        resetLanguageStyles(modalId);
                     }, 'image/png', 0.95);
                 }).catch(error => {
                     console.error('html2canvas error:', error);
                     showScreenshotError(modalId, 'Failed to capture screenshot');
+                    resetLanguageStyles(modalId);
                 });
             }).catch(error => {
                 console.error('Failed to load html2canvas:', error);
                 showScreenshotError(modalId, 'Failed to load screenshot library');
+                resetLanguageStyles(modalId);
+            });
+        }
+
+        function applyLanguageStyles(language, modalId) {
+            const contentElement = document.querySelector(`#${modalId} .modal-content`);
+            if (!contentElement) return;
+
+            if (language === 'ar') {
+                // Apply Arabic styling
+                contentElement.style.direction = 'rtl';
+                contentElement.style.textAlign = 'right';
+
+                // Update header text to Arabic based on modal type
+                const header = contentElement.querySelector('h1');
+                if (header) {
+                    header.setAttribute('data-original-text', header.textContent);
+
+                    // Set Arabic title based on modal type
+                    const arabicTitles = {
+                        'costByCompanyModal': 'تقرير التكلفة حسب الشركة',
+                        'monthlyReportModal': 'التقرير الشهري',
+                        'weeklyMaintenanceModal': 'تقرير الصيانة الأسبوعية',
+                        'costPerStoreYearlyModal': 'التكلفة لكل متجر (سنوياً)',
+                        'pendingProjectsModal': 'المشاريع المعلقة',
+                        'storeImageModal': 'صورة المتجر'
+                    };
+
+                    if (arabicTitles[modalId]) {
+                        header.textContent = arabicTitles[modalId];
+                    }
+                }
+
+                // Apply Arabic translations to common table headers and elements
+                const elementsToTranslate = {
+                    'Company Name': 'اسم الشركة',
+                    'Total Payments': 'إجمالي المدفوعات',
+                    'Total Cost': 'التكلفة الإجمالية',
+                    'Month/Year': 'الشهر/السنة',
+                    'Store': 'المتجر',
+                    'Date': 'التاريخ',
+                    'Description': 'الوصف',
+                    'Cost': 'التكلفة',
+                    'TOTAL': 'المجموع',
+                    'Generated on': 'تم الإنشاء في'
+                };
+
+                // Translate table headers and common elements
+                Object.keys(elementsToTranslate).forEach(englishText => {
+                    const elements = contentElement.querySelectorAll('th, td, p');
+                    elements.forEach(el => {
+                        if (el.textContent.includes(englishText)) {
+                            el.setAttribute('data-original-text', el.textContent);
+                            el.textContent = el.textContent.replace(englishText, elementsToTranslate[englishText]);
+                        }
+                    });
+                });
+
+            } else {
+                // English is default, reset any previous Arabic styling
+                resetLanguageStyles(modalId);
+            }
+        }
+
+        function resetLanguageStyles(modalId) {
+            const contentElement = document.querySelector(`#${modalId} .modal-content`);
+            if (!contentElement) return;
+
+            // Reset direction and text alignment
+            contentElement.style.direction = '';
+            contentElement.style.textAlign = '';
+
+            // Restore original text content
+            contentElement.querySelectorAll('[data-original-text]').forEach(element => {
+                const originalText = element.getAttribute('data-original-text');
+                if (originalText) {
+                    element.textContent = originalText;
+                    element.removeAttribute('data-original-text');
+                }
             });
         }
 
