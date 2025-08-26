@@ -11,6 +11,7 @@
                 <p class="mt-2 text-sm text-gray-600">Manage and track all maintenance requests</p>
             </div>
             <div class="mt-4 sm:mt-0 flex space-x-3">
+
                 <!-- Ticket Report Button -->
                 <button type="button" onclick="openModal('ticketReportModal')"
                         class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-all duration-300 hover:shadow-lg transform hover:scale-105">
@@ -152,15 +153,11 @@
                     <!-- Store Filter -->
                     <div>
                         <label for="store" class="block text-sm font-semibold text-gray-800 mb-2">Store</label>
-                        <select name="store" id="store" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 sm:text-sm transition-all duration-200 hover:border-gray-400 py-3 px-4">
-                            <option value="all" {{ request('store') === 'all' || !request('store') ? 'selected' : '' }}>All Stores</option>
-                            @if(isset($stores))
-                                @foreach($stores as $store)
-                                    <option value="{{ $store }}" {{ request('store') === $store ? 'selected' : '' }}>
-                                        {{ $store }}
-                                    </option>
-                                @endforeach
-                            @endif
+                        <select name="store" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 sm:text-sm transition-all duration-200 hover:border-gray-400 py-3 px-4">>
+                            <option value="all">All Stores</option>
+                            @foreach($stores as $store)
+                                <option value="{{ $store->id }}">{{ $store->store_number }} - {{ $store->name }}</option>
+                            @endforeach
                         </select>
                     </div>
 
