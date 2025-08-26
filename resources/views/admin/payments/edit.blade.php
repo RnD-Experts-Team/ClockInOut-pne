@@ -14,7 +14,7 @@
                     <div class="flex space-x-3">
                         <a href="{{ route('payments.show', $payment) }}"
                            class="form-cancel inline-flex items-center px-4 py-2 border border-orange-300 rounded-lg text-sm font-medium text-black-700 bg-white hover:bg-orange-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500">
-                            <svg class="w-4 h-4 mr- Dao21" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                             </svg>
@@ -173,17 +173,48 @@
                     </div>
                 </div>
 
-                <!-- What Got Fixed -->
+                <!-- What Got Fixed - Custom TomSelect-style Dropdown -->
                 <div>
                     <label for="what_got_fixed" class="form-label block text-sm font-medium text-black-700 mb-2">What Got Fixed</label>
-                    <select id="what_got_fixed" name="what_got_fixed"
-                            class="form-select block w-full border-orange-300 rounded-md py-2 px-3 shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm">
-                        <option value="">Select or type to add new option</option>
-                        @php $selected = old('what_got_fixed', $payment->what_got_fixed ?? ''); @endphp
-                        @foreach($fixedOptions as $option)
-                            <option value="{{ $option }}" {{ $selected == $option ? 'selected' : '' }}>{{ $option }}</option>
-                        @endforeach
-                    </select>
+
+                    <!-- Custom Dropdown Container -->
+                    <div class="custom-select-container relative">
+                        <!-- Hidden select for form submission -->
+                        <select id="what_got_fixed" name="what_got_fixed" class="hidden">
+                            <option value="">Select or type to add new option</option>
+                            @php $selected = old('what_got_fixed', $payment->what_got_fixed ?? ''); @endphp
+                            @foreach($fixedOptions as $option)
+                                <option value="{{ $option }}" {{ $selected == $option ? 'selected' : '' }}>{{ $option }}</option>
+                            @endforeach
+                        </select>
+
+                        <!-- Custom input/display -->
+                        <div class="custom-select-input relative">
+                            <input type="text"
+                                   id="custom_what_got_fixed"
+                                   class="form-field block w-full pr-10 border-orange-300 rounded-lg shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm @error('what_got_fixed') border-red-500 @enderror"
+                                   placeholder="Select or type to add new option..."
+                                   autocomplete="off">
+
+                            <!-- Dropdown arrow -->
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                <svg class="w-4 h-4 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </div>
+                        </div>
+
+                        <!-- Dropdown options -->
+                        <div class="custom-select-dropdown absolute z-50 w-full mt-1 bg-white border border-orange-300 rounded-lg shadow-lg max-h-60 overflow-auto hidden">
+                            <div class="py-1">
+                                <!-- Options will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    @error('what_got_fixed')
+                    <p class="form-error mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
                 </div>
 
                 <!-- Payment Method -->
@@ -192,16 +223,15 @@
                     <select name="payment_method" id="payment_method"
                             class="form-select block w-full border-orange-300 rounded-lg shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm">
                         <option value="">Select Payment Method</option>
-                        <option value="CC" {{ old('payment_method') === 'CC' ? 'selected' : '' }}>Credit Card (CC)</option>
-                        <option value="Cash" {{ old('payment_method') === 'Cash' ? 'selected' : '' }}>Cash</option>
-                        <option value="Check" {{ old('payment_method') === 'Check' ? 'selected' : '' }}>Check</option>
-                        <option value="ACH" {{ old('payment_method') === 'ACH' ? 'selected' : '' }}>ACH</option>
-                        <option value="Wire" {{ old('payment_method') === 'Wire' ? 'selected' : '' }}>Wire Transfer</option>
-                        <option value="Zelle" {{ old('payment_method') === 'Zelle' ? 'selected' : '' }}>Zelle</option>
-                        <option value="Bill Payment" {{ old('payment_method') === 'Bill Payment' ? 'selected' : '' }}>Bill Payment / Check</option>
-                        <option value="Paychex" {{ old('payment_method') === 'Paychex' ? 'selected' : '' }}>Paychex</option>
-                        <option value="DashCard" {{ old('payment_method') === 'DashCard' ? 'selected' : '' }}>DashCard</option>
-
+                        <option value="CC" {{ old('payment_method', $payment->payment_method) === 'CC' ? 'selected' : '' }}>Credit Card (CC)</option>
+                        <option value="Cash" {{ old('payment_method', $payment->payment_method) === 'Cash' ? 'selected' : '' }}>Cash</option>
+                        <option value="Check" {{ old('payment_method', $payment->payment_method) === 'Check' ? 'selected' : '' }}>Check</option>
+                        <option value="ACH" {{ old('payment_method', $payment->payment_method) === 'ACH' ? 'selected' : '' }}>ACH</option>
+                        <option value="Wire" {{ old('payment_method', $payment->payment_method) === 'Wire' ? 'selected' : '' }}>Wire Transfer</option>
+                        <option value="Zelle" {{ old('payment_method', $payment->payment_method) === 'Zelle' ? 'selected' : '' }}>Zelle</option>
+                        <option value="Bill Payment" {{ old('payment_method', $payment->payment_method) === 'Bill Payment' ? 'selected' : '' }}>Bill Payment / Check</option>
+                        <option value="Paychex" {{ old('payment_method', $payment->payment_method) === 'Paychex' ? 'selected' : '' }}>Paychex</option>
+                        <option value="DashCard" {{ old('payment_method', $payment->payment_method) === 'DashCard' ? 'selected' : '' }}>DashCard</option>
                     </select>
                 </div>
 
@@ -242,13 +272,11 @@
         </div>
     </div>
 
-    <!-- TomSelect CSS and JS -->
-    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.0.0/dist/css/tom-select.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.0.0/dist/js/tom-select.complete.min.js"></script>
-
-    <!-- JavaScript for store selection toggle and TomSelect -->
+    <!-- Custom Dropdown JavaScript -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('=== EDIT FORM JAVASCRIPT STARTING ===');
+
             // Store selection toggle
             const storeOptions = document.querySelectorAll('input[name="store_option"]');
             const existingStoreSection = document.getElementById('existing-store-section');
@@ -288,32 +316,235 @@
                 option.addEventListener('change', toggleStoreOptions);
             });
 
-            // Initialize on page load
             toggleStoreOptions();
 
-            // Initialize TomSelect for "What Got Fixed"
-            new TomSelect('#what_got_fixed', {
-                create: true,
-                placeholder: 'Start typing to select or add new option',
-                sortField: {
-                    field: "text",
-                    direction: "asc"
-                },
-                render: {
-                    option: function(data, escape) {
-                        return '<div class="flex items-center">' + escape(data.text) + '</div>';
-                    },
-                    item: function(data, escape) {
-                        return '<div>' + escape(data.text) + '</div>';
+            // CUSTOM TOMSELECT-STYLE DROPDOWN FOR "WHAT GOT FIXED"
+            console.log('Setting up custom dropdown...');
+
+            const hiddenSelect = document.getElementById('what_got_fixed');
+            const customInput = document.getElementById('custom_what_got_fixed');
+            const dropdown = document.querySelector('.custom-select-dropdown');
+            const dropdownContent = dropdown.querySelector('.py-1');
+
+            if (!hiddenSelect || !customInput || !dropdown) {
+                console.error('❌ Custom dropdown elements not found');
+                return;
+            }
+
+            let options = [];
+            let filteredOptions = [];
+            let selectedIndex = -1;
+
+            // Load initial options from the select element
+            function loadInitialOptions() {
+                options = [];
+                Array.from(hiddenSelect.options).forEach(option => {
+                    if (option.value) { // Skip empty option
+                        options.push({
+                            value: option.value,
+                            text: option.textContent,
+                            selected: option.selected
+                        });
                     }
-                },
-                onInitialize: function() {
-                    // Force show placeholder if no value is selected
-                    if(!this.getValue()) {
-                        this.inputState();
+                });
+
+                // Set initial value if there's a selected option
+                const selectedOption = options.find(opt => opt.selected);
+                if (selectedOption) {
+                    customInput.value = selectedOption.text;
+                    hiddenSelect.value = selectedOption.value;
+                }
+
+                console.log('✅ Loaded', options.length, 'initial options');
+            }
+
+            // Render options in dropdown
+            function renderOptions(optionsToRender = options) {
+                dropdownContent.innerHTML = '';
+                filteredOptions = optionsToRender;
+
+                if (filteredOptions.length === 0) {
+                    // Show "Add new" option when no matches
+                    const addNewDiv = document.createElement('div');
+                    addNewDiv.className = 'px-3 py-2 text-orange-600 cursor-pointer hover:bg-orange-50 font-medium';
+                    addNewDiv.innerHTML = `<strong>+ Add:</strong> "${customInput.value.trim()}"`;
+                    addNewDiv.addEventListener('click', () => {
+                        selectNewOption(customInput.value.trim());
+                    });
+                    dropdownContent.appendChild(addNewDiv);
+                } else {
+                    // Render existing options
+                    filteredOptions.forEach((option, index) => {
+                        const optionDiv = document.createElement('div');
+                        optionDiv.className = 'px-3 py-2 cursor-pointer hover:bg-orange-50 text-sm';
+                        optionDiv.textContent = option.text;
+                        optionDiv.addEventListener('click', () => {
+                            selectOption(option);
+                        });
+                        dropdownContent.appendChild(optionDiv);
+                    });
+
+                    // Add "Add new" option if user is typing something new
+                    const inputValue = customInput.value.trim();
+                    if (inputValue && !filteredOptions.some(opt => opt.text.toLowerCase() === inputValue.toLowerCase())) {
+                        const addNewDiv = document.createElement('div');
+                        addNewDiv.className = 'px-3 py-2 text-orange-600 cursor-pointer hover:bg-orange-50 font-medium border-t border-gray-200';
+                        addNewDiv.innerHTML = `<strong>+ Add:</strong> "${inputValue}"`;
+                        addNewDiv.addEventListener('click', () => {
+                            selectNewOption(inputValue);
+                        });
+                        dropdownContent.appendChild(addNewDiv);
                     }
                 }
+
+                selectedIndex = -1; // Reset selection
+            }
+
+            // Filter options based on input
+            function filterOptions(searchTerm) {
+                if (!searchTerm) {
+                    return options;
+                }
+
+                return options.filter(option =>
+                    option.text.toLowerCase().includes(searchTerm.toLowerCase())
+                );
+            }
+
+            // Select an existing option
+            function selectOption(option) {
+                customInput.value = option.text;
+                hiddenSelect.value = option.value;
+                closeDropdown();
+                console.log('✅ Selected option:', option.text);
+            }
+
+            // Select/create a new option
+            function selectNewOption(text) {
+                if (!text) return;
+
+                // Add to options array
+                const newOption = { value: text, text: text, selected: false };
+                options.push(newOption);
+
+                // Add to hidden select
+                const newSelectOption = document.createElement('option');
+                newSelectOption.value = text;
+                newSelectOption.textContent = text;
+                newSelectOption.selected = true;
+                hiddenSelect.appendChild(newSelectOption);
+
+                // Set values
+                customInput.value = text;
+                hiddenSelect.value = text;
+                closeDropdown();
+
+                console.log('✅ Added new option:', text);
+            }
+
+            // Open dropdown
+            function openDropdown() {
+                const filteredOpts = filterOptions(customInput.value);
+                renderOptions(filteredOpts);
+                dropdown.classList.remove('hidden');
+                console.log('Dropdown opened');
+            }
+
+            // Close dropdown
+            function closeDropdown() {
+                dropdown.classList.add('hidden');
+                selectedIndex = -1;
+                console.log('Dropdown closed');
+            }
+
+            // Event listeners
+            customInput.addEventListener('focus', () => {
+                openDropdown();
             });
+
+            customInput.addEventListener('input', (e) => {
+                const filteredOpts = filterOptions(e.target.value);
+                renderOptions(filteredOpts);
+
+                if (dropdown.classList.contains('hidden')) {
+                    openDropdown();
+                }
+            });
+
+            customInput.addEventListener('keydown', (e) => {
+                const visibleOptions = dropdownContent.children;
+
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    selectedIndex = Math.min(selectedIndex + 1, visibleOptions.length - 1);
+                    updateHighlight();
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    selectedIndex = Math.max(selectedIndex - 1, 0);
+                    updateHighlight();
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (selectedIndex >= 0 && visibleOptions[selectedIndex]) {
+                        visibleOptions[selectedIndex].click();
+                    } else if (customInput.value.trim()) {
+                        selectNewOption(customInput.value.trim());
+                    }
+                } else if (e.key === 'Escape') {
+                    closeDropdown();
+                }
+            });
+
+            // Update keyboard navigation highlight
+            function updateHighlight() {
+                const visibleOptions = dropdownContent.children;
+                Array.from(visibleOptions).forEach((opt, index) => {
+                    if (index === selectedIndex) {
+                        opt.classList.add('bg-orange-100');
+                    } else {
+                        opt.classList.remove('bg-orange-100');
+                    }
+                });
+            }
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.custom-select-container')) {
+                    closeDropdown();
+                }
+            });
+
+            // Initialize
+            loadInitialOptions();
+            console.log('✅ Custom dropdown initialized');
+
+            // Form submission handler
+            const form = document.querySelector('form');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    console.log('Form submitting...');
+                    console.log('What Got Fixed value:', hiddenSelect.value);
+
+                    // Validation
+                    const storeOption = document.querySelector('input[name="store_option"]:checked').value;
+                    if (storeOption === 'existing' && !document.getElementById('store_id').value) {
+                        e.preventDefault();
+                        alert('Please select a store.');
+                        return false;
+                    }
+                    if (storeOption === 'new' && !document.getElementById('new_store_number').value.trim()) {
+                        e.preventDefault();
+                        alert('Please enter a store number.');
+                        return false;
+                    }
+                    if (storeOption === 'manual' && !document.getElementById('store').value.trim()) {
+                        e.preventDefault();
+                        alert('Please enter a store.');
+                        return false;
+                    }
+                });
+            }
+
+            console.log('=== EDIT FORM JAVASCRIPT COMPLETE ===');
         });
     </script>
 @endsection
