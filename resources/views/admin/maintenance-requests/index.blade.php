@@ -11,6 +11,7 @@
                 <p class="mt-2 text-sm text-gray-600">Manage and track all maintenance requests</p>
             </div>
             <div class="mt-4 sm:mt-0 flex space-x-3">
+
                 <!-- Ticket Report Button -->
                 <button type="button" onclick="openModal('ticketReportModal')"
                         class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-all duration-300 hover:shadow-lg transform hover:scale-105">
