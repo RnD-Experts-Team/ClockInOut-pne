@@ -36,22 +36,42 @@ class MaintenanceRequestController extends Controller
             $baseQuery->where('urgency_level_id', $request->urgency);
         }
 
-        // Filter by store if provided
+        // Filter by store if provided - FIXED VERSION
         if ($request->has('store') && $request->store !== 'all') {
             if ($request->store) {
-                $storeFilter = function($q) use ($request) {
-                    $q->where('store', 'LIKE', '%' . $request->store . '%')
-                        ->orWhereHas('store', function($subQ) use ($request) {
-                            $subQ->where('store_number', 'LIKE', '%' . $request->store . '%')
-                                ->orWhere('name', 'LIKE', '%' . $request->store . '%');
+                // Try to parse as JSON first (if it's coming as object)
+                $storeValue = $request->store;
+                if (is_string($storeValue) && str_starts_with($storeValue, '{')) {
+                    $storeData = json_decode($storeValue, true);
+                    $storeId = $storeData['id'] ?? null;
+                } else {
+                    $storeId = is_numeric($storeValue) ? $storeValue : null;
+                }
+
+                if ($storeId) {
+                    $storeFilter = function($q) use ($storeId, $storeValue) {
+                        $q->where('store_id', $storeId)
+                            ->orWhereHas('store', function($subQ) use ($storeValue) {
+                                $subQ->where('store_number', 'LIKE', '%' . $storeValue . '%')
+                                    ->orWhere('name', 'LIKE', '%' . $storeValue . '%');
+                            });
+                    };
+                } else {
+                    // Fallback for text-based search
+                    $storeFilter = function($q) use ($storeValue) {
+                        $q->whereHas('store', function($subQ) use ($storeValue) {
+                            $subQ->where('store_number', 'LIKE', '%' . $storeValue . '%')
+                                ->orWhere('name', 'LIKE', '%' . $storeValue . '%');
                         });
-                };
+                    };
+                }
 
                 $query->where($storeFilter);
                 $baseQuery->where($storeFilter);
             }
         }
 
+        // Rest of your filters remain the same...
         // Date range filter
         if ($request->has('date_range') && $request->date_range !== 'all') {
             $dateFilter = function($q) use ($request) {
@@ -93,8 +113,7 @@ class MaintenanceRequestController extends Controller
         if ($request->has('search') && $request->search) {
             $searchFilter = function($q) use ($request) {
                 $search = $request->search;
-                $q->where('store', 'like', "%{$search}%")
-                    ->orWhere('description_of_issue', 'like', "%{$search}%")
+                $q->where('description_of_issue', 'like', "%{$search}%")
                     ->orWhere('equipment_with_issue', 'like', "%{$search}%")
                     ->orWhere('entry_number', 'like', "%{$search}%")
                     ->orWhereHas('requester', function($q) use ($search) {
@@ -118,7 +137,6 @@ class MaintenanceRequestController extends Controller
         if ($request->has('status') && $request->status !== 'all') {
             $selectedStatus = $request->status;
             $query->where('status', $selectedStatus);
-            // Also apply to baseQuery for consistent counting
             $baseQuery->where('status', $selectedStatus);
         }
 
@@ -132,9 +150,8 @@ class MaintenanceRequestController extends Controller
         $stores = Store::orderBy('store_number')->get();
         $users = User::where('role', 'user')->orderBy('name')->get();
 
-        // Calculate status counts based on whether status is filtered or not
+        // Calculate status counts (rest remains the same)...
         if ($selectedStatus) {
-            // When status is filtered, show count for selected status only
             $totalCount = $baseQuery->count();
             $statusCounts = [
                 'all' => $totalCount,
@@ -144,7 +161,6 @@ class MaintenanceRequestController extends Controller
                 'canceled' => $selectedStatus === 'canceled' ? $totalCount : 0,
             ];
         } else {
-            // When no status filter, show all status counts
             $statusCounts = [
                 'all' => $baseQuery->count(),
                 'on_hold' => (clone $baseQuery)->where('status', 'on_hold')->count(),
@@ -153,14 +169,11 @@ class MaintenanceRequestController extends Controller
                 'canceled' => (clone $baseQuery)->where('status', 'canceled')->count(),
             ];
         }
-        $urgencyLevels = UrgencyLevel::orderBy('priority_order')->get();
-        $stores = Store::orderBy('store_number')->get();
-        $users = User::where('role', 'user')->orderBy('name')->get();
 
-        // Add this line to get assigned users for filtering
         $assignedUsers = User::whereHas('assignedMaintenanceRequests')
             ->orderBy('name')
             ->get();
+
         return view('admin.maintenance-requests.index', compact(
             'maintenanceRequests',
             'urgencyLevels',

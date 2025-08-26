@@ -152,15 +152,11 @@
                     <!-- Store Filter -->
                     <div>
                         <label for="store" class="block text-sm font-semibold text-gray-800 mb-2">Store</label>
-                        <select name="store" id="store" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 sm:text-sm transition-all duration-200 hover:border-gray-400 py-3 px-4">
-                            <option value="all" {{ request('store') === 'all' || !request('store') ? 'selected' : '' }}>All Stores</option>
-                            @if(isset($stores))
-                                @foreach($stores as $store)
-                                    <option value="{{ $store }}" {{ request('store') === $store ? 'selected' : '' }}>
-                                        {{ $store }}
-                                    </option>
-                                @endforeach
-                            @endif
+                        <select name="store" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 sm:text-sm transition-all duration-200 hover:border-gray-400 py-3 px-4">>
+                            <option value="all">All Stores</option>
+                            @foreach($stores as $store)
+                                <option value="{{ $store->id }}">{{ $store->store_number }} - {{ $store->name }}</option>
+                            @endforeach
                         </select>
                     </div>
 
