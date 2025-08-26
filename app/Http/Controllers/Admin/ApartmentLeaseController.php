@@ -20,10 +20,13 @@ class ApartmentLeaseController extends Controller
     {
         $query = ApartmentLease::with('store');
 
+        // Create a base query for stats calculation
+        $baseQuery = clone $query;
+
         // Search functionality
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function ($q) use ($search) {
+            $searchFilter = function ($q) use ($search) {
                 $q->where('store_number', 'like', "%{$search}%")
                     ->orWhere('apartment_address', 'like', "%{$search}%")
                     ->orWhere('lease_holder', 'like', "%{$search}%")
@@ -32,38 +35,121 @@ class ApartmentLeaseController extends Controller
                         $q->where('store_number', 'like', "%{$search}%")
                             ->orWhere('name', 'like', "%{$search}%");
                     });
-            });
+            };
+
+            $query->where($searchFilter);
+            $baseQuery->where($searchFilter);
         }
 
         // Family filter
         if ($request->filled('family_filter') && $request->family_filter !== 'all') {
-            if ($request->family_filter === 'yes') {
-                $query->whereIn('is_family', ['Yes', 'yes']);
-            } elseif ($request->family_filter === 'no') {
-                $query->whereIn('is_family', ['No', 'no']);
-            }
+            $familyFilter = function ($q) use ($request) {
+                if ($request->family_filter === 'yes') {
+                    $q->whereIn('is_family', ['Yes', 'yes']);
+                } elseif ($request->family_filter === 'no') {
+                    $q->whereIn('is_family', ['No', 'no']);
+                }
+            };
+
+            $query->where($familyFilter);
+            $baseQuery->where($familyFilter);
         }
 
         // Car filter
         if ($request->filled('car_filter') && $request->car_filter !== 'all') {
-            if ($request->car_filter === 'with_car') {
-                $query->where('has_car', '>', 0);
-            } elseif ($request->car_filter === 'no_car') {
-                $query->where('has_car', '=', 0);
-            }
+            $carFilter = function ($q) use ($request) {
+                if ($request->car_filter === 'with_car') {
+                    $q->where('has_car', '>', 0);
+                } elseif ($request->car_filter === 'no_car') {
+                    $q->where('has_car', '=', 0);
+                }
+            };
+
+            $query->where($carFilter);
+            $baseQuery->where($carFilter);
         }
 
         // Store filter
         if ($request->filled('store_id') && $request->store_id !== 'all') {
-            $query->where('store_id', $request->store_id);
+            $storeFilter = function ($q) use ($request) {
+                $q->where('store_id', $request->store_id);
+            };
+
+            $query->where($storeFilter);
+            $baseQuery->where($storeFilter);
+        }
+
+        // Date range filter for expiration dates
+        if ($request->has('date_range') && $request->date_range !== 'all') {
+            $dateFilter = function($q) use ($request) {
+                switch ($request->date_range) {
+                    case 'expiring_this_month':
+                        $q->whereMonth('expiration_date', Carbon::now()->month)
+                            ->whereYear('expiration_date', Carbon::now()->year);
+                        break;
+                    case 'expiring_next_month':
+                        $nextMonth = Carbon::now()->addMonth();
+                        $q->whereMonth('expiration_date', $nextMonth->month)
+                            ->whereYear('expiration_date', $nextMonth->year);
+                        break;
+                    case 'expiring_3_months':
+                        $q->whereBetween('expiration_date', [
+                            Carbon::now()->startOfDay(),
+                            Carbon::now()->addMonths(3)->endOfDay()
+                        ]);
+                        break;
+                    case 'expired':
+                        $q->where('expiration_date', '<', Carbon::now()->startOfDay());
+                        break;
+                    case 'custom':
+                        if ($request->has('start_date') && $request->has('end_date')) {
+                            $q->whereBetween('expiration_date', [
+                                Carbon::parse($request->start_date)->startOfDay(),
+                                Carbon::parse($request->end_date)->endOfDay()
+                            ]);
+                        }
+                        break;
+                }
+            };
+
+            $query->where($dateFilter);
+            $baseQuery->where($dateFilter);
         }
 
         $leases = $query->orderBy('store_number')->paginate(15)->withQueryString();
 
-        $stats = $this->calculateStats();
+        // Calculate filtered stats using baseQuery
+        $stats = $this->calculateFilteredStats($baseQuery);
+
         $stores = Store::orderBy('store_number')->get();
 
         return view('admin.apartment-leases.index', compact('leases', 'stats', 'stores'));
+    }
+    private function calculateFilteredStats($query)
+    {
+        $total = $query->count();
+        $totalMonthlyRent = $query->sum(DB::raw('rent + COALESCE(utilities, 0)'));
+        $families = $query->whereIn('is_family', ['Yes', 'yes'])->count();
+        $totalCars = $query->sum('has_car');
+        $totalAT = $query->sum('number_of_AT');
+        $expiringSoon = $query->whereBetween('expiration_date', [now(), now()->addMonth()])->count();
+
+        return [
+            'total' => $total,
+            'families' => $families,
+            'total_cars' => $totalCars,
+            'expiring_soon' => $expiringSoon,
+            'total_monthly_rent' => $totalMonthlyRent,
+            'average_rent' => $total > 0 ? $totalMonthlyRent / $total : 0,
+            'total_at' => $totalAT,
+            'average_at' => $total > 0 ? $totalAT / $total : 0,
+            'occupancy_rate' => $total > 0 ? 100 : 0,
+            'expiring_this_month' => $query->whereMonth('expiration_date', now()->month)
+                ->whereYear('expiration_date', now()->year)->count(),
+            'expiring_next_month' => $query->whereMonth('expiration_date', now()->addMonth()->month)
+                ->whereYear('expiration_date', now()->addMonth()->year)->count(),
+            'expiring_next_3_months' => $query->whereBetween('expiration_date', [now(), now()->addMonths(3)])->count(),
+        ];
     }
 
     public function create()

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\MaintenanceRequest;
 use App\Models\Payment;
 use App\Models\Company;
 use App\Models\Store;
@@ -9,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class PaymentController extends Controller
 {
@@ -497,7 +499,7 @@ class PaymentController extends Controller
 
             return view('admin.payments.reports.store-image', compact('store', 'grouped', 'grandTotal'));
         } catch (\Exception $e) {
-            \Log::error('Store Image Error: ' . $e->getMessage());
+
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
@@ -508,15 +510,203 @@ class PaymentController extends Controller
         return view('admin.payments.reports.cost-by-company');
     }
 
-    public function monthlyReport()
+    public function monthlyReport(Request $request)
     {
-        return view('admin.payments.reports.monthly-report');
+        // Get available years from your payment data
+        $availableYears = Payment::selectRaw('DISTINCT YEAR(date) as year')
+            ->whereNotNull('date')
+            ->orderBy('year', 'desc')
+            ->pluck('year')
+            ->toArray();
+
+        // Use the most recent year with data, or current year
+        $currentYear = now()->year;
+        $targetYear = $request->get('year', $availableYears[0] ?? $currentYear);
+
+        $monthlyData = [];
+
+        for ($month = 1; $month <= 12; $month++) {
+            $monthPayments = Payment::whereYear('date', $targetYear)
+                ->whereMonth('date', $month)
+                ->get();
+
+            $paidAmount = $monthPayments->where('paid', true)->sum('cost');
+            $totalAmount = $monthPayments->sum('cost');
+            $unpaidAmount = $monthPayments->where('paid', false)->sum('cost');
+            $paidPercentage = $totalAmount > 0 ? ($paidAmount / $totalAmount) * 100 : 0;
+
+            $monthlyData[] = [
+                'month' => $month,
+                'month_name' => date('F', mktime(0, 0, 0, $month, 1)),
+                'paid_amount' => $paidAmount,
+                'total_amount' => $totalAmount,
+                'unpaid_amount' => $unpaidAmount,
+                'percentage' => $paidPercentage,
+                'payment_count' => $monthPayments->count()
+            ];
+        }
+
+        $grandTotal = collect($monthlyData)->sum('paid_amount');
+        $grandTotalAll = collect($monthlyData)->sum('total_amount');
+        $avgPercentage = $grandTotalAll > 0 ? ($grandTotal / $grandTotalAll) * 100 : 0;
+
+        return view('admin.payments.reports.monthly-report', compact(
+            'monthlyData',
+            'targetYear',
+            'currentYear',
+            'grandTotal',
+            'grandTotalAll',
+            'avgPercentage',
+            'availableYears'
+        ));
+    }
+    public function weeklyMaintenanceReport(Request $request)
+    {
+        // Get filter parameters
+        $dateFrom = $request->query('date_from');
+        $dateTo = $request->query('date_to');
+        $companyId = $request->query('company_id');
+        $paid = $request->query('paid');
+        $maintenanceType = $request->query('maintenance_type');
+
+        // Base query
+        $query = Payment::with(['company', 'store']);
+
+        // Apply date filters (most important)
+        if ($dateFrom) {
+            $query->whereDate('date', '>=', $dateFrom);
+        }
+        if ($dateTo) {
+            $query->whereDate('date', '<=', $dateTo);
+        }
+
+        // Apply other filters
+        if ($companyId && $companyId !== 'all') {
+            $query->where('company_id', $companyId);
+        }
+
+        if ($paid && $paid !== 'all') {
+            $query->where('paid', $paid === '1');
+        }
+
+        if ($maintenanceType && $maintenanceType !== 'all') {
+            $query->where('maintenance_type', $maintenanceType);
+        }
+
+        // Get filtered payments
+        $filteredPayments = $query->get();
+
+        // Debug: Log the query results
+        \Log::info('Filtered payments count: ' . $filteredPayments->count());
+        \Log::info('Sample payment: ', $filteredPayments->first()?->toArray() ?? ['no data']);
+
+        // FIXED: Handle stores properly - check if store_id exists but store is null
+        $stores = collect();
+
+        foreach ($filteredPayments as $payment) {
+            if ($payment->store && $payment->store->store_number) {
+                // Store relationship exists and has store_number
+                $stores->push($payment->store->store_number);
+            } elseif ($payment->store_id) {
+                // Store ID exists but relationship might be null - use ID as fallback
+                $stores->push("Store-" . $payment->store_id);
+            } else {
+                // No store relationship - use a generic identifier
+                $stores->push("Unknown Store");
+            }
+        }
+
+        $stores = $stores->unique()->filter()->sort();
+
+        // Group by store for the report
+        $storeData = [];
+        $totalWeeklyCost = 0;
+        $totalMonthlyCost = 0;
+        $totalEquipmentCost = 0;
+        $totalServiceCost = 0;
+        $totalFourWeeksCost = 0;
+        $totalNinetyDaysCost = 0;
+
+        foreach ($stores as $store) {
+            $storePayments = $filteredPayments->filter(function($payment) use ($store) {
+                if ($payment->store && is_object($payment->store)) {
+                    return $payment->store->store_number === $store;
+                } elseif ($payment->store_id) {
+                    return "Store-" . $payment->store_id === $store;
+                } else {
+                    return $store === "Unknown Store";
+                }
+            });
+
+            // Main filtered period cost
+            $totalCost = $storePayments->sum('cost');
+            $equipmentCost = $storePayments->where('maintenance_type', 'Equipment/Parts')->sum('cost');
+            $serviceCost = $storePayments->where('maintenance_type', 'Service')->sum('cost');
+
+            // Additional time period calculations
+            $thisMonthPayments = $storePayments->filter(function($payment) {
+                return $payment->date->isCurrentMonth();
+            });
+
+            $fourWeeksPayments = $storePayments->filter(function($payment) {
+                return $payment->date >= now()->subWeeks(4);
+            });
+
+            $ninetyDaysPayments = $storePayments->filter(function($payment) {
+                return $payment->date >= now()->subDays(90);
+            });
+
+            $storeData[] = [
+                'store' => $store,
+                'total_cost' => $totalCost,
+                'equipment_cost' => $equipmentCost,
+                'service_cost' => $serviceCost,
+                'this_month_cost' => $thisMonthPayments->sum('cost'),
+                'four_weeks_cost' => $fourWeeksPayments->sum('cost'),
+                'ninety_days_cost' => $ninetyDaysPayments->sum('cost'),
+            ];
+
+            $totalWeeklyCost += $totalCost;
+            $totalMonthlyCost += $thisMonthPayments->sum('cost');
+            $totalEquipmentCost += $equipmentCost;
+            $totalServiceCost += $serviceCost;
+            $totalFourWeeksCost += $fourWeeksPayments->sum('cost');
+            $totalNinetyDaysCost += $ninetyDaysPayments->sum('cost');
+        }
+
+        // FIXED: Set week and year based on filter dates, not current
+        if ($dateFrom) {
+            $currentWeek = \Carbon\Carbon::parse($dateFrom)->weekOfYear;
+            $targetYear = \Carbon\Carbon::parse($dateFrom)->year;
+        } else {
+            $currentWeek = now()->weekOfYear;
+            $targetYear = now()->year;
+        }
+
+        // Get available years
+        $availableYears = Payment::selectRaw('YEAR(date) as year')
+            ->distinct()
+            ->orderBy('year', 'desc')
+            ->pluck('year');
+
+        return view('admin.payments.reports.weekly-maintenance', compact(
+            'stores',
+            'storeData',
+            'currentWeek',
+            'targetYear',
+            'totalWeeklyCost',
+            'totalMonthlyCost',
+            'totalEquipmentCost',
+            'totalServiceCost',
+            'totalFourWeeksCost',
+            'totalNinetyDaysCost',
+            'availableYears'
+        ));
     }
 
-    public function weeklyMaintenanceReport()
-    {
-        return view('admin.payments.reports.weekly-maintenance');
-    }
+
+
+
 
     public function costPerStoreYearlyReport()
     {

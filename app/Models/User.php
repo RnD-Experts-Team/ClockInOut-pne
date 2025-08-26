@@ -27,4 +27,9 @@ class User extends Authenticatable
 {
     return $this->hasMany(Clocking::class, 'user_id');
 }
+    public function assignedMaintenanceRequests()
+    {
+        return $this->hasMany(MaintenanceRequest::class, 'assigned_to');
+    }
+
 }

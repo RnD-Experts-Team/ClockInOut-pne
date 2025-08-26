@@ -228,59 +228,6 @@
         </div>
 
         <!-- Enhanced Bulk Actions -->
-        <form id="bulkForm" method="POST" action="{{ route('maintenance-requests.bulk-update-status') }}">
-            @csrf
-            @method('PATCH')
-            <div class="bg-white shadow-lg rounded-xl p-6 mb-6 border border-gray-200">
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <!-- Bulk Status -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Bulk Status Update</label>
-                        <select name="status" class="bulk-status-select block w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm" required>
-                            <option value="">Select Status</option>
-                            <option value="on_hold">On Hold</option>
-                            <option value="in_progress">In Progress</option>
-                            <option value="done">Done</option>
-                            <option value="canceled">Canceled</option>
-                        </select>
-                    </div>
-
-                    <!-- Assigned To (when in_progress) -->
-                    <div class="bulk-assigned-to-field" style="display: none;">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Assigned To *</label>
-                        <select name="assigned_to" id="assigned_to" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm">
-                            <option value="">Select User</option>
-                            @foreach($users as $user)
-                                <option value="{{ $user->id }}">{{ $user->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <!-- Due Date (when in_progress) -->
-                    <div class="bulk-due-date-field" style="display: none;">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Due Date</label>
-                        <input type="date" name="due_date" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm">
-                    </div>
-
-                    <!-- Costs (when done) -->
-                    <div class="bulk-costs-field" style="display: none;">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Costs *</label>
-                        <input type="number" name="costs" step="0.01" min="0" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm" placeholder="0.00">
-                    </div>
-
-                    <!-- Update Button -->
-                    <div class="flex items-end">
-                        <button type="submit" id="bulkBtn" disabled
-                                class="w-full inline-flex justify-center items-center px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105">
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                            </svg>
-                            Update Selected
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </form>
 
         <!-- Enhanced Requests Table -->
         <div class="bg-white shadow-xl rounded-xl overflow-hidden border border-gray-200">
@@ -423,23 +370,25 @@
                                     @if($request->assignedTo)
                                         <div class="flex items-center">
                                             <div class="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center mr-2">
-                                                <span class="text-xs font-medium text-white">
-                                                    {{ substr($request->assignedTo->first_name, 0, 1) }}{{ substr($request->assignedTo->last_name, 0, 1) }}
-                                                </span>
+                <span class="text-xs font-medium text-white">
+                    {{ substr($request->assignedTo->name, 0, 1) }}
+                </span>
                                             </div>
-                                            <span class="font-medium">{{ $request->assignedTo->first_name }} {{ $request->assignedTo->last_name }}</span>
+                                            <span class="font-medium">{{ $request->assignedTo->name }}</span>
                                         </div>
                                     @else
                                         <span class="text-gray-400 italic">Not Assigned</span>
                                     @endif
-                                </td>
-                                <td class="px-4 py-4 text-sm text-gray-600">
+                                </td>                                <td class="px-4 py-4 text-sm text-gray-600">
                                     @if($request->due_date)
                                         <div class="flex items-center">
                                             <svg class="w-4 h-4 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                                             </svg>
-                                            <span class="font-medium">{{ $request->due_date->format('M d, Y') }}</span>
+                                            <span class="font-medium">{{ $request->due_date ?
+   (is_string($request->due_date) ? $request->due_date : $request->due_date->format('M d, Y'))
+   : 'N/A' }}</span>
+
                                         </div>
                                     @else
                                         <span class="text-gray-400">N/A</span>
@@ -478,8 +427,6 @@
                                     <div class="flex space-x-2">
                                         <a href="{{ route('maintenance-requests.show', $request) }}"
                                            class="text-blue-600 hover:text-blue-900 font-medium hover:underline transition-colors">View</a>
-                                        <button type="button" onclick="openStatusModal({{ $request->id }})"
-                                                class="text-orange-600 hover:text-orange-900 font-medium hover:underline transition-colors">Edit</button>
                                         <form action="{{ route('maintenance-requests.destroy', $request) }}" method="POST" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this request?')">
                                             @csrf
                                             @method('DELETE')
@@ -604,7 +551,7 @@
                 });
             }
 
-            // Ticket Report Modal functionality
+            // Enhanced Modal functionality
             window.openModal = function(modalId) {
                 const modal = document.getElementById(modalId);
                 if (modal) {
@@ -664,14 +611,6 @@
                                     el.style.color = el.style.color || 'inherit';
                                 }
                             });
-
-                            // Fix table layout for screenshots
-                            // const table = contentDiv.querySelector('table');
-                            // if (table) {
-                            //     table.style.tableLayout = 'fixed';
-                            //     table.style.width = '100%';
-                            //     table.style.borderCollapse = 'collapse';
-                            // }
                         }, 300);
                     })
                     .catch(error => {
@@ -790,7 +729,7 @@
             });
         }
 
-        // FIXED Screenshot functionality
+        // Enhanced Screenshot functionality with Arabic language selection
         function generateScreenshot(modalId, type) {
             const contentDiv = document.getElementById('ticketReportContent');
 
@@ -806,6 +745,60 @@
                 return;
             }
 
+            // Show language selection modal
+            showLanguageSelection(modalId, type);
+        }
+
+        function showLanguageSelection(modalId, type) {
+            const languageModal = document.createElement('div');
+            languageModal.id = 'languageSelectionModal';
+            languageModal.className = 'fixed inset-0 bg-black bg-opacity-50 z-[110] flex items-center justify-center';
+            languageModal.innerHTML = `
+            <div class="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+                <div class="text-center mb-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Select Language for Screenshot</h3>
+                    <p class="text-sm text-gray-600">Choose the language for your screenshot export</p>
+                </div>
+
+                <div class="space-y-3">
+                    <button onclick="proceedWithScreenshot('${modalId}', '${type}', 'en')"
+                            class="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors">
+                        <span class="text-2xl mr-3">🇺🇸</span>
+                        <span class="font-medium">English</span>
+                    </button>
+
+                    <button onclick="proceedWithScreenshot('${modalId}', '${type}', 'ar')"
+                            class="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors">
+                        <span class="text-2xl mr-3">🇸🇦</span>
+                        <span class="font-medium">العربية (Arabic)</span>
+                    </button>
+                </div>
+
+                <div class="mt-6 text-center">
+                    <button onclick="hideLanguageSelection()"
+                            class="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 focus:outline-none">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        `;
+
+            document.body.appendChild(languageModal);
+        }
+
+        function hideLanguageSelection() {
+            const languageModal = document.getElementById('languageSelectionModal');
+            if (languageModal) {
+                languageModal.remove();
+            }
+        }
+
+        function proceedWithScreenshot(modalId, type, language) {
+            hideLanguageSelection();
+
+            // Apply language-specific styling before screenshot
+            applyLanguageStyles(language);
+
             showScreenshotLoading(modalId);
 
             // Scroll to top to avoid layout issues
@@ -814,8 +807,9 @@
             loadHtml2Canvas().then(html2canvas => {
                 // Wait longer for content to be fully rendered
                 setTimeout(() => {
+                    const contentDiv = document.getElementById('ticketReportContent');
                     const options = {
-                        backgroundColor: '#f9fafb', // Match your background
+                        backgroundColor: '#f9fafb',
                         scale: 1.5,
                         useCORS: true,
                         allowTaint: true,
@@ -825,13 +819,10 @@
                         width: contentDiv.scrollWidth,
                         height: contentDiv.scrollHeight,
                         onclone: function(clonedDoc) {
-                            // Fix all elements in the cloned document
                             const clonedContent = clonedDoc.querySelector('#ticketReportContent');
                             if (clonedContent) {
-                                // Remove classes that cause 'nested' look (rounded corners, shadow)
+                                // Remove classes that cause 'nested' look
                                 clonedContent.classList.remove('rounded-lg', 'shadow-sm');
-
-                                // Set styles to flatten the appearance
                                 clonedContent.style.transform = 'none';
                                 clonedContent.style.position = 'static';
                                 clonedContent.style.overflow = 'visible';
@@ -839,19 +830,16 @@
                                 clonedContent.style.padding = '0';
                                 clonedContent.style.margin = '0';
 
-                                // Hide the bottom close button in the report to avoid duplication/nesting
+                                // Hide the bottom close button
                                 const closeDiv = clonedContent.querySelector('.mt-6.text-center');
                                 if (closeDiv) {
                                     closeDiv.style.display = 'none';
                                 }
 
-                                // Remove min-h-screen if present (from report template)
-                                const reportOuterDiv = clonedContent.querySelector('.bg-gray-50.py-8');
-                                if (reportOuterDiv) {
-                                    reportOuterDiv.classList.remove('min-h-screen');
-                                    reportOuterDiv.style.minHeight = 'auto';
-                                    reportOuterDiv.style.height = 'auto';
-                                    reportOuterDiv.style.padding = '0';
+                                // Apply language direction if Arabic
+                                if (language === 'ar') {
+                                    clonedContent.style.direction = 'rtl';
+                                    clonedContent.style.textAlign = 'right';
                                 }
 
                                 // Ensure all text is visible
@@ -875,10 +863,14 @@
                                     table.style.display = 'table';
                                     table.style.margin = '0';
 
+                                    if (language === 'ar') {
+                                        table.style.direction = 'rtl';
+                                    }
+
                                     // Fix all table cells
                                     const cells = table.querySelectorAll('td, th');
                                     cells.forEach(cell => {
-                                        cell.style.whiteSpace = 'normal';  // Changed to 'normal' to prevent truncation if needed
+                                        cell.style.whiteSpace = 'normal';
                                         cell.style.overflow = 'visible';
                                         cell.style.textOverflow = 'clip';
                                         cell.style.padding = '12px 8px';
@@ -911,7 +903,8 @@
                             const now = new Date();
                             const dateStr = now.toISOString().split('T')[0];
                             const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-');
-                            const filename = `${type}-${dateStr}-${timeStr}.png`;
+                            const languageSuffix = language === 'ar' ? '-arabic' : '-english';
+                            const filename = `${type}${languageSuffix}-${dateStr}-${timeStr}.png`;
 
                             // Auto download
                             const link = document.createElement('a');
@@ -923,6 +916,9 @@
 
                             showScreenshotReady(modalId, url, url, filename);
 
+                            // Reset language styles after screenshot
+                            resetLanguageStyles();
+
                             setTimeout(() => {
                                 URL.revokeObjectURL(url);
                             }, 10000);
@@ -931,12 +927,122 @@
                         console.error('html2canvas error:', error);
                         hideScreenshotLoading(modalId);
                         showScreenshotError(modalId, 'Failed to capture screenshot: ' + error.message);
+                        resetLanguageStyles();
                     });
-                }, 1000); // Wait 1 full second for rendering
+                }, 1000);
             }).catch(error => {
                 console.error('Failed to load html2canvas:', error);
                 hideScreenshotLoading(modalId);
                 showScreenshotError(modalId, 'Failed to load screenshot library');
+                resetLanguageStyles();
+            });
+        }
+
+        function applyLanguageStyles(language) {
+            const contentElement = document.querySelector('#ticketReportContent');
+            if (!contentElement) return;
+
+            if (language === 'ar') {
+                // Apply Arabic styling
+                contentElement.style.direction = 'rtl';
+                contentElement.style.textAlign = 'right';
+
+                // Update header text to Arabic
+                const header = contentElement.querySelector('h1');
+                if (header) {
+                    header.setAttribute('data-original-text', header.textContent);
+                    header.textContent = 'تقرير طلبات الصيانة';
+                }
+
+                // Arabic translations for maintenance request terms
+                const elementsToTranslate = {
+                    'Ticket Report': 'تقرير التذاكر',
+                    'Maintenance Requests': 'طلبات الصيانة',
+                    'Entry #': 'رقم الإدخال',
+                    'Store': 'المتجر',
+                    'Requester': 'مقدم الطلب',
+                    'Equipment': 'المعدات',
+                    'Issue Description': 'وصف المشكلة',
+                    'Urgency': 'الأولوية',
+                    'Status': 'الحالة',
+                    'Assigned To': 'تم التعيين لـ',
+                    'Due Date': 'تاريخ الاستحقاق',
+                    'Created Date': 'تاريخ الإنشاء',
+                    'Costs': 'التكاليف',
+                    'Actions': 'الإجراءات',
+                    'Total': 'الإجمالي',
+                    'On Hold': 'قيد الانتظار',
+                    'In Progress': 'قيد التنفيذ',
+                    'Done': 'تم',
+                    'Canceled': 'ملغى',
+                    'Critical': 'حرج',
+                    'High': 'عالي',
+                    'Medium': 'متوسط',
+                    'Low': 'منخفض',
+                    'Generated on': 'تم الإنشاء في',
+                    'Not Assigned': 'غير معين',
+                    'Local Only': 'محلي فقط',
+                    'Synced': 'متزامن',
+                    'View': 'عرض',
+                    'Edit': 'تعديل',
+                    'Delete': 'حذف',
+                    'Export CSV': 'تصدير CSV',
+                    'Filter': 'تصفية',
+                    'Search': 'بحث'
+                };
+
+                // Translate table headers and common elements
+                Object.keys(elementsToTranslate).forEach(englishText => {
+                    const elements = contentElement.querySelectorAll('th, td, p, span, button, h1, h2, h3, label');
+                    elements.forEach(el => {
+                        if (el.textContent && el.textContent.trim() === englishText) {
+                            el.setAttribute('data-original-text', el.textContent);
+                            el.textContent = elementsToTranslate[englishText];
+                        } else if (el.textContent && el.textContent.includes(englishText)) {
+                            el.setAttribute('data-original-text', el.textContent);
+                            el.textContent = el.textContent.replace(englishText, elementsToTranslate[englishText]);
+                        }
+                    });
+                });
+
+                // Update date format to Arabic
+                const dateElements = contentElement.querySelectorAll('p, span, td');
+                dateElements.forEach(el => {
+                    if (el.textContent && el.textContent.includes('Generated on')) {
+                        el.setAttribute('data-original-text', el.textContent);
+                        const now = new Date();
+                        const arabicDate = now.toLocaleDateString('ar-SA', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                        el.textContent = `تم الإنشاء في ${arabicDate}`;
+                    }
+                });
+
+            } else {
+                // English is default, reset any previous Arabic styling
+                resetLanguageStyles();
+            }
+        }
+
+        function resetLanguageStyles() {
+            const contentElement = document.querySelector('#ticketReportContent');
+            if (!contentElement) return;
+
+            // Reset direction and text alignment
+            contentElement.style.direction = '';
+            contentElement.style.textAlign = '';
+
+            // Restore original text content
+            contentElement.querySelectorAll('[data-original-text]').forEach(element => {
+                const originalText = element.getAttribute('data-original-text');
+                if (originalText) {
+                    element.textContent = originalText;
+                    element.removeAttribute('data-original-text');
+                }
             });
         }
 
@@ -1021,5 +1127,6 @@
                 }, 300);
             }, 5000);
         }
+
     </script>
 @endsection

@@ -77,7 +77,9 @@
                         <div>
                             <dt class="text-sm font-medium text-black-500">Due Date</dt>
                             <dd class="mt-1 text-sm text-black-900">
-                                {{ $maintenanceRequest->due_date ? $maintenanceRequest->due_date->format('M d, Y') : 'N/A' }}
+                                {{ $maintenanceRequest->due_date ?
+                                   (is_string($maintenanceRequest->due_date) ? $maintenanceRequest->due_date : $maintenanceRequest->due_date->format('M d, Y'))
+                                   : 'N/A' }}
                             </dd>
                         </div>
                         <div>
@@ -325,7 +327,9 @@
                             </div>
                             <div id="dueDateField" style="display: {{ $maintenanceRequest->status === 'in_progress' ? 'block' : 'none' }};">
                                 <label for="due_date" class="block text-sm font-medium text-black-700 mb-2">Due Date</label>
-                                <input type="date" name="due_date" id="due_date" class="block w-full rounded-lg border-orange-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm" value="{{ $maintenanceRequest->due_date ? $maintenanceRequest->due_date->format('Y-m-d') : '' }}">
+                                <input type="date" name="due_date" id="due_date" class="block w-full rounded-lg border-orange-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm" value="{{ $maintenanceRequest->due_date ?
+   (is_string($maintenanceRequest->due_date) ? $maintenanceRequest->due_date : $maintenanceRequest->due_date->format('M d, Y'))
+   : 'N/A' }}">
                             </div>
                             <div id="costsField" style="display: {{ $maintenanceRequest->status === 'done' ? 'block' : 'none' }};">
                                 <label for="costs" class="block text-sm font-medium text-black-700 mb-2">Costs *</label>
@@ -453,7 +457,7 @@
             const costsField = document.getElementById('costsField');
             const fixField = document.getElementById('fixField');
             const assignedToField = document.getElementById('assignedToField');
-            const dueDateField = document.getElementById('dueField');
+            const dueDateField = document.getElementById('dueDateField');
             const costsInput = document.getElementById('costs');
             const fixTextarea = document.getElementById('how_we_fixed_it');
             const assignedToSelect = document.getElementById('assigned_to');

@@ -464,6 +464,18 @@
                 });
             }
 
+            // Excel file import handler
+            const xlsxFileInput = document.getElementById('xlsx_file_input');
+            const importExcelForm = document.getElementById('importExcelForm');
+
+            if (xlsxFileInput && importExcelForm) {
+                xlsxFileInput.addEventListener('change', function() {
+                    if (this.files.length > 0) {
+                        importExcelForm.submit();
+                    }
+                });
+            }
+
             // Handle both modal buttons - "View Apartment Lease List" and "Export as Image"
             const openApartmentLeaseListModal = document.getElementById('openApartmentLeaseListModal');
             const exportImageBtn = document.getElementById('exportImageBtn');
@@ -489,224 +501,8 @@
                     document.body.style.overflow = 'hidden';
                 }
             }
-        });
 
-        function loadApartmentLeaseList() {
-            fetch('{{ route('admin.apartment-leases.list') }}')
-                .then(response => response.text())
-                .then(html => {
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(html, 'text/html');
-                    const content = doc.querySelector('.bg-white.shadow-lg');
-                    document.getElementById('apartmentLeaseListContent').innerHTML = content ? content.outerHTML : '<p>Error loading content</p>';
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    document.getElementById('apartmentLeaseListContent').innerHTML = '<p>Error loading content</p>';
-                });
-        }
-
-        function loadHtml2Canvas() {
-            return new Promise((resolve, reject) => {
-                if (window.html2canvas) {
-                    resolve(window.html2canvas);
-                    return;
-                }
-                const script = document.createElement('script');
-                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-                script.onload = () => resolve(window.html2canvas);
-                script.onerror = reject;
-                document.head.appendChild(script);
-            });
-        }
-
-        // Enhanced screenshot functionality from the first file
-        function generateScreenshot(modalId, type) {
-            showScreenshotLoading(modalId);
-
-            loadHtml2Canvas().then(html2canvas => {
-                const modal = document.getElementById(modalId);
-                const contentElement = modal.querySelector('.modal-content');
-
-                if (!contentElement) {
-                    showScreenshotError(modalId, 'Content not found for screenshot');
-                    return;
-                }
-
-                // Configure html2canvas options
-                const options = {
-                    backgroundColor: '#ffffff',
-                    scale: 2, // Higher quality
-                    useCORS: true,
-                    allowTaint: true,
-                    scrollX: 0,
-                    scrollY: 0,
-                    width: contentElement.scrollWidth,
-                    height: contentElement.scrollHeight,
-                    logging: false
-                };
-
-                html2canvas(contentElement, options).then(canvas => {
-                    // Convert canvas to blob
-                    canvas.toBlob(blob => {
-                        if (!blob) {
-                            showScreenshotError(modalId, 'Failed to generate screenshot');
-                            return;
-                        }
-
-                        // Create download URL
-                        const url = URL.createObjectURL(blob);
-
-                        // Generate filename based on type and current date
-                        const now = new Date();
-                        const dateStr = now.toISOString().split('T')[0];
-                        const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-');
-                        const filename = `${type}-${dateStr}-${timeStr}.png`;
-
-                        hideScreenshotLoading(modalId);
-                        showScreenshotReady(modalId, url, url, filename);
-                    }, 'image/png', 0.95);
-                }).catch(error => {
-                    console.error('html2canvas error:', error);
-                    showScreenshotError(modalId, 'Failed to capture screenshot');
-                });
-            }).catch(error => {
-                console.error('Failed to load html2canvas:', error);
-                showScreenshotError(modalId, 'Failed to load screenshot library');
-            });
-        }
-
-        function showScreenshotLoading(modalId) {
-            const modal = document.getElementById(modalId);
-            const screenshotButton = modal.querySelector('button[onclick*="generateScreenshot"]');
-
-            if (screenshotButton) {
-                screenshotButton.innerHTML = `
-                    <svg class="animate-spin w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Generating...
-                `;
-                screenshotButton.disabled = true;
-            }
-        }
-
-        function hideScreenshotLoading(modalId) {
-            const modal = document.getElementById(modalId);
-            const screenshotButton = modal.querySelector('button[onclick*="generateScreenshot"]');
-
-            if (screenshotButton) {
-                screenshotButton.innerHTML = `
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    Screenshot
-                `;
-                screenshotButton.disabled = false;
-            }
-        }
-
-        function showScreenshotReady(modalId, screenshotUrl, downloadUrl, filename) {
-            const instructionDiv = document.createElement('div');
-            instructionDiv.id = 'screenshotInstructions';
-            instructionDiv.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-6 py-4 rounded-lg shadow-lg z-[100] max-w-md';
-            instructionDiv.innerHTML = `
-                <div class="text-center">
-                    <div class="flex items-center justify-center mb-3">
-                        <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                        </svg>
-                        <strong>Screenshot Generated Successfully!</strong>
-                    </div>
-                    <div class="space-y-3">
-                        <div>
-                            <img src="${screenshotUrl}" alt="Generated Screenshot" class="max-w-full mx-auto rounded border shadow" style="max-height: 200px;">
-                        </div>
-                        <div class="flex space-x-3 justify-center">
-                            <button onclick="downloadScreenshot('${downloadUrl}', '${filename}')"
-                                   class="inline-flex items-center px-4 py-2 bg-white text-green-600 rounded hover:bg-gray-100 font-medium">
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                </svg>
-                                Download
-                            </button>
-                            <button onclick="hideScreenshotInstructions()"
-                                    class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
-                                Close
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(instructionDiv);
-
-            // Auto-hide after 15 seconds
-            setTimeout(() => {
-                hideScreenshotInstructions();
-            }, 15000);
-        }
-
-        function downloadScreenshot(url, filename) {
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = filename;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-
-            // Clean up the blob URL after download
-            setTimeout(() => {
-                URL.revokeObjectURL(url);
-            }, 1000);
-        }
-
-        function showScreenshotError(modalId, message = 'Screenshot generation failed') {
-            const instructionDiv = document.createElement('div');
-            instructionDiv.id = 'screenshotInstructions';
-            instructionDiv.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-red-600 text-white px-6 py-4 rounded-lg shadow-lg z-[100]';
-            instructionDiv.innerHTML = `
-                <div class="text-center">
-                    <div class="flex items-center justify-center mb-2">
-                        <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                        <strong>Screenshot Error</strong>
-                    </div>
-                    <p class="text-sm mb-3">${message}</p>
-                    <button onclick="hideScreenshotInstructions()"
-                            class="inline-flex items-center px-4 py-2 bg-white text-red-600 rounded hover:bg-gray-100">
-                        Close
-                    </button>
-                </div>
-            `;
-            document.body.appendChild(instructionDiv);
-        }
-
-        function hideScreenshotInstructions() {
-            const instructions = document.getElementById('screenshotInstructions');
-            if (instructions) {
-                instructions.remove();
-            }
-        }
-
-        function closeModal(modalId) {
-            const modal = document.getElementById(modalId);
-            if (modal) {
-                modal.classList.add('hidden');
-                // Restore body scrolling
-                document.body.style.overflow = 'auto';
-            }
-        }
-
-        // Close modal when clicking outside
-        window.onclick = function(event) {
-            const modal = document.getElementById('apartmentLeaseListModal');
-            if (event.target === modal) {
-                closeModal('apartmentLeaseListModal');
-            }
-        }
-        document.addEventListener('DOMContentLoaded', function() {
+            // Table sorting functionality
             let sortDirection = {};
 
             window.sortLeaseTable = function(columnIndex, type) {
@@ -782,6 +578,372 @@
                 }
             };
         });
+
+        // Load apartment lease list content
+        function loadApartmentLeaseList() {
+            fetch('{{ route('admin.apartment-leases.list') }}')
+                .then(response => response.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    let content = doc.querySelector('main') || doc.querySelector('.container') || doc.body;
+
+                    // Remove navigation elements
+                    if (content === doc.body) {
+                        content = content.cloneNode(true);
+                        const navElements = content.querySelectorAll('[role="menu"], .dropdown, #payments-dropdown');
+                        navElements.forEach(nav => nav.remove());
+                    }
+
+                    document.getElementById('apartmentLeaseListContent').innerHTML = content ? content.outerHTML : '<p>Error loading content</p>';
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('apartmentLeaseListContent').innerHTML = '<p>Error loading content</p>';
+                });
+        }
+
+        // Load html2canvas library
+        function loadHtml2Canvas() {
+            return new Promise((resolve, reject) => {
+                if (window.html2canvas) {
+                    resolve(window.html2canvas);
+                    return;
+                }
+                const script = document.createElement('script');
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+                script.onload = () => resolve(window.html2canvas);
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        }
+
+        // Enhanced screenshot functionality with language selection
+        function generateScreenshot(modalId, type) {
+            showLanguageSelection(modalId, type);
+        }
+
+        function showLanguageSelection(modalId, type) {
+            const languageModal = document.createElement('div');
+            languageModal.id = 'languageSelectionModal';
+            languageModal.className = 'fixed inset-0 bg-black bg-opacity-50 z-[110] flex items-center justify-center';
+            languageModal.innerHTML = `
+            <div class="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+                <div class="text-center mb-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Select Language for Screenshot</h3>
+                    <p class="text-sm text-gray-600">Choose the language for your screenshot export</p>
+                </div>
+
+                <div class="space-y-3">
+                    <button onclick="proceedWithScreenshot('${modalId}', '${type}', 'en')"
+                            class="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors">
+                        <span class="text-2xl mr-3">🇺🇸</span>
+                        <span class="font-medium">English</span>
+                    </button>
+
+                    <button onclick="proceedWithScreenshot('${modalId}', '${type}', 'ar')"
+                            class="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors">
+                        <span class="text-2xl mr-3">🇸🇦</span>
+                        <span class="font-medium">العربية (Arabic)</span>
+                    </button>
+                </div>
+
+                <div class="mt-6 text-center">
+                    <button onclick="hideLanguageSelection()"
+                            class="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 focus:outline-none">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        `;
+
+            document.body.appendChild(languageModal);
+        }
+
+        function hideLanguageSelection() {
+            const languageModal = document.getElementById('languageSelectionModal');
+            if (languageModal) {
+                languageModal.remove();
+            }
+        }
+
+        function proceedWithScreenshot(modalId, type, language) {
+            hideLanguageSelection();
+
+            // Apply language-specific styling before screenshot
+            applyLanguageStyles(language);
+
+            showScreenshotLoading(modalId);
+
+            loadHtml2Canvas().then(html2canvas => {
+                const modal = document.getElementById(modalId);
+                const contentElement = modal.querySelector('.modal-content');
+
+                if (!contentElement) {
+                    showScreenshotError(modalId, 'Content not found for screenshot');
+                    return;
+                }
+
+                // Configure html2canvas options
+                const options = {
+                    backgroundColor: '#ffffff',
+                    scale: 2,
+                    useCORS: true,
+                    allowTaint: true,
+                    scrollX: 0,
+                    scrollY: 0,
+                    width: contentElement.scrollWidth,
+                    height: contentElement.scrollHeight,
+                    logging: false
+                };
+
+                html2canvas(contentElement, options).then(canvas => {
+                    canvas.toBlob(blob => {
+                        if (!blob) {
+                            showScreenshotError(modalId, 'Failed to generate screenshot');
+                            return;
+                        }
+
+                        const url = URL.createObjectURL(blob);
+                        const now = new Date();
+                        const dateStr = now.toISOString().split('T')[0];
+                        const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-');
+                        const languageSuffix = language === 'ar' ? '-arabic' : '-english';
+                        const filename = `${type}${languageSuffix}-${dateStr}-${timeStr}.png`;
+
+                        hideScreenshotLoading(modalId);
+                        showScreenshotReady(modalId, url, url, filename);
+
+                        // Reset language styles after screenshot
+                        resetLanguageStyles();
+                    }, 'image/png', 0.95);
+                }).catch(error => {
+                    console.error('html2canvas error:', error);
+                    showScreenshotError(modalId, 'Failed to capture screenshot');
+                    resetLanguageStyles();
+                });
+            }).catch(error => {
+                console.error('Failed to load html2canvas:', error);
+                showScreenshotError(modalId, 'Failed to load screenshot library');
+                resetLanguageStyles();
+            });
+        }
+
+        function applyLanguageStyles(language) {
+            const contentElement = document.querySelector('#apartmentLeaseListContent');
+            if (!contentElement) return;
+
+            if (language === 'ar') {
+                // Apply Arabic styling
+                contentElement.style.direction = 'rtl';
+                contentElement.style.textAlign = 'right';
+
+                // Update header text to Arabic
+                const header = contentElement.querySelector('h1');
+                if (header) {
+                    header.setAttribute('data-original-text', header.textContent);
+                    header.textContent = 'قائمة عقود إيجار الشقق';
+                }
+
+                // Update table headers to Arabic
+                const elementsToTranslate = {
+                    'Store #': 'رقم المتجر',
+                    'Store Number': 'رقم المتجر',
+                    'Address': 'العنوان',
+                    'Apartment Address': 'عنوان الشقة',
+                    'Total Rent': 'إجمالي الإيجار',
+                    'Number of AT': 'عدد AT',
+                    'Lease Holder': 'صاحب العقد',
+                    'Expiration Date': 'تاريخ انتهاء الصلاحية',
+                    'Family': 'العائلة',
+                    'Cars': 'السيارات',
+                    'TOTAL': 'المجموع',
+                    'Apartments': 'شقة',
+                    'Generated on': 'تم الإنشاء في',
+                    'Yes': 'نعم',
+                    'No': 'لا'
+                };
+
+                // Translate headers and common elements
+                Object.keys(elementsToTranslate).forEach(englishText => {
+                    const elements = contentElement.querySelectorAll('th, td, p, span');
+                    elements.forEach(el => {
+                        if (el.textContent.includes(englishText)) {
+                            el.setAttribute('data-original-text', el.textContent);
+                            el.textContent = el.textContent.replace(englishText, elementsToTranslate[englishText]);
+                        }
+                    });
+                });
+
+                // Update date format
+                const dateElement = contentElement.querySelector('p');
+                if (dateElement && dateElement.textContent.includes('Generated on')) {
+                    dateElement.setAttribute('data-original-text', dateElement.textContent);
+                    const now = new Date();
+                    const arabicDate = now.toLocaleDateString('ar-SA', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    dateElement.textContent = `تم الإنشاء في ${arabicDate}`;
+                }
+
+            } else {
+                // English is default, no changes needed
+                resetLanguageStyles();
+            }
+        }
+
+        function resetLanguageStyles() {
+            const contentElement = document.querySelector('#apartmentLeaseListContent');
+            if (!contentElement) return;
+
+            // Reset direction and text alignment
+            contentElement.style.direction = '';
+            contentElement.style.textAlign = '';
+
+            // Restore original text content
+            contentElement.querySelectorAll('[data-original-text]').forEach(element => {
+                const originalText = element.getAttribute('data-original-text');
+                if (originalText) {
+                    element.textContent = originalText;
+                    element.removeAttribute('data-original-text');
+                }
+            });
+        }
+
+        function showScreenshotLoading(modalId) {
+            const modal = document.getElementById(modalId);
+            const screenshotButton = modal.querySelector('button[onclick*="generateScreenshot"]');
+
+            if (screenshotButton) {
+                screenshotButton.innerHTML = `
+                <svg class="animate-spin w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Generating...
+            `;
+                screenshotButton.disabled = true;
+            }
+        }
+
+        function hideScreenshotLoading(modalId) {
+            const modal = document.getElementById(modalId);
+            const screenshotButton = modal.querySelector('button[onclick*="generateScreenshot"]');
+
+            if (screenshotButton) {
+                screenshotButton.innerHTML = `
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+                Screenshot
+            `;
+                screenshotButton.disabled = false;
+            }
+        }
+
+        function showScreenshotReady(modalId, screenshotUrl, downloadUrl, filename) {
+            const instructionDiv = document.createElement('div');
+            instructionDiv.id = 'screenshotInstructions';
+            instructionDiv.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-6 py-4 rounded-lg shadow-lg z-[100] max-w-md';
+            instructionDiv.innerHTML = `
+            <div class="text-center">
+                <div class="flex items-center justify-center mb-3">
+                    <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    <strong>Screenshot Generated Successfully!</strong>
+                </div>
+                <div class="space-y-3">
+                    <div>
+                        <img src="${screenshotUrl}" alt="Generated Screenshot" class="max-w-full mx-auto rounded border shadow" style="max-height: 200px;">
+                    </div>
+                    <div class="flex space-x-3 justify-center">
+                        <button onclick="downloadScreenshot('${downloadUrl}', '${filename}')"
+                               class="inline-flex items-center px-4 py-2 bg-white text-green-600 rounded hover:bg-gray-100 font-medium">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            Download
+                        </button>
+                        <button onclick="hideScreenshotInstructions()"
+                                class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
+                            Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+            document.body.appendChild(instructionDiv);
+
+            // Auto-hide after 15 seconds
+            setTimeout(() => {
+                hideScreenshotInstructions();
+            }, 15000);
+        }
+
+        function downloadScreenshot(url, filename) {
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            // Clean up the blob URL after download
+            setTimeout(() => {
+                URL.revokeObjectURL(url);
+            }, 1000);
+        }
+
+        function showScreenshotError(modalId, message = 'Screenshot generation failed') {
+            const instructionDiv = document.createElement('div');
+            instructionDiv.id = 'screenshotInstructions';
+            instructionDiv.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-red-600 text-white px-6 py-4 rounded-lg shadow-lg z-[100]';
+            instructionDiv.innerHTML = `
+            <div class="text-center">
+                <div class="flex items-center justify-center mb-2">
+                    <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                    <strong>Screenshot Error</strong>
+                </div>
+                <p class="text-sm mb-3">${message}</p>
+                <button onclick="hideScreenshotInstructions()"
+                        class="inline-flex items-center px-4 py-2 bg-white text-red-600 rounded hover:bg-gray-100">
+                    Close
+                </button>
+            </div>
+        `;
+            document.body.appendChild(instructionDiv);
+        }
+
+        function hideScreenshotInstructions() {
+            const instructions = document.getElementById('screenshotInstructions');
+            if (instructions) {
+                instructions.remove();
+            }
+        }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.add('hidden');
+                // Restore body scrolling
+                document.body.style.overflow = 'auto';
+            }
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('apartmentLeaseListModal');
+            if (event.target === modal) {
+                closeModal('apartmentLeaseListModal');
+            }
+        }
     </script>
 
 @endsection
