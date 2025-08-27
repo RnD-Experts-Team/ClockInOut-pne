@@ -8,6 +8,8 @@ use App\Models\Configuration;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
+
 
 use Carbon\Carbon;
 
@@ -241,14 +243,66 @@ public function destroy($id)
 
    public function clockOut(Request $request)
 {
-    // Validate new fields as well
-    $request->validate([
-        'miles_out'         => 'nullable|integer',
-        'image_out'         => 'nullable|image|mimes:jpg,png,jpeg|max:2048',
-        'bought_something'  => 'required|boolean',
-        'purchase_cost'     => 'required_if:bought_something,1|nullable|numeric',
-        'purchase_receipt'  => 'required_if:bought_something,1|nullable|image|mimes:jpg,png,jpeg|max:2048',
+    // Log all incoming request data for debugging
+    Log::info('Clock-out request received', [
+        'user_id' => Auth::id(),
+        'all_request_data' => $request->all(),
+        'files' => $request->allFiles(),
+        'has_image_out' => $request->hasFile('image_out'),
+        'has_purchase_receipt' => $request->hasFile('purchase_receipt'),
+        'bought_something_value' => $request->input('bought_something'),
+        'bought_something_type' => gettype($request->input('bought_something')),
     ]);
+    
+    // Specific logging for purchase fields when bought_something is 'yes' or '1'
+    $boughtSomething = $request->input('bought_something');
+    if ($boughtSomething == '1' || $boughtSomething === true || $boughtSomething === 'true') {
+        Log::info('Purchase detected - detailed validation check', [
+            'bought_something' => $boughtSomething,
+            'purchase_cost' => $request->input('purchase_cost'),
+            'purchase_cost_type' => gettype($request->input('purchase_cost')),
+            'purchase_cost_empty' => empty($request->input('purchase_cost')),
+            'has_purchase_receipt_file' => $request->hasFile('purchase_receipt'),
+            'purchase_receipt_file_info' => $request->hasFile('purchase_receipt') ? [
+                'name' => $request->file('purchase_receipt')->getClientOriginalName(),
+                'size' => $request->file('purchase_receipt')->getSize(),
+                'mime' => $request->file('purchase_receipt')->getMimeType()
+            ] : null
+        ]);
+    }
+
+    try {
+        // Log validation rules being applied
+        Log::info('Applying validation rules', [
+            'bought_something_for_validation' => $request->input('bought_something'),
+            'will_require_purchase_cost' => $request->input('bought_something') == '1',
+            'will_require_purchase_receipt' => $request->input('bought_something') == '1'
+        ]);
+        
+        // Validate new fields as well
+        $request->validate([
+            'miles_out'         => 'nullable|integer',
+            'image_out'         => 'nullable|image|mimes:jpg,png,jpeg|max:2048',
+            'bought_something'  => 'required|boolean',
+            'purchase_cost'     => 'required_if:bought_something,1|nullable|numeric',
+            'purchase_receipt'  => 'required_if:bought_something,1|nullable|image|mimes:jpg,png,jpeg|max:2048',
+        ]);
+        
+        Log::info('Clock-out validation passed');
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        Log::error('Clock-out validation failed', [
+            'errors' => $e->errors(),
+            'request_data' => $request->all(),
+            'specific_purchase_validation' => [
+                'bought_something' => $request->input('bought_something'),
+                'purchase_cost' => $request->input('purchase_cost'),
+                'has_purchase_receipt' => $request->hasFile('purchase_receipt'),
+                'purchase_cost_errors' => $e->errors()['purchase_cost'] ?? null,
+                'purchase_receipt_errors' => $e->errors()['purchase_receipt'] ?? null
+            ]
+        ]);
+        throw $e;
+    }
 
     // Handle clock-out image
     $imagePath = null;
@@ -263,23 +317,37 @@ public function destroy($id)
     }
 
     // Retrieve the existing clocking record for clock out
+    Log::info('Looking for active clocking record', ['user_id' => Auth::id()]);
+    
     $clocking = Clocking::where('user_id', Auth::id())
         ->whereNull('clock_out')
         ->where('is_clocked_in', true)
-        ->firstOrFail();
+        ->first();
+        
+    if (!$clocking) {
+        Log::error('No active clocking record found for user', ['user_id' => Auth::id()]);
+        return back()->withErrors(['error' => 'No active clock-in record found. Please clock in first.']);
+    }
+    
+    Log::info('Found active clocking record', ['clocking_id' => $clocking->id]);
 
-    // Update the record with clock-out details
-    $clocking->update([
+    // Prepare update data
+    $updateData = [
         'clock_out'        => now(),
         'miles_out'        => $request->miles_out,
         'image_out'        => $imagePath,
         'is_clocked_in'    => false,
-
-        // New fields
         'bought_something' => $request->bought_something,
         'purchase_cost'    => $request->purchase_cost,
         'purchase_receipt' => $receiptPath,
-    ]);
+    ];
+    
+    Log::info('Updating clocking record with data', $updateData);
+
+    // Update the record with clock-out details
+    $clocking->update($updateData);
+    
+    Log::info('Clock-out completed successfully', ['clocking_id' => $clocking->id]);
 
     return back()->with('success', 'تم تسجيل الإنصراف بنجاح');
 }
