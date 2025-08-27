@@ -5,29 +5,57 @@
 @section('content')
     <div class="min-h-screen bg-gray-50 py-8">
         <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
-            <!-- Simple Header -->
+            <!-- Header -->
             <div class="text-center mb-8">
-                <h1 class="text-3xl font-bold text-white bg-[#ff671b] py-4 px-8 rounded-lg inline-block mb-4">Cost per Store Within 1 Year</h1>
-                <p class="text-gray-600">Generated on {{ now()->format('F j, Y \a\t g:i A') }}</p>
+                <h1 class="text-3xl font-bold text-white bg-[#ff671b] py-4 px-8 rounded-lg inline-block mb-4">
+                    Cost per Store - {{ $targetYear ?? 'Current Year' }}
+                </h1>
+                <p class="text-gray-600">Generated on {{ now()->format('F j, Y \\a\\t g:i A') }}</p>
+
+                <!-- Year Selector -->
+                @if(count($availableYears) > 1)
+                    <form method="GET" class="mt-4">
+                        <label for="year" class="text-sm text-gray-600 mr-2">Select Year:</label>
+                        <select name="year" id="year" onchange="this.form.submit()"
+                                class="rounded border-gray-300 text-sm">
+                            @foreach($availableYears as $year)
+                                <option value="{{ $year }}" {{ ($targetYear ?? now()->year) == $year ? 'selected' : '' }}>
+                                    {{ $year }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </form>
+                @endif
             </div>
+
+            <!-- Filter Display -->
+            @if(request()->hasAny(['date_from', 'date_to', 'company_id', 'search']))
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                    <div class="text-center">
+                        <h3 class="text-sm font-medium text-blue-900">Applied Filters</h3>
+                        <div class="flex flex-wrap justify-center gap-2 mt-2">
+                            @if($dateFrom && $dateTo)
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                    Date Range: {{ $dateFrom }} to {{ $dateTo }}
+                                </span>
+                            @endif
+                            @if(request('company_id') && request('company_id') !== 'all')
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                    Company Filter Applied
+                                </span>
+                            @endif
+                            @if(request('search'))
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                    Search: {{ request('search') }}
+                                </span>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            @endif
 
             <!-- Summary Statistics -->
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-                @php
-                    $storeYearlyCosts = \App\Models\Payment::within1Year()
-                        ->selectRaw('COALESCE(store, CONCAT("Store ", store_id)) as store_display,
-                                     SUM(cost) as total_cost,
-                                     COUNT(*) as payment_count')
-                        ->whereNotNull('cost')
-                        ->where('cost', '>', 0)
-                        ->groupByRaw('COALESCE(store, CONCAT("Store ", store_id))')
-                        ->orderBy('total_cost', 'desc')
-                        ->get();
-
-                    $grandTotal = $storeYearlyCosts->sum('total_cost');
-                    $avgCostPerStore = $storeYearlyCosts->count() > 0 ? $grandTotal / $storeYearlyCosts->count() : 0;
-                @endphp
-
                 <div class="bg-white rounded-lg shadow p-4 text-center">
                     <div class="text-2xl font-bold text-[#ff671b]">{{ $storeYearlyCosts->count() }}</div>
                     <div class="text-sm text-gray-600">Active Stores</div>
@@ -60,8 +88,12 @@
                                         <span class="ml-2 text-xs opacity-75" id="costperstore-sort-indicator-0">A↓</span>
                                     </div>
                                 </th>
-                                <th class="border border-gray-300 px-6 py-4 text-center text-sm font-semibold">
-                                    Payment Count
+                                <th class="border border-gray-300 px-6 py-4 text-center text-sm font-semibold cursor-pointer hover:bg-[#e55b17] select-none"
+                                    onclick="sortCostPerStoreTable(1, 'number')" id="costperstore-header-1">
+                                    <div class="flex items-center justify-center">
+                                        Payment Count
+                                        <span class="ml-2 text-xs opacity-75" id="costperstore-sort-indicator-1">↑</span>
+                                    </div>
                                 </th>
                                 <th class="border border-gray-300 px-6 py-4 text-right text-sm font-semibold cursor-pointer hover:bg-[#e55b17] select-none"
                                     onclick="sortCostPerStoreTable(2, 'number')" id="costperstore-header-2">
@@ -80,7 +112,7 @@
                                 @php
                                     $percentage = $grandTotal > 0 ? ($storeData->total_cost / $grandTotal) * 100 : 0;
                                 @endphp
-                                <tr class="{{ $index % 2 == 0 ? 'bg-gray-50' : 'bg-white' }} hover:bg-[#fff4ed]">
+                                <tr class="{{ $index % 2 == 0 ? 'bg-blue-50' : 'bg-white' }} hover:bg-[#fff4ed]">
                                     <td class="border border-gray-300 px-6 py-3 text-sm font-medium text-gray-900" data-sort="{{ $storeData->store_display }}">
                                         <div class="flex items-center">
                                             <div class="w-3 h-3 bg-[#ff671b] rounded-full mr-3"></div>
@@ -88,18 +120,18 @@
                                         </div>
                                     </td>
                                     <td class="border border-gray-300 px-6 py-3 text-sm text-center text-gray-600" data-sort="{{ $storeData->payment_count }}">
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#fff4ed] text-[#ff671b] border border-[#ff671b]">
-                                        {{ $storeData->payment_count }}
-                                    </span>
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#fff4ed] text-[#ff671b] border border-[#ff671b]">
+                                            {{ $storeData->payment_count }}
+                                        </span>
                                     </td>
                                     <td class="border border-gray-300 px-6 py-3 text-sm text-right" data-sort="{{ $storeData->total_cost }}">
                                         <div class="flex items-center justify-end">
-                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold
-                                            @if($storeData->total_cost >= 1000) bg-red-100 text-red-800
-                                            @elseif($storeData->total_cost >= 500) bg-orange-100 text-orange-800
-                                            @else bg-[#fff4ed] text-[#ff671b] @endif">
-                                            ${{ number_format($storeData->total_cost, 2) }}
-                                        </span>
+                                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold
+                                                @if($storeData->total_cost >= 1000) bg-red-100 text-red-800
+                                                @elseif($storeData->total_cost >= 500) bg-orange-100 text-orange-800
+                                                @else bg-[#fff4ed] text-[#ff671b] @endif">
+                                                ${{ number_format($storeData->total_cost, 2) }}
+                                            </span>
                                         </div>
                                     </td>
                                     <td class="border border-gray-300 px-6 py-3 text-sm text-center text-gray-600" data-sort="{{ $percentage }}">
@@ -141,9 +173,9 @@
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 @foreach($storeYearlyCosts->take(3) as $index => $store)
                                     <div class="bg-white rounded-lg p-4 shadow-sm border-l-4
-                                @if($index === 0) border-red-500
-                                @elseif($index === 1) border-orange-500
-                                @else border-[#ff671b] @endif">
+                                        @if($index === 0) border-red-500
+                                        @elseif($index === 1) border-orange-500
+                                        @else border-[#ff671b] @endif">
                                         <div class="flex justify-between items-start">
                                             <div>
                                                 <div class="text-sm font-medium text-gray-600">
@@ -156,9 +188,9 @@
                                             </div>
                                             <div class="text-right">
                                                 <div class="text-xl font-bold
-                                            @if($index === 0) text-red-600
-                                            @elseif($index === 1) text-orange-600
-                                            @else text-[#ff671b] @endif">
+                                                    @if($index === 0) text-red-600
+                                                    @elseif($index === 1) text-orange-600
+                                                    @else text-[#ff671b] @endif">
                                                     ${{ number_format($store->total_cost, 2) }}
                                                 </div>
                                             </div>
@@ -174,7 +206,9 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                         <h3 class="mt-2 text-sm font-medium text-gray-900">No payment data found</h3>
-                        <p class="mt-1 text-sm text-gray-500">No store payments within the last year.</p>
+                        <p class="mt-1 text-sm text-gray-500">
+                            No store payments found for {{ $dateFrom && $dateTo ? 'the selected date range' : 'the selected year' }}.
+                        </p>
                     </div>
                 @endif
             </div>
@@ -195,10 +229,12 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             let costPerStoreSortDirection = {};
+
             window.sortCostPerStoreTable = function(columnIndex, type) {
                 const table = document.getElementById('costPerStoreTable');
                 const tbody = document.getElementById('costPerStoreBody');
                 if (!table || !tbody) return;
+
                 const rows = Array.from(tbody.querySelectorAll('tr'));
                 if (rows.length === 0) return;
 
@@ -208,7 +244,7 @@
                 costPerStoreSortDirection[columnIndex] = newDirection;
 
                 // Clear all sort indicators
-                for (let i = 0; i < 2; i++) {
+                for (let i = 0; i < 3; i++) {
                     const indicator = document.getElementById(`costperstore-sort-indicator-${i}`);
                     if (indicator) {
                         indicator.textContent = i === 0 ? 'A↓' : '↑';
@@ -216,7 +252,7 @@
                     }
                 }
 
-                const activeIndicator = document.getElementById(`costperstore-sort-indicator-${columnIndex === 2 ? 2 : 0}`);
+                const activeIndicator = document.getElementById(`costperstore-sort-indicator-${columnIndex}`);
                 if (activeIndicator) {
                     if (type === 'number') {
                         activeIndicator.textContent = newDirection === 'asc' ? '↑' : '↓';
@@ -241,9 +277,20 @@
                 });
 
                 rows.forEach((row, idx) => {
-                    row.className = (idx % 2 == 0 ? 'bg-gray-50' : 'bg-white') + ' hover:bg-[#fff4ed]';
+                    row.className = (idx % 2 == 0 ? 'bg-blue-50' : 'bg-white') + ' hover:bg-[#fff4ed]';
                     tbody.appendChild(row);
                 });
+            };
+
+            // Close modal function
+            window.closeModal = function(modalId) {
+                const modal = document.getElementById(modalId);
+                if (modal) {
+                    modal.classList.add('hidden');
+                    document.body.style.overflow = 'auto';
+                } else {
+                    window.history.back();
+                }
             };
         });
     </script>

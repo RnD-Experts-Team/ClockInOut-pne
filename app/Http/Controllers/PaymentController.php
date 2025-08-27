@@ -505,47 +505,258 @@ class PaymentController extends Controller
     }
 
     // Keep all other report methods exactly the same...
-    public function costByCompanyReport()
+    public function costByCompanyReport(Request $request)
     {
-        return view('admin.payments.reports.cost-by-company');
+        // Get filters from index page
+        $dateFrom = $request->get('date_from');
+        $dateTo = $request->get('date_to');
+        $companyId = $request->get('company_id');
+        $search = $request->get('search');
+        $maintenanceType = $request->get('maintenance_type');
+        $paid = $request->get('paid');
+
+        // FIXED: Build base query with proper filters
+        $paymentsQuery = Payment::with('company');
+
+        // Apply date filters
+        if ($dateFrom && $dateTo) {
+            $paymentsQuery->whereBetween('date', [
+                Carbon::parse($dateFrom)->startOfDay(),
+                Carbon::parse($dateTo)->endOfDay()
+            ]);
+        } elseif ($dateFrom) {
+            $paymentsQuery->whereDate('date', '>=', $dateFrom);
+        } elseif ($dateTo) {
+            $paymentsQuery->whereDate('date', '<=', $dateTo);
+        } else {
+            // Default to current month if no date filters
+            $paymentsQuery->whereMonth('date', now()->month)
+                ->whereYear('date', now()->year);
+        }
+
+        // Apply company filter
+        if ($companyId && $companyId !== 'all') {
+            $paymentsQuery->where('company_id', $companyId);
+        }
+
+        // Apply search filter
+        if ($search) {
+            $paymentsQuery->where(function($q) use ($search) {
+                $q->where('store', 'like', "%{$search}%")
+                    ->orWhere('what_got_fixed', 'like', "%{$search}%")
+                    ->orWhere('notes', 'like', "%{$search}%")
+                    ->orWhereHas('company', function($companyQuery) use ($search) {
+                        $companyQuery->where('name', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        // Apply maintenance type filter
+        if ($maintenanceType && $maintenanceType !== 'all') {
+            $paymentsQuery->where('maintenance_type', $maintenanceType);
+        }
+
+        // Apply payment status filter
+        if ($paid && $paid !== 'all') {
+            $paymentsQuery->where('paid', $paid === '1');
+        }
+
+        // FIXED: Get companies with aggregated data using query builder
+        $companies = DB::table('companies as c')
+            ->leftJoin('payments as p', 'c.id', '=', 'p.company_id')
+            ->when($dateFrom && $dateTo, function($query) use ($dateFrom, $dateTo) {
+                $query->whereBetween('p.date', [
+                    Carbon::parse($dateFrom)->startOfDay(),
+                    Carbon::parse($dateTo)->endOfDay()
+                ]);
+            })
+            ->when($dateFrom && !$dateTo, function($query) use ($dateFrom) {
+                $query->whereDate('p.date', '>=', $dateFrom);
+            })
+            ->when($dateTo && !$dateFrom, function($query) use ($dateTo) {
+                $query->whereDate('p.date', '<=', $dateTo);
+            })
+            ->when(!$dateFrom && !$dateTo, function($query) {
+                $query->whereMonth('p.date', now()->month)
+                    ->whereYear('p.date', now()->year);
+            })
+            ->when($companyId && $companyId !== 'all', function($query) use ($companyId) {
+                $query->where('c.id', $companyId);
+            })
+            ->when($search, function($query) use ($search) {
+                $query->where(function($q) use ($search) {
+                    $q->where('p.store', 'like', "%{$search}%")
+                        ->orWhere('p.what_got_fixed', 'like', "%{$search}%")
+                        ->orWhere('p.notes', 'like', "%{$search}%")
+                        ->orWhere('c.name', 'like', "%{$search}%");
+                });
+            })
+            ->when($maintenanceType && $maintenanceType !== 'all', function($query) use ($maintenanceType) {
+                $query->where('p.maintenance_type', $maintenanceType);
+            })
+            ->when($paid && $paid !== 'all', function($query) use ($paid) {
+                $query->where('p.paid', $paid === '1');
+            })
+            ->select([
+                'c.id',
+                'c.name',
+                DB::raw('COALESCE(SUM(p.cost), 0) as total_cost'),
+                DB::raw('COALESCE(SUM(CASE WHEN p.paid = 1 THEN p.cost ELSE 0 END), 0) as paid_cost'),
+                DB::raw('COALESCE(SUM(CASE WHEN p.paid = 0 THEN p.cost ELSE 0 END), 0) as unpaid_cost'),
+                DB::raw('COUNT(p.id) as payment_count')
+            ])
+            ->groupBy('c.id', 'c.name')
+            ->orderBy('total_cost', 'desc')
+            ->get();
+
+        // FIXED: Calculate 90-day costs separately for each company
+        $companiesWithNinetyDays = collect($companies)->map(function($company) use ($dateFrom, $dateTo) {
+            $ninetyDayQuery = Payment::where('company_id', $company->id);
+
+            if ($dateFrom && $dateTo) {
+                // Use the same date range as the main filter
+                $ninetyDayQuery->whereBetween('date', [
+                    Carbon::parse($dateFrom)->startOfDay(),
+                    Carbon::parse($dateTo)->endOfDay()
+                ]);
+            } else {
+                // Default 90 days
+                $ninetyDayQuery->where('date', '>=', now()->subDays(90));
+            }
+
+            $ninetyDayCost = $ninetyDayQuery->sum('cost');
+
+            return (object) [
+                'id' => $company->id,
+                'name' => $company->name,
+                'ninety_day_cost' => $ninetyDayCost,
+                'payments' => collect([]) // Add empty collection for compatibility
+            ];
+        });
+
+        return view('admin.payments.reports.cost-by-company', compact(
+            'companies',
+            'companiesWithNinetyDays',
+            'dateFrom',
+            'dateTo'
+        ));
     }
 
     public function monthlyReport(Request $request)
     {
-        // Get available years from your payment data
-        $availableYears = Payment::selectRaw('DISTINCT YEAR(date) as year')
-            ->whereNotNull('date')
+        // Get filters from index page
+        $dateFrom = $request->get('date_from');
+        $dateTo = $request->get('date_to');
+        $companyId = $request->get('company_id');
+        $search = $request->get('search');
+        $maintenanceType = $request->get('maintenance_type');
+
+        // FIXED: Determine target year from filters, not defaulting to current year
+        if ($dateFrom) {
+            $targetYear = Carbon::parse($dateFrom)->year;
+        } elseif ($dateTo) {
+            $targetYear = Carbon::parse($dateTo)->year;
+        } else {
+            $targetYear = $request->get('year', now()->year);
+        }
+
+        $currentYear = now()->year;
+
+        // Base query
+        $query = Payment::query();
+
+        // FIXED: Apply date filters properly
+        if ($dateFrom && $dateTo) {
+            $query->whereBetween('date', [
+                Carbon::parse($dateFrom)->startOfDay(),
+                Carbon::parse($dateTo)->endOfDay()
+            ]);
+        } elseif ($dateFrom) {
+            $query->whereDate('date', '>=', $dateFrom);
+        } elseif ($dateTo) {
+            $query->whereDate('date', '<=', $dateTo);
+        } else {
+            // Only apply year filter if no date range specified
+            $query->whereYear('date', $targetYear);
+        }
+
+        // Apply additional filters
+        if ($companyId && $companyId !== 'all') {
+            $query->where('company_id', $companyId);
+        }
+
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('store', 'like', "%{$search}%")
+                    ->orWhere('what_got_fixed', 'like', "%{$search}%")
+                    ->orWhere('notes', 'like', "%{$search}%")
+                    ->orWhereHas('company', function($companyQuery) use ($search) {
+                        $companyQuery->where('name', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        if ($maintenanceType && $maintenanceType !== 'all') {
+            $query->where('maintenance_type', $maintenanceType);
+        }
+
+        // Get available years
+        $availableYears = Payment::selectRaw('YEAR(date) as year')
+            ->distinct()
             ->orderBy('year', 'desc')
             ->pluck('year')
             ->toArray();
 
-        // Use the most recent year with data, or current year
-        $currentYear = now()->year;
-        $targetYear = $request->get('year', $availableYears[0] ?? $currentYear);
-
+        // FIXED: Process monthly data for the correct year range
         $monthlyData = [];
 
-        for ($month = 1; $month <= 12; $month++) {
-            $monthPayments = Payment::whereYear('date', $targetYear)
-                ->whereMonth('date', $month)
-                ->get();
+        // Determine which months to process based on date filters
+        if ($dateFrom && $dateTo) {
+            $startMonth = Carbon::parse($dateFrom)->month;
+            $endMonth = Carbon::parse($dateTo)->month;
+            $startYear = Carbon::parse($dateFrom)->year;
+            $endYear = Carbon::parse($dateTo)->year;
 
-            $paidAmount = $monthPayments->where('paid', true)->sum('cost');
-            $totalAmount = $monthPayments->sum('cost');
-            $unpaidAmount = $monthPayments->where('paid', false)->sum('cost');
-            $paidPercentage = $totalAmount > 0 ? ($paidAmount / $totalAmount) * 100 : 0;
+            // Handle cross-year date ranges
+            if ($startYear == $endYear) {
+                $monthRange = range($startMonth, $endMonth);
+                $yearToProcess = $startYear;
+            } else {
+                // For simplicity, process all months of the target year
+                $monthRange = range(1, 12);
+                $yearToProcess = $targetYear;
+            }
+        } else {
+            $monthRange = range(1, 12);
+            $yearToProcess = $targetYear;
+        }
+
+        foreach ($monthRange as $month) {
+            $monthQuery = clone $query;
+
+            // Add month filter
+            $monthQuery->whereMonth('date', $month)
+                ->whereYear('date', $yearToProcess);
+
+            // Calculate data for this month
+            $paidAmount = (clone $monthQuery)->where('paid', true)->sum('cost');
+            $totalAmount = $monthQuery->sum('cost');
+            $unpaidAmount = $totalAmount - $paidAmount;
+            $percentage = $totalAmount > 0 ? ($paidAmount / $totalAmount) * 100 : 0;
+            $paymentCount = $monthQuery->count();
 
             $monthlyData[] = [
                 'month' => $month,
-                'month_name' => date('F', mktime(0, 0, 0, $month, 1)),
+                'month_name' => Carbon::create($yearToProcess, $month, 1)->format('F'),
                 'paid_amount' => $paidAmount,
-                'total_amount' => $totalAmount,
                 'unpaid_amount' => $unpaidAmount,
-                'percentage' => $paidPercentage,
-                'payment_count' => $monthPayments->count()
+                'total_amount' => $totalAmount,
+                'percentage' => $percentage,
+                'payment_count' => $paymentCount
             ];
         }
 
+        // Calculate totals
         $grandTotal = collect($monthlyData)->sum('paid_amount');
         $grandTotalAll = collect($monthlyData)->sum('total_amount');
         $avgPercentage = $grandTotalAll > 0 ? ($grandTotal / $grandTotalAll) * 100 : 0;
@@ -554,10 +765,12 @@ class PaymentController extends Controller
             'monthlyData',
             'targetYear',
             'currentYear',
+            'availableYears',
             'grandTotal',
             'grandTotalAll',
             'avgPercentage',
-            'availableYears'
+            'dateFrom',
+            'dateTo'
         ));
     }
     public function weeklyMaintenanceReport(Request $request)
@@ -708,9 +921,102 @@ class PaymentController extends Controller
 
 
 
-    public function costPerStoreYearlyReport()
+    public function costPerStoreYearlyReport(Request $request)
     {
-        return view('admin.payments.reports.cost-per-store-yearly');
+        // Get filters from index page
+        $dateFrom = $request->get('date_from');
+        $dateTo = $request->get('date_to');
+        $companyId = $request->get('company_id');
+        $search = $request->get('search');
+        $maintenanceType = $request->get('maintenance_type');
+        $paid = $request->get('paid');
+
+        // FIXED: Determine target year from filters
+        if ($dateFrom) {
+            $targetYear = Carbon::parse($dateFrom)->year;
+        } elseif ($dateTo) {
+            $targetYear = Carbon::parse($dateTo)->year;
+        } else {
+            $targetYear = $request->get('year', now()->year);
+        }
+
+        // Base query with filters
+        $query = Payment::query();
+
+        // Apply date filters
+        if ($dateFrom && $dateTo) {
+            $query->whereBetween('date', [
+                Carbon::parse($dateFrom)->startOfDay(),
+                Carbon::parse($dateTo)->endOfDay()
+            ]);
+        } elseif ($dateFrom) {
+            $query->whereDate('date', '>=', $dateFrom);
+        } elseif ($dateTo) {
+            $query->whereDate('date', '<=', $dateTo);
+        } else {
+            // Default to within 1 year from target year
+            $query->where('date', '>=', Carbon::create($targetYear, 1, 1)->startOfYear())
+                ->where('date', '<=', Carbon::create($targetYear, 12, 31)->endOfYear());
+        }
+
+        // Apply additional filters
+        if ($companyId && $companyId !== 'all') {
+            $query->where('company_id', $companyId);
+        }
+
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('store', 'like', "%{$search}%")
+                    ->orWhere('what_got_fixed', 'like', "%{$search}%")
+                    ->orWhere('notes', 'like', "%{$search}%")
+                    ->orWhereHas('company', function($companyQuery) use ($search) {
+                        $companyQuery->where('name', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        if ($maintenanceType && $maintenanceType !== 'all') {
+            $query->where('maintenance_type', $maintenanceType);
+        }
+
+        if ($paid && $paid !== 'all') {
+            $query->where('paid', $paid === '1');
+        }
+
+        // FIXED: Get store yearly costs with proper grouping
+        $storeYearlyCosts = $query
+            ->selectRaw('
+            COALESCE(store, CONCAT("Store ", store_id)) as store_display,
+            SUM(cost) as total_cost,
+            COUNT(*) as payment_count,
+            AVG(cost) as avg_cost
+        ')
+            ->whereNotNull('cost')
+            ->where('cost', '>', 0)
+            ->groupByRaw('COALESCE(store, CONCAT("Store ", store_id))')
+            ->orderBy('total_cost', 'desc')
+            ->get();
+
+        // Calculate summary data
+        $grandTotal = $storeYearlyCosts->sum('total_cost');
+        $avgCostPerStore = $storeYearlyCosts->count() > 0 ? $grandTotal / $storeYearlyCosts->count() : 0;
+
+        // Get available years for dropdown
+        $availableYears = Payment::selectRaw('YEAR(date) as year')
+            ->distinct()
+            ->orderBy('year', 'desc')
+            ->pluck('year')
+            ->toArray();
+
+        return view('admin.payments.reports.cost-per-store-yearly', compact(
+            'storeYearlyCosts',
+            'grandTotal',
+            'avgCostPerStore',
+            'targetYear',
+            'availableYears',
+            'dateFrom',
+            'dateTo'
+        ));
     }
 
     public function pendingProjectsReport()
