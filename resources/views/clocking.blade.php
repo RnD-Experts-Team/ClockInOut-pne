@@ -65,12 +65,12 @@
                             <div class="flex items-center {{ isRtl() ? 'space-x-reverse' : '' }} space-x-4">
                                 <div class="flex items-center">
                                     <input class="h-4 w-4 border-orange-200 text-black-600 focus:ring-orange-500"
-                                           id="didBuyYes" name="did_buy" type="radio" value="1">
+                                           id="didBuyYes" name="bought_something" type="radio" value="1">
                                     <label class="{{ isRtl() ? 'mr-2' : 'ml-2' }}" for="didBuyYes">{{ __('messages.yes') }}</label>
                                 </div>
                                 <div class="flex items-center">
                                     <input class="h-4 w-4 border-orange-200 text-black-600 focus:ring-orange-500"
-                                           id="didBuyNo" name="did_buy" type="radio" value="0" checked>
+                                           id="didBuyNo" name="bought_something" type="radio" value="0" checked>
                                     <label class="{{ isRtl() ? 'mr-2' : 'ml-2' }}" for="didBuyNo">{{ __('messages.no') }}</label>
                                 </div>
                             </div>
@@ -313,12 +313,26 @@
             const confirmButton = document.getElementById('confirmButton');
             const message = document.getElementById('confirmationMessage');
 
+            console.log('Showing confirmation modal for action:', action);
+
             if (action === 'in') {
                 message.textContent = '{{ __('messages.confirm_clock_in') }}';
-                confirmButton.onclick = () => document.getElementById('clockInForm').submit();
+                confirmButton.onclick = () => {
+                    console.log('Clock-in form submission confirmed');
+                    document.getElementById('clockInForm').submit();
+                };
             } else {
                 message.textContent = '{{ __('messages.confirm_clock_out') }}';
-                confirmButton.onclick = () => document.getElementById('clockOutForm').submit();
+                confirmButton.onclick = () => {
+                    console.log('=== CLOCK-OUT FORM SUBMISSION CONFIRMED ===');
+                    const form = document.getElementById('clockOutForm');
+                    const formData = new FormData(form);
+                    console.log('Final form data before submission:');
+                    for (let [key, value] of formData.entries()) {
+                        console.log(`  ${key}:`, value);
+                    }
+                    form.submit();
+                };
             }
 
             // Show the modal
@@ -369,16 +383,36 @@
             const usingCar = {{ $using_car ? 'true' : 'false' }};
             const clockOutErrorBox = document.getElementById('clockOutError');
 
+            console.log('=== CLOCK-OUT VALIDATION STARTED ===');
+            console.log('Using car:', usingCar);
+
             // Clear any previous error
             clockOutErrorBox.innerText = '';
             clockOutErrorBox.classList.add('hidden');
+
+            // Get all form data for logging
+            const formData = new FormData(document.getElementById('clockOutForm'));
+            const formDataObj = {};
+            for (let [key, value] of formData.entries()) {
+                formDataObj[key] = value;
+            }
+            console.log('Form data being submitted:', formDataObj);
+
+            // Check radio button states
+            const didBuyYes = document.getElementById('didBuyYes');
+            const didBuyNo = document.getElementById('didBuyNo');
+            console.log('didBuyYes checked:', didBuyYes ? didBuyYes.checked : 'element not found');
+            console.log('didBuyNo checked:', didBuyNo ? didBuyNo.checked : 'element not found');
+            console.log('bought_something value in form:', formData.get('bought_something'));
 
             // If using car => check miles_out + image_out
             if (usingCar) {
                 const milesOut = document.getElementById('miles_out').value.trim();
                 const imageOut = document.getElementById('image_out').value; // file path
+                console.log('Car validation - miles_out:', milesOut, 'image_out:', imageOut);
 
                 if (!milesOut || !imageOut) {
+                    console.log('Car validation failed');
                     clockOutErrorBox.innerText = '{{ __('messages.car_clock_out_validation') }}';
                     clockOutErrorBox.classList.remove('hidden');
                     return;
@@ -386,18 +420,20 @@
             }
 
             // Also validate the "did you buy anything?" question
-            const didBuyYes = document.getElementById('didBuyYes');
             if (didBuyYes && didBuyYes.checked) {
                 const costVal = document.getElementById('purchase_cost').value.trim();
                 const receiptVal = document.getElementById('purchase_receipt').value;
+                console.log('Purchase validation - cost:', costVal, 'receipt:', receiptVal);
 
                 if (!costVal || !receiptVal) {
+                    console.log('Purchase validation failed');
                     clockOutErrorBox.innerText = '{{ __('messages.purchase_validation') }}';
                     clockOutErrorBox.classList.remove('hidden');
                     return;
                 }
             }
 
+            console.log('All validations passed, showing confirmation');
             // If all good
             showConfirmation('out');
         }
