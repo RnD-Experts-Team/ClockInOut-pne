@@ -16,28 +16,29 @@
                 <div class="w-full">
                     <table class="w-full table-fixed border-collapse text-xs" id="leaseTrackerTable">
                         <colgroup>
-                            <col style="width: 6%">   <!-- Store # -->
-                            <col style="width: 8%">   <!-- AWS -->
-                            <col style="width: 8%">   <!-- Total Rent -->
-                            <col style="width: 7%">   <!-- L2S Ratio -->
-                            <col style="width: 12%">  <!-- Time Left -->
-                            <col style="width: 12%">  <!-- Total Lease Life -->
-                            <col style="width: 8%">   <!-- Term 1 -->
-                            <col style="width: 8%">   <!-- Term 2 -->
-                            <col style="width: 8%">   <!-- Term 3 -->
-                            <col style="width: 8%">   <!-- Term 4 -->
-                            <col style="width: 8%">   <!-- Term 5 -->
+                            <col style="width: 5%">   <!-- Store # -->
+                            <col style="width: 7%">   <!-- AWS -->
+                            <col style="width: 7%">   <!-- Total Rent -->
+                            <col style="width: 6%">   <!-- L2S Ratio -->
+                            <col style="width: 10%">  <!-- Time Left -->
+                            <col style="width: 10%">  <!-- Total Lease Life -->
+                            <col style="width: 8%">   <!-- Initial Lease Exp -->
+                            <col style="width: 7%">   <!-- Term 1 -->
+                            <col style="width: 7%">   <!-- Term 2 -->
+                            <col style="width: 7%">   <!-- Term 3 -->
+                            <col style="width: 7%">   <!-- Term 4 -->
+                            <col style="width: 7%">   <!-- Term 5 -->
                             <col style="width: 9%">   <!-- Franchise Exp -->
-                            <col style="width: 8%">   <!-- Status -->
+                            <col style="width: 7%">   <!-- Status -->
                         </colgroup>
                         <thead>
                         <tr class="bg-[#ff671b] text-white">
                             <th class="border border-gray-300 px-1 py-2 text-center text-xs font-semibold cursor-pointer hover:bg-[#e55b17] transition-colors select-none"
-                                onclick="sortLeaseTrackerTable(0, 'text')" id="leasetracker-header-0">
+                                onclick="sortLeaseTrackerTable(0, 'number')" id="leasetracker-header-0">
                                 <div class="flex flex-col items-center">
                                     <span class="leading-tight">Store</span>
                                     <span class="leading-tight">#</span>
-                                    <span class="text-xs opacity-75" id="leasetracker-sort-indicator-0">A↓</span>
+                                    <span class="text-xs opacity-75" id="leasetracker-sort-indicator-0">↑</span>
                                 </div>
                             </th>
                             <th class="border border-gray-300 px-1 py-2 text-center text-xs font-semibold cursor-pointer hover:bg-[#e55b17] transition-colors select-none"
@@ -79,10 +80,11 @@
                                     <span class="text-xs opacity-75" id="leasetracker-sort-indicator-5">A↓</span>
                                 </div>
                             </th>
+                            <!-- NEW: Initial Lease Expiration Column -->
                             <th class="border border-gray-300 px-1 py-2 text-center text-xs font-semibold cursor-pointer hover:bg-[#e55b17] transition-colors select-none"
                                 onclick="sortLeaseTrackerTable(6, 'text')" id="leasetracker-header-6">
                                 <div class="flex flex-col items-center">
-                                    <span class="leading-tight">Term 1</span>
+                                    <span class="leading-tight">Initial Lease</span>
                                     <span class="leading-tight">Exp</span>
                                     <span class="text-xs opacity-75" id="leasetracker-sort-indicator-6">A↓</span>
                                 </div>
@@ -90,7 +92,7 @@
                             <th class="border border-gray-300 px-1 py-2 text-center text-xs font-semibold cursor-pointer hover:bg-[#e55b17] transition-colors select-none"
                                 onclick="sortLeaseTrackerTable(7, 'text')" id="leasetracker-header-7">
                                 <div class="flex flex-col items-center">
-                                    <span class="leading-tight">Term 2</span>
+                                    <span class="leading-tight">Term 1</span>
                                     <span class="leading-tight">Exp</span>
                                     <span class="text-xs opacity-75" id="leasetracker-sort-indicator-7">A↓</span>
                                 </div>
@@ -98,7 +100,7 @@
                             <th class="border border-gray-300 px-1 py-2 text-center text-xs font-semibold cursor-pointer hover:bg-[#e55b17] transition-colors select-none"
                                 onclick="sortLeaseTrackerTable(8, 'text')" id="leasetracker-header-8">
                                 <div class="flex flex-col items-center">
-                                    <span class="leading-tight">Term 3</span>
+                                    <span class="leading-tight">Term 2</span>
                                     <span class="leading-tight">Exp</span>
                                     <span class="text-xs opacity-75" id="leasetracker-sort-indicator-8">A↓</span>
                                 </div>
@@ -106,7 +108,7 @@
                             <th class="border border-gray-300 px-1 py-2 text-center text-xs font-semibold cursor-pointer hover:bg-[#e55b17] transition-colors select-none"
                                 onclick="sortLeaseTrackerTable(9, 'text')" id="leasetracker-header-9">
                                 <div class="flex flex-col items-center">
-                                    <span class="leading-tight">Term 4</span>
+                                    <span class="leading-tight">Term 3</span>
                                     <span class="leading-tight">Exp</span>
                                     <span class="text-xs opacity-75" id="leasetracker-sort-indicator-9">A↓</span>
                                 </div>
@@ -114,7 +116,7 @@
                             <th class="border border-gray-300 px-1 py-2 text-center text-xs font-semibold cursor-pointer hover:bg-[#e55b17] transition-colors select-none"
                                 onclick="sortLeaseTrackerTable(10, 'text')" id="leasetracker-header-10">
                                 <div class="flex flex-col items-center">
-                                    <span class="leading-tight">Term 5</span>
+                                    <span class="leading-tight">Term 4</span>
                                     <span class="leading-tight">Exp</span>
                                     <span class="text-xs opacity-75" id="leasetracker-sort-indicator-10">A↓</span>
                                 </div>
@@ -122,7 +124,7 @@
                             <th class="border border-gray-300 px-1 py-2 text-center text-xs font-semibold cursor-pointer hover:bg-[#e55b17] transition-colors select-none"
                                 onclick="sortLeaseTrackerTable(11, 'text')" id="leasetracker-header-11">
                                 <div class="flex flex-col items-center">
-                                    <span class="leading-tight">Franchise</span>
+                                    <span class="leading-tight">Term 5</span>
                                     <span class="leading-tight">Exp</span>
                                     <span class="text-xs opacity-75" id="leasetracker-sort-indicator-11">A↓</span>
                                 </div>
@@ -130,8 +132,16 @@
                             <th class="border border-gray-300 px-1 py-2 text-center text-xs font-semibold cursor-pointer hover:bg-[#e55b17] transition-colors select-none"
                                 onclick="sortLeaseTrackerTable(12, 'text')" id="leasetracker-header-12">
                                 <div class="flex flex-col items-center">
-                                    <span class="leading-tight">Status</span>
+                                    <span class="leading-tight">Franchise</span>
+                                    <span class="leading-tight">Exp</span>
                                     <span class="text-xs opacity-75" id="leasetracker-sort-indicator-12">A↓</span>
+                                </div>
+                            </th>
+                            <th class="border border-gray-300 px-1 py-2 text-center text-xs font-semibold cursor-pointer hover:bg-[#e55b17] transition-colors select-none"
+                                onclick="sortLeaseTrackerTable(13, 'text')" id="leasetracker-header-13">
+                                <div class="flex flex-col items-center">
+                                    <span class="leading-tight">Status</span>
+                                    <span class="text-xs opacity-75" id="leasetracker-sort-indicator-13">A↓</span>
                                 </div>
                             </th>
                         </tr>
@@ -159,7 +169,7 @@
                                     $rowClass = $index % 2 == 0 ? 'bg-white' : 'bg-gray-50';
                                 }
 
-                                // Get term expiration dates
+                                // Get term expiration dates (starting from renewal terms, not initial)
                                 $termExpirations = ['N/A', 'N/A', 'N/A', 'N/A', 'N/A'];
                                 if ($termDates && $termDates->count() > 1) {
                                     for($i = 1; $i <= 5; $i++) {
@@ -178,6 +188,8 @@
                                 <td class="border border-gray-300 px-1 py-2 text-xs text-right break-words" data-sort="{{ $lease->lease_to_sales_ratio ?: 0 }}">{{ $lease->lease_to_sales_ratio ? number_format($lease->lease_to_sales_ratio * 100, 2) . '%' : 'N/A' }}</td>
                                 <td class="border border-gray-300 px-1 py-2 text-xs text-center break-words leading-tight" data-sort="{{ $currentTerm ? ($currentTerm['time_left']['expired'] ? 'Expired' : $currentTerm['time_left']['formatted']) : 'N/A' }}">{{ $currentTerm ? ($currentTerm['time_left']['expired'] ? 'Expired' : $currentTerm['time_left']['formatted']) : 'N/A' }}</td>
                                 <td class="border border-gray-300 px-1 py-2 text-xs text-center break-words leading-tight" data-sort="{{ $lease->time_until_last_term_ends ? $lease->time_until_last_term_ends['formatted'] : 'N/A' }}">{{ $lease->time_until_last_term_ends ? $lease->time_until_last_term_ends['formatted'] : 'N/A' }}</td>
+                                <!-- NEW: Initial Lease Expiration Date Column -->
+                                <td class="border border-gray-300 px-1 py-2 text-xs text-center break-words" data-sort="{{ $lease->initial_lease_expiration_date ? $lease->initial_lease_expiration_date->format('m/d/Y') : 'N/A' }}">{{ $lease->initial_lease_expiration_date ? $lease->initial_lease_expiration_date->format('m/d/Y') : 'N/A' }}</td>
                                 <td class="border border-gray-300 px-1 py-2 text-xs text-center break-words" data-sort="{{ $termExpirations[0] }}">{{ $termExpirations[0] }}</td>
                                 <td class="border border-gray-300 px-1 py-2 text-xs text-center break-words" data-sort="{{ $termExpirations[1] }}">{{ $termExpirations[1] }}</td>
                                 <td class="border border-gray-300 px-1 py-2 text-xs text-center break-words" data-sort="{{ $termExpirations[2] }}">{{ $termExpirations[2] }}</td>
@@ -201,4 +213,78 @@
             </div>
         </div>
     </div>
+
+    <script>
+        // Sorting functionality for the lease tracker table
+        let leaseTrackerSortColumn = 0;
+        let leaseTrackerSortDirection = 'asc';
+
+        function sortLeaseTrackerTable(column, type) {
+            const tbody = document.getElementById('leaseTrackerBody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+
+            // Toggle sort direction if clicking the same column
+            if (leaseTrackerSortColumn === column) {
+                leaseTrackerSortDirection = leaseTrackerSortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                leaseTrackerSortDirection = 'asc';
+                leaseTrackerSortColumn = column;
+            }
+
+            // Clear all sort indicators
+            for (let i = 0; i <= 13; i++) {
+                const indicator = document.getElementById(`leasetracker-sort-indicator-${i}`);
+                if (indicator) {
+                    if (type === 'number') {
+                        indicator.textContent = '↑';
+                    } else {
+                        indicator.textContent = 'A↓';
+                    }
+                }
+            }
+
+            // Set current sort indicator
+            const currentIndicator = document.getElementById(`leasetracker-sort-indicator-${column}`);
+            if (currentIndicator) {
+                if (type === 'number') {
+                    currentIndicator.textContent = leaseTrackerSortDirection === 'asc' ? '↑' : '↓';
+                } else {
+                    currentIndicator.textContent = leaseTrackerSortDirection === 'asc' ? 'A↓' : 'Z↑';
+                }
+            }
+
+            // Sort rows
+            rows.sort((a, b) => {
+                const aValue = a.cells[column].getAttribute('data-sort') || '';
+                const bValue = b.cells[column].getAttribute('data-sort') || '';
+
+                let comparison = 0;
+                if (type === 'number') {
+                    const aNum = parseFloat(aValue) || 0;
+                    const bNum = parseFloat(bValue) || 0;
+                    comparison = aNum - bNum;
+                } else {
+                    comparison = aValue.localeCompare(bValue);
+                }
+
+                return leaseTrackerSortDirection === 'asc' ? comparison : -comparison;
+            });
+
+            // Reattach sorted rows and update alternating colors
+            rows.forEach((row, index) => {
+                tbody.appendChild(row);
+                // Update row colors while preserving status-based colors
+                if (!row.classList.contains('bg-red-100') && !row.classList.contains('bg-yellow-100')) {
+                    row.className = row.className.replace(/bg-(white|gray-50)/, '');
+                    row.classList.add(index % 2 === 0 ? 'bg-white' : 'bg-gray-50');
+                    row.classList.add('hover:bg-[#fff4ed]');
+                }
+            });
+        }
+
+        function closeModal(modalId) {
+            // Add your modal closing logic here
+            window.close(); // or whatever method you use to close the modal
+        }
+    </script>
 @endsection

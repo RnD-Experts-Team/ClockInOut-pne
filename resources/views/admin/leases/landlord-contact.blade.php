@@ -8,7 +8,7 @@
             <!-- Simple Header -->
             <div class="text-center mb-8">
                 <h1 class="text-3xl font-bold text-gray-900 mb-2">Landlord Contact Directory</h1>
-                <p class="text-gray-600">Generated on {{ now()->format('F j, Y \a\t g:i A') }}</p>
+                <p class="text-gray-600">Generated on {{ now()->format('F j, Y \\a\\t g:i A') }}</p>
             </div>
 
             <!-- Excel-like Table -->
@@ -17,11 +17,12 @@
                     <table class="min-w-full border-collapse" id="landlordDirectoryTable">
                         <thead>
                         <tr class="bg-[#ff671b] text-white">
+                            <!-- FIXED: Store # should be sorted as number, not text -->
                             <th class="border border-gray-300 px-4 py-3 text-left text-sm font-semibold cursor-pointer hover:bg-[#e55b17] transition-colors select-none"
-                                onclick="sortLandlordTable(0, 'text')" id="landlord-header-0">
+                                onclick="sortLandlordTable(0, 'number')" id="landlord-header-0">
                                 <div class="flex items-center justify-between">
                                     Store #
-                                    <span class="ml-2 text-xs opacity-75" id="landlord-sort-indicator-0">A↓</span>
+                                    <span class="ml-2 text-xs opacity-75" id="landlord-sort-indicator-0">↑</span>
                                 </div>
                             </th>
                             <th class="border border-gray-300 px-4 py-3 text-left text-sm font-semibold cursor-pointer hover:bg-[#e55b17] transition-colors select-none"
@@ -85,7 +86,7 @@
                         <tbody id="landlordTableBody">
                         @foreach($leases as $index => $lease)
                             <tr class="{{ $index % 2 == 0 ? 'bg-white' : 'bg-gray-50' }} hover:bg-[#fff4ed]">
-                                <!-- Store Number -->
+                                <!-- Store Number - FIXED: Removed escape characters -->
                                 <td class="border border-gray-300 px-4 py-3 text-sm" data-sort="{{ $lease->store_number ?: 'N/A' }}">
                                     {{ $lease->store_number ?: 'N/A' }}
                                 </td>
@@ -152,5 +153,87 @@
         </div>
     </div>
 
+    <script>
+        // Fixed Landlord Table Sorting
+        document.addEventListener('DOMContentLoaded', function() {
+            let landlordSortDirection = {};
 
+            window.sortLandlordTable = function(columnIndex, type) {
+                const tbody = document.getElementById('landlordTableBody');
+                if (!tbody) return;
+
+                const rows = Array.from(tbody.querySelectorAll('tr'));
+                if (rows.length === 0) return;
+
+                const currentDirection = landlordSortDirection[columnIndex] || 'asc';
+                const newDirection = currentDirection === 'asc' ? 'desc' : 'asc';
+                landlordSortDirection[columnIndex] = newDirection;
+
+                // Clear all sort indicators
+                for (let i = 0; i <= 8; i++) {
+                    const indicator = document.getElementById(`landlord-sort-indicator-${i}`);
+                    if (indicator) {
+                        // Store # (0), AWS (6), Total Rent (7) are numbers
+                        if (i === 0 || i === 6 || i === 7) {
+                            indicator.textContent = '↑';
+                        } else {
+                            indicator.textContent = 'A↓';
+                        }
+                        indicator.style.opacity = '0.5';
+                    }
+                }
+
+                // Set active sort indicator
+                const activeIndicator = document.getElementById(`landlord-sort-indicator-${columnIndex}`);
+                if (activeIndicator) {
+                    if (type === 'number') {
+                        activeIndicator.textContent = newDirection === 'asc' ? '↑' : '↓';
+                    } else {
+                        activeIndicator.textContent = newDirection === 'asc' ? 'A↓' : 'Z↑';
+                    }
+                    activeIndicator.style.opacity = '1';
+                }
+
+                // Sort rows
+                rows.sort((a, b) => {
+                    let aValue, bValue;
+
+                    if (type === 'number') {
+                        // FIXED: Store numbers need integer parsing
+                        if (columnIndex === 0) {
+                            aValue = parseInt(a.cells[columnIndex].getAttribute('data-sort')) || 0;
+                            bValue = parseInt(b.cells[columnIndex].getAttribute('data-sort')) || 0;
+                        } else {
+                            aValue = parseFloat(a.cells[columnIndex].getAttribute('data-sort')) || 0;
+                            bValue = parseFloat(b.cells[columnIndex].getAttribute('data-sort')) || 0;
+                        }
+                    } else {
+                        aValue = (a.cells[columnIndex].getAttribute('data-sort') || '').toLowerCase();
+                        bValue = (b.cells[columnIndex].getAttribute('data-sort') || '').toLowerCase();
+
+                        // Handle N/A values
+                        if (aValue === 'n/a') aValue = 'zzzz';
+                        if (bValue === 'n/a') bValue = 'zzzz';
+                    }
+
+                    if (newDirection === 'asc') {
+                        return aValue > bValue ? 1 : (aValue < bValue ? -1 : 0);
+                    } else {
+                        return aValue < bValue ? 1 : (aValue > bValue ? -1 : 0);
+                    }
+                });
+
+                // Re-append sorted rows with alternating colors
+                rows.forEach((row, index) => {
+                    row.className = (index % 2 === 0 ? 'bg-white' : 'bg-gray-50') + ' hover:bg-[#fff4ed]';
+                    tbody.appendChild(row);
+                });
+            };
+        });
+
+        function closeModal(modalId) {
+            // Add your modal closing logic here
+            window.close(); // or whatever method you use to close the modal
+        }
+    </script>
 @endsection

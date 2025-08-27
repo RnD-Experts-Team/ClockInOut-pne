@@ -195,6 +195,7 @@ class LeaseController extends Controller
             'insurance' => 'nullable|numeric|min:0',
             're_taxes' => 'nullable|numeric|min:0',
             'others' => 'nullable|numeric|min:0',
+            'current_term' => 'nullable|integer|min:1|max:10', // NEW VALIDATION RULE
             'security_deposit' => 'nullable|numeric|min:0',
             'franchise_agreement_expiration_date' => 'nullable|date',
             'renewal_options' => 'nullable|string|max:255',
@@ -265,6 +266,8 @@ class LeaseController extends Controller
             'cam' => 'nullable|numeric|min:0',
             'insurance' => 'nullable|numeric|min:0',
             're_taxes' => 'nullable|numeric|min:0',
+            'current_term' => 'nullable|integer|min:1|max:10', // NEW VALIDATION RULE
+
             'others' => 'nullable|numeric|min:0',
             'security_deposit' => 'nullable|numeric|min:0',
             'franchise_agreement_expiration_date' => 'nullable|date',
@@ -369,8 +372,8 @@ class LeaseController extends Controller
         $csvData[] = [
             'Store Number', 'Store Name (from Store)', 'Name', 'Store Address', 'AWS', 'Base Rent', '% Increase/Year',
             'CAM', 'Insurance', 'RE Taxes', 'Others', 'Security Deposit',
-            'Franchise Expiration', 'Renewal Options', 'Lease Expiration', 'SQF',
-            'HVAC', 'Total Rent', 'Current Term', 'Time Left Current Term',
+            'Franchise Expiration', 'Renewal Options', 'Current Term Override', // NEW HEADER
+            'Lease Expiration', 'SQF', 'HVAC', 'Total Rent', 'Current Term', 'Time Left Current Term',
             'Time Left Last Term', 'Lease to Sales Ratio', 'Time Until Franchise Expires',
             'Created At'
         ];
@@ -393,6 +396,7 @@ class LeaseController extends Controller
                 $lease->security_deposit,
                 $lease->franchise_agreement_expiration_date?->format('Y-m-d'),
                 $lease->renewal_options,
+                $lease->current_term ?? 'Auto', // NEW DATA FIELD
                 $lease->initial_lease_expiration_date?->format('Y-m-d'),
                 $lease->sqf,
                 $lease->hvac ? 'Yes' : 'No',
