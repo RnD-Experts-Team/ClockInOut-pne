@@ -219,7 +219,7 @@ public function destroy($id)
         $request->validate([
             'using_car' => 'required|boolean',
             'miles_in' => 'required_if:using_car,1|nullable|integer',
-            'image_in' => 'required_if:using_car,1|nullable|image|mimes:jpg,png,jpeg|max:2048',
+            'image_in' => 'required_if:using_car,1|nullable|image|mimes:jpg,png,jpeg',
         ]);
 
         // Check if the clock-in image exists and store it
@@ -282,10 +282,10 @@ public function destroy($id)
         // Validate new fields as well
         $request->validate([
             'miles_out'         => 'nullable|integer',
-            'image_out'         => 'nullable|image|mimes:jpg,png,jpeg|max:2048',
+            'image_out'         => 'nullable|image|mimes:jpg,png,jpeg',
             'bought_something'  => 'required|boolean',
             'purchase_cost'     => 'required_if:bought_something,1|nullable|numeric',
-            'purchase_receipt'  => 'required_if:bought_something,1|nullable|image|mimes:jpg,png,jpeg|max:2048',
+            'purchase_receipt'  => 'required_if:bought_something,1|nullable|image|mimes:jpg,png,jpeg',
         ]);
         
         Log::info('Clock-out validation passed');
