@@ -1,3 +1,4 @@
+{{-- resources/views/payments/monthly-report.blade.php --}}
 @extends('layouts.app')
 
 @section('title', 'Monthly Report')
@@ -25,6 +26,32 @@
                     </form>
                 @endif
             </div>
+
+            <!-- Filter Display (if filters are applied) -->
+            @if(request()->hasAny(['date_from', 'date_to', 'company_id', 'search', 'time_filter']))
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                    <div class="text-center">
+                        <h3 class="text-sm font-medium text-blue-900">Applied Filters</h3>
+                        <div class="flex flex-wrap justify-center gap-2 mt-2">
+                            @if(request('date_from') && request('date_to'))
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                    Date Range: {{ request('date_from') }} to {{ request('date_to') }}
+                                </span>
+                            @endif
+                            @if(request('company_id') && request('company_id') !== 'all')
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                    Company Filter Applied
+                                </span>
+                            @endif
+                            @if(request('search'))
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                    Search: {{ request('search') }}
+                                </span>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            @endif
 
             <!-- Excel-like Table -->
             <div class="bg-white shadow-lg rounded-lg overflow-hidden">
