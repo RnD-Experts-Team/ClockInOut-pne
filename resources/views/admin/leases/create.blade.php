@@ -136,7 +136,7 @@
                 </div>
             </div>
 
-            <!-- Financial Information (unchanged) -->
+            <!-- Financial Information -->
             <div class="bg-orange-50 shadow-sm ring-1 ring-orange-900/5 rounded-lg p-6">
                 <h2 class="text-lg font-semibold text-black-900 mb-4 flex items-center">
                     <svg class="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -285,7 +285,7 @@
                 </div>
             </div>
 
-            <!-- Lease Terms (unchanged) -->
+            <!-- Lease Terms -->
             <div class="bg-orange-50 shadow-sm ring-1 ring-orange-900/5 rounded-lg p-6">
                 <h2 class="text-lg font-semibold text-black-900 mb-4 flex items-center">
                     <svg class="w-5 h-5 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -293,7 +293,7 @@
                     </svg>
                     Lease Terms
                 </h2>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label for="initial_lease_expiration_date" class="form-label block text-sm font-medium text-black-700 mb-2">Initial Lease Expiration Date</label>
                         <input type="date" name="initial_lease_expiration_date" id="initial_lease_expiration_date"
@@ -323,10 +323,48 @@
                         <p class="form-error mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
                     </div>
+                    <!-- NEW: Current Term Override Field -->
+                    <div>
+                        <label for="current_term" class="form-label block text-sm font-medium text-black-700 mb-2">
+                            <svg class="w-4 h-4 inline mr-1 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Current Term Override
+                        </label>
+                        <select name="current_term" id="current_term" class="form-select block w-full rounded-lg border-orange-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm @error('current_term') border-red-500 @enderror">
+                            <option value="">Auto-calculate from dates</option>
+                            <option value="1" {{ old('current_term') == '1' ? 'selected' : '' }}>
+                                1 - Initial Term
+                            </option>
+                            <option value="2" {{ old('current_term') == '2' ? 'selected' : '' }}>
+                                2 - First Renewal Term
+                            </option>
+                            <option value="3" {{ old('current_term') == '3' ? 'selected' : '' }}>
+                                3 - Second Renewal Term
+                            </option>
+                            <option value="4" {{ old('current_term') == '4' ? 'selected' : '' }}>
+                                4 - Third Renewal Term
+                            </option>
+                            <option value="5" {{ old('current_term') == '5' ? 'selected' : '' }}>
+                                5 - Fourth Renewal Term
+                            </option>
+                        </select>
+                        <p class="mt-1 text-xs text-black-500">
+                            <span class="inline-flex items-center">
+                                <svg class="w-3 h-3 mr-1 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                Leave empty to auto-calculate. Set manually if lease terms have been updated in real life.
+                            </span>
+                        </p>
+                        @error('current_term')
+                        <p class="form-error mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
                 </div>
             </div>
 
-            <!-- Landlord Information (unchanged except for styling) -->
+            <!-- Landlord Information -->
             <div class="bg-orange-50 shadow-sm ring-1 ring-orange-900/5 rounded-lg p-6">
                 <h2 class="text-lg font-semibold text-black-900 mb-4 flex items-center">
                     <svg class="w-5 h-5 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -386,7 +424,7 @@
                 </div>
             </div>
 
-            <!-- Comments (unchanged except for styling) -->
+            <!-- Comments -->
             <div class="bg-orange-50 shadow-sm ring-1 ring-orange-900/5 rounded-lg p-6">
                 <h2 class="text-lg font-semibold text-black-900 mb-4 flex items-center">
                     <svg class="w-5 h-5 mr-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

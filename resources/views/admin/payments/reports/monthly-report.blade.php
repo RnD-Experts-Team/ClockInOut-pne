@@ -69,7 +69,7 @@
                         @else
                             <tr class="bg-[#fff4ed]" data-row-type="indicator">
                                 <td colspan="3" class="border border-gray-300 px-6 py-2 text-center text-sm text-[#ff671b]">
-                                    <strong>{{ $currentYear }} Payment Report</strong>
+                                    <strong>{{ $currentYear }} Payment Report (without labor)</strong>
                                 </td>
                             </tr>
                         @endif

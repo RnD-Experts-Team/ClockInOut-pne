@@ -1258,13 +1258,11 @@
 
         // Landlord Table Sorting
         document.addEventListener('DOMContentLoaded', function() {
+            // === LANDLORD TABLE SORTING ===
             let landlordSortDirection = {};
-
             window.sortLandlordTable = function(columnIndex, type) {
-                const table = document.getElementById('landlordDirectoryTable');
                 const tbody = document.getElementById('landlordTableBody');
-
-                if (!table || !tbody) return;
+                if (!tbody) return;
 
                 const rows = Array.from(tbody.querySelectorAll('tr'));
                 if (rows.length === 0) return;
@@ -1273,34 +1271,9 @@
                 const newDirection = currentDirection === 'asc' ? 'desc' : 'asc';
                 landlordSortDirection[columnIndex] = newDirection;
 
-                // Clear all sort indicators
-                for (let i = 0; i < 9; i++) {
-                    const indicator = document.getElementById(`landlord-sort-indicator-${i}`);
-                    if (indicator) {
-                        if (i === 6 || i === 7) {
-                            indicator.textContent = '↑';
-                        } else {
-                            indicator.textContent = 'A↓';
-                        }
-                        indicator.style.opacity = '0.5';
-                    }
-                }
-
-                // Set active sort indicator
-                const activeIndicator = document.getElementById(`landlord-sort-indicator-${columnIndex}`);
-                if (activeIndicator) {
-                    if (type === 'number') {
-                        activeIndicator.textContent = newDirection === 'asc' ? '↑' : '↓';
-                    } else {
-                        activeIndicator.textContent = newDirection === 'asc' ? 'A↓' : 'Z↑';
-                    }
-                    activeIndicator.style.opacity = '1';
-                }
-
-                // Sort rows
+                // Sort and reattach rows
                 rows.sort((a, b) => {
                     let aValue, bValue;
-
                     if (type === 'number') {
                         aValue = parseFloat(a.cells[columnIndex].getAttribute('data-sort')) || 0;
                         bValue = parseFloat(b.cells[columnIndex].getAttribute('data-sort')) || 0;
@@ -1308,15 +1281,9 @@
                         aValue = (a.cells[columnIndex].getAttribute('data-sort') || '').toLowerCase();
                         bValue = (b.cells[columnIndex].getAttribute('data-sort') || '').toLowerCase();
                     }
-
-                    if (newDirection === 'asc') {
-                        return aValue > bValue ? 1 : -1;
-                    } else {
-                        return aValue < bValue ? 1 : -1;
-                    }
+                    return newDirection === 'asc' ? (aValue > bValue ? 1 : -1) : (aValue < bValue ? 1 : -1);
                 });
 
-                // Re-append sorted rows with alternating colors
                 rows.forEach((row, index) => {
                     row.className = (index % 2 === 0 ? 'bg-white' : 'bg-gray-50') + ' hover:bg-[#fff4ed]';
                     tbody.appendChild(row);
@@ -1327,12 +1294,9 @@
         // Cost Breakdown Table Sorting
         document.addEventListener('DOMContentLoaded', function() {
             let costBreakdownSortDirection = {};
-
             window.sortCostBreakdownTable = function(columnIndex, type) {
-                const table = document.getElementById('costBreakdownTable');
                 const tbody = document.getElementById('costBreakdownBody');
-
-                if (!table || !tbody) return;
+                if (!tbody) return;
 
                 const rows = Array.from(tbody.querySelectorAll('tr'));
                 if (rows.length === 0) return;
@@ -1341,50 +1305,24 @@
                 const newDirection = currentDirection === 'asc' ? 'desc' : 'asc';
                 costBreakdownSortDirection[columnIndex] = newDirection;
 
-                // Clear all sort indicators
-                for (let i = 0; i < 12; i++) {
-                    const indicator = document.getElementById(`costbreakdown-sort-indicator-${i}`);
-                    if (indicator) {
-                        if (i === 0 || i === 1) {
-                            indicator.textContent = 'A↓';
-                        } else {
-                            indicator.textContent = '↑';
-                        }
-                        indicator.style.opacity = '0.5';
-                    }
-                }
-
-                // Set active sort indicator
-                const activeIndicator = document.getElementById(`costbreakdown-sort-indicator-${columnIndex}`);
-                if (activeIndicator) {
-                    if (type === 'number') {
-                        activeIndicator.textContent = newDirection === 'asc' ? '↑' : '↓';
-                    } else {
-                        activeIndicator.textContent = newDirection === 'asc' ? 'A↓' : 'Z↑';
-                    }
-                    activeIndicator.style.opacity = '1';
-                }
-
-                // Sort rows
                 rows.sort((a, b) => {
                     let aValue, bValue;
-
                     if (type === 'number') {
-                        aValue = parseFloat(a.cells[columnIndex].getAttribute('data-sort')) || 0;
-                        bValue = parseFloat(b.cells[columnIndex].getAttribute('data-sort')) || 0;
+                        // FIXED: Better number parsing for store numbers
+                        if (columnIndex === 0) {
+                            aValue = parseInt(a.cells[columnIndex].getAttribute('data-sort')) || 0;
+                            bValue = parseInt(b.cells[columnIndex].getAttribute('data-sort')) || 0;
+                        } else {
+                            aValue = parseFloat(a.cells[columnIndex].getAttribute('data-sort')) || 0;
+                            bValue = parseFloat(b.cells[columnIndex].getAttribute('data-sort')) || 0;
+                        }
                     } else {
                         aValue = (a.cells[columnIndex].getAttribute('data-sort') || '').toLowerCase();
                         bValue = (b.cells[columnIndex].getAttribute('data-sort') || '').toLowerCase();
                     }
-
-                    if (newDirection === 'asc') {
-                        return aValue > bValue ? 1 : -1;
-                    } else {
-                        return aValue < bValue ? 1 : -1;
-                    }
+                    return newDirection === 'asc' ? (aValue > bValue ? 1 : -1) : (aValue < bValue ? 1 : -1);
                 });
 
-                // Re-append sorted rows with alternating colors
                 rows.forEach((row, index) => {
                     row.className = (index % 2 === 0 ? 'bg-white' : 'bg-gray-50') + ' hover:bg-[#fff4ed]';
                     tbody.appendChild(row);
@@ -1393,6 +1331,7 @@
         });
 
         // Lease Tracker Table Sorting
+        // Lease Tracker Table Sorting - FIXED VERSION
         document.addEventListener('DOMContentLoaded', function() {
             let leaseTrackerSortDirection = {};
 
@@ -1409,11 +1348,12 @@
                 const newDirection = currentDirection === 'asc' ? 'desc' : 'asc';
                 leaseTrackerSortDirection[columnIndex] = newDirection;
 
-                // Clear all sort indicators
-                for (let i = 0; i < 13; i++) {
+                // Clear all sort indicators (UPDATED COLUMN COUNT TO 14)
+                for (let i = 0; i <= 13; i++) {
                     const indicator = document.getElementById(`leasetracker-sort-indicator-${i}`);
                     if (indicator) {
-                        if (i === 1 || i === 2 || i === 3) {
+                        // FIXED: Store # (0), AWS (1), Total Rent (2), L2S Ratio (3) are numbers
+                        if (i === 0 || i === 1 || i === 2 || i === 3) {
                             indicator.textContent = '↑';
                         } else {
                             indicator.textContent = 'A↓';
@@ -1433,28 +1373,45 @@
                     activeIndicator.style.opacity = '1';
                 }
 
-                // Sort rows
+                // Sort rows - IMPROVED SORTING LOGIC
                 rows.sort((a, b) => {
                     let aValue, bValue;
 
                     if (type === 'number') {
-                        aValue = parseFloat(a.cells[columnIndex].getAttribute('data-sort')) || 0;
-                        bValue = parseFloat(b.cells[columnIndex].getAttribute('data-sort')) || 0;
+                        // Get the raw data-sort value for numbers
+                        const aRaw = a.cells[columnIndex].getAttribute('data-sort');
+                        const bRaw = b.cells[columnIndex].getAttribute('data-sort');
+
+                        // FIXED: Better number parsing for store numbers and monetary values
+                        if (columnIndex === 0) {
+                            // Store numbers - parse as integers
+                            aValue = parseInt(aRaw) || 0;
+                            bValue = parseInt(bRaw) || 0;
+                        } else {
+                            // Other numbers - parse as floats
+                            aValue = parseFloat(aRaw) || 0;
+                            bValue = parseFloat(bRaw) || 0;
+                        }
                     } else {
+                        // Text sorting
                         aValue = (a.cells[columnIndex].getAttribute('data-sort') || '').toLowerCase();
                         bValue = (b.cells[columnIndex].getAttribute('data-sort') || '').toLowerCase();
+
+                        // Handle special cases like "N/A", "Expired"
+                        if (aValue === 'n/a') aValue = 'zzzz'; // Put N/A at end
+                        if (bValue === 'n/a') bValue = 'zzzz';
                     }
 
                     if (newDirection === 'asc') {
-                        return aValue > bValue ? 1 : -1;
+                        return aValue > bValue ? 1 : (aValue < bValue ? -1 : 0);
                     } else {
-                        return aValue < bValue ? 1 : -1;
+                        return aValue < bValue ? 1 : (aValue > bValue ? -1 : 0);
                     }
                 });
 
                 // Re-append sorted rows with updated row colors
                 rows.forEach((row, index) => {
-                    const statusCell = row.cells[12].getAttribute('data-sort');
+                    const statusCell = row.cells[13].getAttribute('data-sort'); // FIXED: Status is column 13 now
                     let rowClass = '';
                     if (statusCell === 'EXPIRED') {
                         rowClass = 'bg-red-100';
