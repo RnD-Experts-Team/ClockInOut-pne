@@ -39,6 +39,7 @@ class Lease extends Model
         'landlord_phone',
         'landlord_address',
         'comments',
+        'current_term',
     ];
 
     protected $casts = [
@@ -53,6 +54,7 @@ class Lease extends Model
         'franchise_agreement_expiration_date' => 'date',
         'initial_lease_expiration_date' => 'date',
         'sqf' => 'integer',
+        'current_term' => 'integer',
         'hvac' => 'boolean'
     ];
 
@@ -178,15 +180,36 @@ class Lease extends Model
     {
         return Attribute::make(
             get: function () {
-                $now = Carbon::now();
                 $termDates = $this->term_expiration_dates;
 
+                // If manual current_term is set, use it
+                if ($this->current_term && $this->current_term > 0) {
+                    $termIndex = $this->current_term - 1; // Convert to 0-based index
+
+                    if (isset($termDates[$termIndex])) {
+                        $term = $termDates[$termIndex];
+                        $now = Carbon::now();
+
+                        return [
+                            'term_name' => $term['term'],
+                            'term_number' => $this->current_term,
+                            'expiration_date' => $term['expiration_date'],
+                            'time_left' => $this->formatTimeDifference($now, $term['expiration_date']),
+                            'is_manual' => true // Flag to indicate this was manually set
+                        ];
+                    }
+                }
+
+                // Fall back to automatic date-based calculation
+                $now = Carbon::now();
                 foreach ($termDates as $index => $term) {
                     if ($now->lte($term['expiration_date'])) {
                         return [
                             'term_name' => $term['term'],
+                            'term_number' => $index + 1,
                             'expiration_date' => $term['expiration_date'],
-                            'time_left' => $this->formatTimeDifference($now, $term['expiration_date'])
+                            'time_left' => $this->formatTimeDifference($now, $term['expiration_date']),
+                            'is_manual' => false // Flag to indicate this was automatically calculated
                         ];
                     }
                 }
@@ -194,6 +217,21 @@ class Lease extends Model
                 return null;
             }
         );
+    }
+    public function getAvailableTermsAttribute(): array
+    {
+        $termDates = $this->term_expiration_dates;
+        $options = [];
+
+        foreach ($termDates as $index => $term) {
+            $options[] = [
+                'value' => $index + 1,
+                'label' => $term['term'],
+                'expiration_date' => $term['expiration_date']->format('Y-m-d')
+            ];
+        }
+
+        return $options;
     }
 
     // Get last term expiration date
