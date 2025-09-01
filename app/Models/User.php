@@ -47,5 +47,6 @@ class User extends Authenticatable
         return $this->hasMany(StatusHistory::class, 'changed_by_user_id');
     }
 
-    
+
+
 }
