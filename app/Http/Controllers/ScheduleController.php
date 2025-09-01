@@ -163,13 +163,13 @@ class ScheduleController extends Controller
             ->with(['store', 'urgencyLevel'])->get();
 
         // ✅ Get distinct values from database
-        $shiftTypes = Schedule::select('shift_type')
+        $shiftTypes = ScheduleShift::select('shift_type')
             ->whereNotNull('shift_type')
             ->distinct()
             ->pluck('shift_type')
             ->toArray();
 
-        $scheduleRoles = Schedule::select('role')
+        $scheduleRoles = ScheduleShift::select('role')
             ->whereNotNull('role')
             ->distinct()
             ->pluck('role')
@@ -402,9 +402,7 @@ class ScheduleController extends Controller
     public function destroy(Schedule $schedule)
     {
         // Only allow deletion of draft schedules
-        if ($schedule->status !== 'draft') {
-            return back()->withErrors(['error' => 'Only draft schedules can be deleted.']);
-        }
+       
 
         $schedule->shifts()->delete();
         $schedule->delete();
