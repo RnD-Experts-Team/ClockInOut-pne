@@ -42,11 +42,32 @@ class MaintenanceRequest extends Model
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
+    public function latestTaskAssignment()
+    {
+        return $this->hasOne(TaskAssignment::class, 'maintenance_request_id')
+            ->latestOfMany('assigned_at');
+    }
+    public function getLatestTaskAssignmentAttribute()
+    {
+        return $this->taskAssignments->first(); // Since we ordered by assigned_at desc
+    }
 
+    // ✅ Get assigned user from latest task assignment
+    public function getTaskAssignedToAttribute()
+    {
+        return $this->latestTaskAssignment?->assignedUser;
+    }
+
+    // ✅ Get due date from latest task assignment
+    public function getTaskDueDateAttribute()
+    {
+        return $this->latestTaskAssignment?->due_date;
+    }
     public function assignedTo()
     {
         return $this->belongsTo(User::class, 'assigned_to');
     }
+
     public function store(): BelongsTo
     {
         return $this->belongsTo(Store::class);
@@ -70,6 +91,23 @@ class MaintenanceRequest extends Model
     public function statusHistories(): HasMany
     {
         return $this->hasMany(StatusHistory::class);
+    }
+
+    // ADD THIS MISSING RELATIONSHIP
+    public function assignments(): HasMany
+    {
+        return $this->hasMany(TaskAssignment::class, 'maintenance_request_id');
+    }
+
+    // ADD THESE ADDITIONAL RELATIONSHIPS FOR SCHEDULE INTEGRATION
+    public function taskAssignments(): HasMany
+    {
+        return $this->hasMany(TaskAssignment::class, 'maintenance_request_id');
+    }
+
+    public function scheduleShifts(): HasMany
+    {
+        return $this->hasMany(ScheduleShift::class, 'task_id');
     }
 
     // Scopes
@@ -103,6 +141,24 @@ class MaintenanceRequest extends Model
         return $query->where('urgency_level_id', $urgencyId);
     }
 
+    // ADD THESE SCOPES FOR SCHEDULE INTEGRATION
+    public function scopeUnassigned($query)
+    {
+        return $query->whereNull('assigned_to')
+            ->whereNotIn('status', ['done', 'canceled']);
+    }
+
+    public function scopeAvailableForAssignment($query)
+    {
+        return $query->whereNotIn('status', ['done', 'canceled'])
+            ->where(function($q) {
+                $q->whereNull('assigned_to')
+                    ->orWhereDoesntHave('assignments', function($subQuery) {
+                        $subQuery->whereIn('status', ['pending', 'in_progress']);
+                    });
+            });
+    }
+
     // Accessors
     public function getStatusLabelAttribute()
     {
@@ -113,12 +169,19 @@ class MaintenanceRequest extends Model
     {
         return $this->costs ? '$' . number_format($this->costs, 2) : null;
     }
+
+    // ADD THESE ACCESSORS FOR SCHEDULE INTEGRATION
+    public function getIsAssignedAttribute()
+    {
+        return !is_null($this->assigned_to) || $this->assignments()->whereIn('status', ['pending', 'in_progress'])->exists();
+    }
+
+    public function getCanBeAssignedAttribute()
+    {
+        return !in_array($this->status, ['done', 'canceled']) && !$this->is_assigned;
+    }
+
     // Relationships remain the same...
-
-
-
-
-
     public function attachments(): HasMany
     {
         return $this->hasMany(MaintenanceAttachment::class);
@@ -128,8 +191,6 @@ class MaintenanceRequest extends Model
     {
         return $this->hasMany(MaintenanceLink::class);
     }
-
-
 
     // Updated helper methods
     public function canMoveToStatus(string $newStatus): bool

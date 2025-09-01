@@ -15,6 +15,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'is_active',
         'hourly_pay',
     ];
 
@@ -22,6 +23,12 @@ class User extends Authenticatable
         'password',
         'remember_token',
     ];
+    public function taskAssignments()
+    {
+        return $this->hasMany(TaskAssignment::class, 'assigned_user_id');
+    }
+
+    // ✅ Alternative: If you want maintenance requests directly through task assignments
 
     public function clockings()
 {
