@@ -38,5 +38,10 @@ class User extends Authenticatable
     {
         return $this->hasMany(MaintenanceRequest::class, 'assigned_to');
     }
+    public function shifts()
+    {
+        return $this->hasMany(ScheduleShift::class);
+    }
 
+  
 }
