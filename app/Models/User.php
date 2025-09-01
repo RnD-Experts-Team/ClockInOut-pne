@@ -42,6 +42,11 @@ class User extends Authenticatable
     {
         return $this->hasMany(ScheduleShift::class);
     }
+    public function statusHistories()
+    {
+        return $this->hasMany(StatusHistory::class, 'changed_by_user_id');
+    }
 
-  
+
+
 }
