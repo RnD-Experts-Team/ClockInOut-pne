@@ -65,8 +65,17 @@ class UserController extends Controller
 
     public function destroy(User $user)
     {
+        // Delete related schedule shifts first
+        $user->shifts()->delete();
+
+        // Also delete any task assignments
+        $user->taskAssignments()->delete();
+
+        // Then delete the user
         $user->delete();
+
         return redirect()->route('users.index')
             ->with('success', 'User deleted successfully.');
     }
+
 }

@@ -402,7 +402,7 @@ class ScheduleController extends Controller
     public function destroy(Schedule $schedule)
     {
         // Only allow deletion of draft schedules
-       
+
 
         $schedule->shifts()->delete();
         $schedule->delete();
