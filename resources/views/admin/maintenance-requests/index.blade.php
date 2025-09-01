@@ -364,31 +364,37 @@
                                     @endswitch
                                 </td>
                                 <td class="px-4 py-4 text-sm text-gray-600">
-                                    @if($request->assignedTo)
+                                    @if($request->latestTaskAssignment && $request->latestTaskAssignment->assignedUser)
                                         <div class="flex items-center">
                                             <div class="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center mr-2">
                 <span class="text-xs font-medium text-white">
-                    {{ substr($request->assignedTo->name, 0, 1) }}
+                    {{ substr($request->latestTaskAssignment->assignedUser->name, 0, 1) }}
                 </span>
                                             </div>
-                                            <span class="font-medium">{{ $request->assignedTo->name }}</span>
+                                            <div>
+                                                <div class="font-medium text-gray-900">{{ $request->latestTaskAssignment->assignedUser->name }}</div>
+                                                <div class="text-xs text-gray-500">Task Assignment</div>
+                                            </div>
                                         </div>
                                     @else
-                                        <span class="text-gray-400 italic">Not Assigned</span>
+                                        <span class="text-gray-400 italic">No Task Assignment</span>
                                     @endif
-                                </td>                                <td class="px-4 py-4 text-sm text-gray-600">
-                                    @if($request->due_date)
+                                </td>
+
+                                <!-- ✅ Display due date from latest TaskAssignment -->
+                                <td class="px-4 py-4 text-sm text-gray-600">
+                                    @if($request->latestTaskAssignment && $request->latestTaskAssignment->due_date)
                                         <div class="flex items-center">
-                                            <svg class="w-4 h-4 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <svg class="w-4 h-4 mr-1 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                                             </svg>
-                                            <span class="font-medium">{{ $request->due_date ?
-   (is_string($request->due_date) ? $request->due_date : $request->due_date->format('M d, Y'))
-   : 'N/A' }}</span>
-
+                                            <div>
+                                                <div class="font-medium text-gray-900">{{ $request->latestTaskAssignment->due_date->format('M d, Y') }}</div>
+                                                <div class="text-xs text-gray-500">{{ $request->latestTaskAssignment->due_date->format('g:i A') }}</div>
+                                            </div>
                                         </div>
                                     @else
-                                        <span class="text-gray-400">N/A</span>
+                                        <span class="text-gray-400">No Due Date Set</span>
                                     @endif
                                 </td>
                                 <td class="px-4 py-4 text-sm text-gray-600">
