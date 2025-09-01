@@ -100,6 +100,52 @@
                 <!-- Desktop Menu -->
                 <div class="hidden md:flex items-center space-x-4 rtl:space-x-reverse">
                     @if(Auth::user()->role === 'admin')
+                        <!-- Schedule Management Dropdown -->
+                        <div class="relative inline-block text-left">
+                            <div>
+                                <button type="button" class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-all duration-300 hover:shadow-lg" id="schedule-menu" aria-expanded="false" aria-haspopup="true">
+                                    <svg class="w-5 h-5 mr-2 rtl:ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3a4 4 0 118 0v4m-4 0l-8 4v12l8-4m0 0l8 4M12 11v8"></path>
+                                    </svg>
+                                    <span class="hidden xl:inline">Schedule</span>
+                                    <span class="xl:hidden">Sched</span>
+                                    <svg class="-mr-1 ml-1 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                    </svg>
+                                </button>
+                            </div>
+
+                            <div class="origin-top-right absolute right-0 mt-2 w-56 rounded-lg shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none hidden z-50" role="menu" aria-orientation="vertical" aria-labelledby="schedule-menu" id="schedule-dropdown">
+                                <div class="py-1" role="none">
+                                    <a href="{{ route('admin.schedules.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-900 transition-colors duration-200" role="menuitem">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                                        </svg>
+                                        All Schedules
+                                    </a>
+                                    <a href="{{ route('admin.schedules.create') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-900 transition-colors duration-200" role="menuitem">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                        </svg>
+                                        Create Schedule
+                                    </a>
+                                    <a href="{{ route('admin.task-assignments.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-900 transition-colors duration-200" role="menuitem">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m.121 9.243l4.95 4.95a2.121 2.121 0 0 0 3-3L13.243 8.364a2.121 2.121 0 0 0-3 3L15.121 16.121Z"></path>
+                                        </svg>
+                                        Task Assignments
+                                    </a>
+                                    <a href="{{ route('admin.scorecards.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-900 transition-colors duration-200" role="menuitem">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a4 4 0 01-4-4V5a4 4 0 014-4h10a4 4 0 014 4v10a4 4 0 01-4 4z"></path>
+                                        </svg>
+                                        Scorecards
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+
                         <a href="{{ route('admin.clocking') }}"
                            class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-all duration-300 hover:shadow-lg">
                             <svg class="w-5 h-5 mr-2 rtl:ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -207,6 +253,29 @@
                             </div>
                         </div>
                     @else
+                            <!-- Regular User Navigation with Enhanced Buttons -->
+
+                        <a href="{{ route('user.schedule.index') }}"
+                           class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-all duration-300 hover:shadow-lg">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                            <span class="hidden xl:inline">{{ __('messages.my_schedule') }}</span>
+                            <span class="xl:hidden">{{ __('messages.schedule') }}</span>
+                        </a>
+
+                        <!-- My Tasks Button -->
+                        <a href="{{ route('user.tasks.index') }}"
+                           class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-all duration-300 hover:shadow-lg">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m.121 9.243l4.95 4.95a2.121 2.121 0 0 0 3-3L13.243 8.364a2.121 2.121 0 0 0-3 3L15.121 16.121Z"></path>
+                            </svg>
+                            <span class="hidden xl:inline">{{ __('messages.my_tasks') }}</span>
+                            <span class="xl:hidden">{{ __('messages.tasks') }}</span>
+                        </a>
+
+                            <!-- Existing buttons remain the same -->
+
                         <a href="{{ route('attendance.index') }}" class="inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-all duration-300 hover:shadow-lg hover:scale-105">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
@@ -340,6 +409,21 @@
                     </div>
                 @else
                     <!-- Regular user mobile menu items -->
+                    <a href="{{ route('user.schedule.index') }}" class="flex items-center px-3 py-3 text-base font-medium text-gray-700 hover:text-orange-900 hover:bg-orange-50 rounded-lg transition-all duration-200">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                        {{ __('messages.my_schedule') }}
+                    </a>
+
+                    <!-- My Tasks -->
+                    <a href="{{ route('user.tasks.index') }}" class="flex items-center px-3 py-3 text-base font-medium text-gray-700 hover:text-orange-900 hover:bg-orange-50 rounded-lg transition-all duration-200">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m.121 9.243l4.95 4.95a2.121 2.121 0 0 0 3-3L13.243 8.364a2.121 2.121 0 0 0-3 3L15.121 16.121Z"></path>
+                        </svg>
+                        {{ __('messages.my_tasks') }}
+                    </a>
+
                     <a href="{{ route('attendance.index') }}" class="flex items-center px-3 py-3 text-base font-medium text-gray-700 hover:text-orange-900 hover:bg-orange-50">
                         <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
@@ -624,6 +708,17 @@
             settingsButton.addEventListener('click', function(e) {
                 e.preventDefault();
                 toggleDropdown('settings-dropdown', 'settings-menu');
+            });
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Schedule dropdown
+        const scheduleButton = document.getElementById('schedule-menu');
+        if (scheduleButton) {
+            scheduleButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                toggleDropdown('schedule-dropdown', 'schedule-menu');
             });
         }
     });
