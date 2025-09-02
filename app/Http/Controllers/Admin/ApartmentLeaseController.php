@@ -127,12 +127,18 @@ class ApartmentLeaseController extends Controller
     }
     private function calculateFilteredStats($query)
     {
-        $total = $query->count();
-        $totalMonthlyRent = $query->sum(DB::raw('rent + COALESCE(utilities, 0)'));
-        $families = $query->whereIn('is_family', ['Yes', 'yes'])->count();
-        $totalCars = $query->sum('has_car');
-        $totalAT = $query->sum('number_of_AT');
-        $expiringSoon = $query->whereBetween('expiration_date', [now(), now()->addMonth()])->count();
+        $total = (clone $query)->count();
+        $totalMonthlyRent = (clone $query)->sum(DB::raw('rent + COALESCE(utilities, 0)'));
+        $families = (clone $query)->whereIn('is_family', ['Yes', 'yes'])->count();
+        $totalCars = (clone $query)->sum('has_car');
+        $totalAT = (clone $query)->sum('number_of_AT');
+
+        // Fix the date range calculation
+        $startDate = now()->startOfDay();
+        $endDate = now()->addMonth()->endOfMonth(); // End of next month instead of exact 1 month
+
+        $expiringSoon = (clone $query)->whereBetween('expiration_date', [$startDate, $endDate])->count();
+
 
         return [
             'total' => $total,
