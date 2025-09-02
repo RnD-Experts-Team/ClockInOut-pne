@@ -126,7 +126,10 @@ class ApartmentLease extends Model
     /**
      * Get expiration warning - shows if lease expires within a month
      */
-    public function getExpirationWarningAttribute()
+    /**
+     * Get expiration warning text for display
+     */
+    public function getExpirationWarningTextAttribute()
     {
         if (!$this->expiration_date) {
             return null;
@@ -138,32 +141,72 @@ class ApartmentLease extends Model
                 : Carbon::parse($this->expiration_date);
 
             $now = Carbon::now();
-            $oneMonthFromNow = $now->copy()->addMonth();
+            $daysUntilExpiration = $now->diffInDays($expirationDate, false);
 
-            // Check if expiration date has passed
             if ($expirationDate->isPast()) {
-                $daysAgo = $now->diffInDays($expirationDate);
-                return "Expired " . $daysAgo . " day" . ($daysAgo > 1 ? 's' : '') . " ago";
-            }
-
-            // Check if expiration date is within the next month
-            if ($expirationDate->between($now, $oneMonthFromNow)) {
-                $daysLeft = $now->diffInDays($expirationDate);
-
-                if ($daysLeft == 0) {
-                    return "Expires today";
-                } elseif ($daysLeft <= 7) {
-                    return "Expires in " . $daysLeft . " day" . ($daysLeft > 1 ? 's' : '');
-                } else {
-                    return "Expires in " . $daysLeft . " days";
-                }
+                $daysAgo = abs($daysUntilExpiration);
+                return "Expired {$daysAgo} day" . ($daysAgo > 1 ? 's' : '') . " ago";
+            } elseif ($daysUntilExpiration <= 30) {
+                return "Expires in {$daysUntilExpiration} day" . ($daysUntilExpiration > 1 ? 's' : '');
             }
 
             return null; // No warning needed
         } catch (\Exception $e) {
-            return "Invalid date format";
+            return null;
         }
     }
+
+    /**
+     * Get expiration warning CSS class
+     */
+    public function getExpirationWarningClassAttribute()
+    {
+        if (!$this->expiration_date) {
+            return '';
+        }
+
+        try {
+            $expirationDate = $this->expiration_date instanceof Carbon
+                ? $this->expiration_date
+                : Carbon::parse($this->expiration_date);
+
+            $now = Carbon::now();
+            $daysUntilExpiration = $now->diffInDays($expirationDate, false);
+
+            if ($expirationDate->isPast()) {
+                return 'bg-red-100 text-red-800';
+            } elseif ($daysUntilExpiration <= 7) {
+                return 'bg-red-100 text-red-800';
+            } elseif ($daysUntilExpiration <= 30) {
+                return 'bg-yellow-100 text-yellow-800';
+            }
+
+            return 'bg-green-100 text-green-800';
+        } catch (\Exception $e) {
+            return 'bg-gray-100 text-gray-800';
+        }
+    }
+
+    /**
+     * Get sort value for expiration warning
+     */
+    public function getExpirationWarningSortValueAttribute()
+    {
+        if (!$this->expiration_date) {
+            return 999; // Put at end
+        }
+
+        try {
+            $expirationDate = $this->expiration_date instanceof Carbon
+                ? $this->expiration_date
+                : Carbon::parse($this->expiration_date);
+
+            return Carbon::now()->diffInDays($expirationDate, false);
+        } catch (\Exception $e) {
+            return 999;
+        }
+    }
+
 
     /**
      * Accessor for formatted family status
