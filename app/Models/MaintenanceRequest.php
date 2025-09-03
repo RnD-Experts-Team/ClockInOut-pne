@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Log;
 
 class MaintenanceRequest extends Model
 {
@@ -31,6 +32,8 @@ class MaintenanceRequest extends Model
         'not_in_cognito',
         'assigned_to',
         'due_date',
+        'assignment_source',
+        'current_task_assignment_id',
     ];
 
     protected $casts = [
@@ -42,6 +45,80 @@ class MaintenanceRequest extends Model
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
+
+    public function currentTaskAssignment()
+    {
+        return $this->belongsTo(TaskAssignment::class, 'current_task_assignment_id');
+    }
+    public function getEffectiveAssignedUserAttribute()
+    {
+        if ($this->assignment_source === 'task_assignment' && $this->currentTaskAssignment) {
+            return $this->currentTaskAssignment->assignedUser;
+        }
+
+        return $this->assignedTo;
+    }
+    public function getEffectiveDueDateAttribute()
+    {
+        if ($this->assignment_source === 'task_assignment' && $this->currentTaskAssignment) {
+            return $this->currentTaskAssignment->due_date;
+        }
+
+        return $this->due_date;
+    }
+    public function getAssignmentDetailsAttribute()
+    {
+        return [
+            'user' => $this->effective_assigned_user,
+            'due_date' => $this->effective_due_date,
+            'source' => $this->assignment_source,
+            'task_assignment_id' => $this->current_task_assignment_id,
+        ];
+    }
+
+    public function assignDirectly($userId, $dueDate = null)
+    {
+        Log::debug('assignDirectly method called', [
+            'maintenance_request_id' => $this->id,
+            'current_assigned_to' => $this->assigned_to,
+            'current_due_date' => $this->due_date,
+            'current_assignment_source' => $this->assignment_source,
+            'current_task_assignment_id' => $this->current_task_assignment_id,
+            'new_user_id' => $userId,
+            'new_due_date' => $dueDate,
+        ]);
+
+        // Use individual assignment + save() instead of update()
+        $this->assigned_to = $userId;
+        $this->due_date = $dueDate;
+        $this->assignment_source = 'direct';
+        $this->current_task_assignment_id = null;
+
+        $result = $this->save();
+
+        Log::debug('assignDirectly save result', [
+            'save_result' => $result,
+            'after_assigned_to' => $this->assigned_to,
+            'after_due_date' => $this->due_date,
+            'after_assignment_source' => $this->assignment_source,
+            'after_task_assignment_id' => $this->current_task_assignment_id,
+        ]);
+
+        return $result;
+    }
+
+    public function assignThroughTask(TaskAssignment $taskAssignment)
+    {
+        $this->update([
+            'assignment_source' => 'task_assignment',
+            'current_task_assignment_id' => $taskAssignment->id,
+            // Keep direct assignment fields for backup/history
+        ]);
+    }
+//    public function getIsAssignedAttribute()
+//    {
+//        return $this->effective_assigned_user !== null;
+//    }
     public function latestTaskAssignment()
     {
         return $this->hasOne(TaskAssignment::class, 'maintenance_request_id')

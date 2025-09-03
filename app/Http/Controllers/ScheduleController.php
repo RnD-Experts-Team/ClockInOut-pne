@@ -127,9 +127,9 @@ class ScheduleController extends Controller
                     'assignment_notes' => $shift['assignment_notes'] ?? null,
                 ]);
 
-                // Create task assignment (now required)
+                // ✅ Create task assignment AND update MaintenanceRequest
                 if (!empty($shift['task_id'])) {
-                    TaskAssignment::create([
+                    $taskAssignment = TaskAssignment::create([
                         'maintenance_request_id' => $shift['task_id'],
                         'assigned_user_id' => $item['employee_id'],
                         'schedule_shift_id' => $scheduleShift->id,
@@ -139,10 +139,25 @@ class ScheduleController extends Controller
                         'assignment_notes' => $shift['assignment_notes'] ?? null,
                         'assigned_by' => Auth::id(),
                     ]);
+
+                    // ✅ NEW: Update the MaintenanceRequest to reflect task assignment
+                    $maintenanceRequest = \App\Models\MaintenanceRequest::find($shift['task_id']);
+                    if ($maintenanceRequest) {
+                        $maintenanceRequest->update([
+                            'assignment_source' => 'task_assignment',
+                            'current_task_assignment_id' => $taskAssignment->id,
+                            // Don't set assigned_to and due_date here - let the task assignment handle it
+                        ]);
+
+                        Log::debug('Updated MaintenanceRequest from schedule creation', [
+                            'maintenance_request_id' => $shift['task_id'],
+                            'assignment_source' => 'task_assignment',
+                            'task_assignment_id' => $taskAssignment->id,
+                        ]);
+                    }
                 }
             }
         }
-
         $message = $request->has('publish')
             ? 'Schedule published successfully! Employees have been notified.'
             : 'Schedule saved as draft successfully.';
@@ -185,46 +200,48 @@ class ScheduleController extends Controller
 
     public function edit(Schedule $schedule, Request $request)
     {
-        // Optional: Uncomment if you want to restrict editing
-        // if ($schedule->status !== 'draft') {
-        //     return redirect()->route('admin.schedules.index')
-        //         ->withErrors(['error' => 'Only draft schedules can be edited.']);
-        // }
-
         // Get the week dates from the schedule
         $startDate = Carbon::parse($schedule->start_date);
         $endDate = Carbon::parse($schedule->end_date);
 
-        // Generate current week days (same as create)
+        // Generate current week days
         $currentWeek = collect();
         for ($date = $startDate->copy(); $date->lte($endDate); $date->addDay()) {
             $currentWeek->push($date->copy());
         }
 
-        // Get active employees (same as create)
+        // Get active employees
         $employees = User::where('is_active', true)
             ->whereIn('role', ['user', 'admin'])
             ->orderBy('name')
             ->get();
 
-        // Get available tasks for assignment (same as create)
+        // Get available tasks for assignment
         $availableTasks = MaintenanceRequest::with(['store', 'urgencyLevel'])
             ->whereNotIn('status', ['done', 'canceled'])
             ->orderBy('urgency_level_id', 'desc')
             ->orderBy('created_at', 'asc')
             ->get();
 
-        // Get shift types and roles (same as create)
-        $shiftTypes = ScheduleShift::select('shift_type')
+        // ✅ Get shift types and roles with default values
+        $shiftTypes = collect(ScheduleShift::select('shift_type')
             ->whereNotNull('shift_type')
+            ->where('shift_type', '!=', '')
             ->distinct()
-            ->pluck('shift_type')
+            ->pluck('shift_type'))
+            ->merge(['regular', 'overtime', 'split', 'night', 'morning', 'afternoon'])
+            ->unique()
+            ->values()
             ->toArray();
 
-        $scheduleRoles = ScheduleShift::select('role')
+        $scheduleRoles = collect(ScheduleShift::select('role')
             ->whereNotNull('role')
+            ->where('role', '!=', '')
             ->distinct()
-            ->pluck('role')
+            ->pluck('role'))
+            ->merge(['general', 'supervisor', 'technician', 'maintenance', 'admin'])
+            ->unique()
+            ->values()
             ->toArray();
 
         $userRoles = User::whereNotNull('role')
@@ -232,16 +249,15 @@ class ScheduleController extends Controller
             ->pluck('role')
             ->toArray();
 
-        // ✅ Load schedule with existing shifts for pre-population
+        // Load existing schedule data with proper relationships
         $schedule->load([
             'shifts.user',
             'shifts.taskAssignments.maintenanceRequest.store',
             'creator'
         ]);
 
-        // ✅ Convert existing shifts to the same format as create form expects
+        // ✅ Convert existing shifts to proper format for JavaScript
         $existingScheduleData = [];
-
         foreach ($schedule->shifts as $shift) {
             $key = $shift->user_id . '_' . $shift->date;
 
@@ -249,23 +265,23 @@ class ScheduleController extends Controller
                 $existingScheduleData[$key] = [];
             }
 
-            // ✅ Handle case where taskAssignments might be empty
+            // Get the first task assignment for this shift
             $taskAssignment = $shift->taskAssignments->first();
 
             $existingScheduleData[$key][] = [
-                'id' => $shift->id, // ✅ Add this line - actual shift ID
+                'id' => $shift->id,
                 'start' => $shift->start_time,
                 'end' => $shift->end_time,
                 'type' => $shift->shift_type,
                 'role' => $shift->role,
                 'color' => $shift->color,
                 'task_id' => $taskAssignment ? $taskAssignment->maintenance_request_id : null,
-                'assignment_notes' => $shift->assignment_notes
+                'assignment_notes' => $shift->assignment_notes,
+                'task_assignment_id' => $taskAssignment ? $taskAssignment->id : null, // ✅ Include task assignment ID
             ];
         }
 
-        // ✅ Debug: Check if data is being loaded
-        Log::info('Existing Schedule Data:', $existingScheduleData);
+
 
         return view('admin.schedules.edit', compact(
             'schedule',
@@ -280,6 +296,7 @@ class ScheduleController extends Controller
             'existingScheduleData'
         ));
     }
+
 
 
     public function update(Request $request, Schedule $schedule)
@@ -310,19 +327,21 @@ class ScheduleController extends Controller
                 'status' => $request->has('publish') ? 'published' : $schedule->status,
             ]);
 
-            // Get all existing shifts with their IDs for updating
+            // Get all existing shifts with their task assignments
             $existingShifts = $schedule->shifts()->with('taskAssignments')->get();
             $updatedShiftIds = [];
 
             // Process incoming shifts - UPDATE or CREATE
             foreach ($scheduleData as $item) {
                 foreach ($item['shifts'] as $shiftData) {
+                    // Try to find existing shift by exact match first
                     $existingShift = $existingShifts->where('user_id', $item['employee_id'])
                         ->where('date', $item['start_date'])
                         ->where('start_time', $shiftData['start'])
                         ->where('end_time', $shiftData['end'])
                         ->first();
 
+                    // If no exact match, try to find any shift for this employee/date
                     if (!$existingShift) {
                         $existingShift = $existingShifts->where('user_id', $item['employee_id'])
                             ->where('date', $item['start_date'])
@@ -331,6 +350,7 @@ class ScheduleController extends Controller
                     }
 
                     if ($existingShift) {
+                        // ✅ UPDATE EXISTING SHIFT
                         $existingShift->update([
                             'start_time' => $shiftData['start'],
                             'end_time' => $shiftData['end'],
@@ -339,9 +359,71 @@ class ScheduleController extends Controller
                             'color' => $shiftData['color'] ?? $existingShift->color ?? '#3b82f6',
                             'assignment_notes' => $shiftData['assignment_notes'] ?? $existingShift->assignment_notes,
                         ]);
+
+                        // ✅ UPDATE OR CREATE TASK ASSIGNMENT
+                        if (!empty($shiftData['task_id'])) {
+                            $existingTaskAssignment = $existingShift->taskAssignments->first();
+
+                            if ($existingTaskAssignment) {
+                                // Update existing task assignment
+                                $existingTaskAssignment->update([
+                                    'maintenance_request_id' => $shiftData['task_id'],
+                                    'assigned_user_id' => $item['employee_id'],
+                                    'assignment_notes' => $shiftData['assignment_notes'] ?? null,
+                                ]);
+
+                                $taskAssignmentId = $existingTaskAssignment->id;
+                            } else {
+                                // Create new task assignment
+                                $newTaskAssignment = TaskAssignment::create([
+                                    'maintenance_request_id' => $shiftData['task_id'],
+                                    'assigned_user_id' => $item['employee_id'],
+                                    'schedule_shift_id' => $existingShift->id,
+                                    'assigned_at' => now(),
+                                    'status' => 'pending',
+                                    'priority' => 'normal',
+                                    'assignment_notes' => $shiftData['assignment_notes'] ?? null,
+                                    'assigned_by' => Auth::id(),
+                                ]);
+
+                                $taskAssignmentId = $newTaskAssignment->id;
+                            }
+
+                            // ✅ UPDATE MAINTENANCE REQUEST
+                            $maintenanceRequest = \App\Models\MaintenanceRequest::find($shiftData['task_id']);
+                            if ($maintenanceRequest) {
+                                $maintenanceRequest->update([
+                                    'assignment_source' => 'task_assignment',
+                                    'current_task_assignment_id' => $taskAssignmentId,
+                                ]);
+
+                                Log::debug('Updated MaintenanceRequest assignment from schedule update', [
+                                    'maintenance_request_id' => $shiftData['task_id'],
+                                    'assignment_source' => 'task_assignment',
+                                    'task_assignment_id' => $taskAssignmentId,
+                                ]);
+                            }
+                        } else {
+                            // ✅ REMOVE TASK ASSIGNMENT IF NO TASK
+                            foreach ($existingShift->taskAssignments as $taskAssignment) {
+                                $maintenanceRequest = $taskAssignment->maintenanceRequest;
+                                if ($maintenanceRequest && $maintenanceRequest->current_task_assignment_id == $taskAssignment->id) {
+                                    $maintenanceRequest->update([
+                                        'assignment_source' => null,
+                                        'current_task_assignment_id' => null,
+                                        'assigned_to' => null,
+                                        'due_date' => null,
+                                    ]);
+                                }
+                                $taskAssignment->delete();
+                            }
+                        }
+
                         $updatedShiftIds[] = $existingShift->id;
                         Log::info("Updated existing shift #{$existingShift->id}");
+
                     } else {
+                        // ✅ CREATE NEW SHIFT
                         $scheduleShift = $schedule->shifts()->create([
                             'user_id' => $item['employee_id'],
                             'date' => $item['start_date'],
@@ -352,12 +434,13 @@ class ScheduleController extends Controller
                             'color' => $shiftData['color'] ?? '#3b82f6',
                             'assignment_notes' => $shiftData['assignment_notes'] ?? null,
                         ]);
+
                         $updatedShiftIds[] = $scheduleShift->id;
                         Log::info("Created new shift #{$scheduleShift->id}");
 
-                        // Create task assignment
+                        // ✅ CREATE TASK ASSIGNMENT FOR NEW SHIFT
                         if (!empty($shiftData['task_id'])) {
-                            TaskAssignment::create([
+                            $taskAssignment = TaskAssignment::create([
                                 'maintenance_request_id' => $shiftData['task_id'],
                                 'assigned_user_id' => $item['employee_id'],
                                 'schedule_shift_id' => $scheduleShift->id,
@@ -367,24 +450,75 @@ class ScheduleController extends Controller
                                 'assignment_notes' => $shiftData['assignment_notes'] ?? null,
                                 'assigned_by' => Auth::id(),
                             ]);
+
+                            // ✅ UPDATE MAINTENANCE REQUEST
+                            $maintenanceRequest = \App\Models\MaintenanceRequest::find($shiftData['task_id']);
+                            if ($maintenanceRequest) {
+                                $maintenanceRequest->update([
+                                    'assignment_source' => 'task_assignment',
+                                    'current_task_assignment_id' => $taskAssignment->id,
+                                ]);
+
+                                Log::debug('Updated MaintenanceRequest assignment from new shift', [
+                                    'maintenance_request_id' => $shiftData['task_id'],
+                                    'assignment_source' => 'task_assignment',
+                                    'task_assignment_id' => $taskAssignment->id,
+                                ]);
+                            }
                         }
                     }
                 }
             }
 
-            // Delete shifts marked for deletion by the user
+            // ✅ DELETE SHIFTS MARKED FOR DELETION BY USER
             if (!empty($deletedShiftIds)) {
                 $shiftsToDelete = $existingShifts->whereIn('id', $deletedShiftIds);
                 foreach ($shiftsToDelete as $shift) {
+                    // Reset maintenance requests that were assigned via this shift
+                    foreach ($shift->taskAssignments as $taskAssignment) {
+                        $maintenanceRequest = $taskAssignment->maintenanceRequest;
+                        if ($maintenanceRequest && $maintenanceRequest->current_task_assignment_id == $taskAssignment->id) {
+                            $maintenanceRequest->update([
+                                'assignment_source' => null,
+                                'current_task_assignment_id' => null,
+                                'assigned_to' => null,
+                                'due_date' => null,
+                            ]);
+
+                            Log::debug('Reset MaintenanceRequest assignment due to shift deletion', [
+                                'maintenance_request_id' => $maintenanceRequest->id,
+                                'deleted_task_assignment_id' => $taskAssignment->id,
+                            ]);
+                        }
+                    }
+
                     $shift->taskAssignments()->delete();
                     $shift->delete();
                     Log::info("Deleted shift #{$shift->id} and its assignments (user-initiated)");
                 }
             }
 
-            // Delete remaining unused shifts and their assignments
+            // ✅ DELETE REMAINING UNUSED SHIFTS AND RESET THEIR ASSIGNMENTS
             $shiftsToDelete = $existingShifts->whereNotIn('id', $updatedShiftIds)->whereNotIn('id', $deletedShiftIds);
             foreach ($shiftsToDelete as $shift) {
+                // Reset maintenance requests that were assigned via this shift
+                foreach ($shift->taskAssignments as $taskAssignment) {
+                    $maintenanceRequest = $taskAssignment->maintenanceRequest;
+                    if ($maintenanceRequest && $maintenanceRequest->current_task_assignment_id == $taskAssignment->id) {
+                        $maintenanceRequest->update([
+                            'assignment_source' => null,
+                            'current_task_assignment_id' => null,
+                            'assigned_to' => null,
+                            'due_date' => null,
+                        ]);
+
+                        Log::debug('Reset MaintenanceRequest assignment due to unused shift cleanup', [
+                            'maintenance_request_id' => $maintenanceRequest->id,
+                            'deleted_task_assignment_id' => $taskAssignment->id,
+                        ]);
+                    }
+                }
+
                 $shift->taskAssignments()->delete();
                 $shift->delete();
                 Log::info("Deleted unused shift #{$shift->id} and its assignments");
@@ -397,6 +531,7 @@ class ScheduleController extends Controller
 
         return redirect()->route('admin.schedules.index')->with('success', $message);
     }
+
 
 
     public function destroy(Schedule $schedule)
