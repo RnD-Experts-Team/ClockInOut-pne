@@ -293,17 +293,18 @@ class MaintenanceRequestController extends Controller
 
     public function updateStatus(Request $request, MaintenanceRequest $maintenanceRequest): RedirectResponse
     {
+
         $request->validate([
             'status' => 'required|in:on_hold,in_progress,done,canceled',
             'costs' => 'required_if:status,done|nullable|numeric|min:0',
             'how_we_fixed_it' => 'required_if:status,done|nullable|string|max:1000',
             'assigned_to' => 'required_if:status,in_progress|nullable|exists:users,id',
-            'due_date' => 'nullable|date|after_or_equal:request_date'
+            'due_date' => 'nullable|date|after_or_equal:today'
         ]);
+
 
         try {
             DB::beginTransaction();
-
             $newStatus = $request->input('status');
             $costs = $request->input('costs');
             $howWeFixedIt = $request->input('how_we_fixed_it');
@@ -311,6 +312,7 @@ class MaintenanceRequestController extends Controller
             $dueDate = $request->input('due_date');
             $userId = auth()->id() ?? 1;
 
+            // Validation checks
             if ($newStatus === 'done' && (empty($costs) || empty($howWeFixedIt))) {
                 return back()->withErrors([
                     'costs' => 'Costs and how we fixed it are required when marking as done.'
@@ -322,15 +324,27 @@ class MaintenanceRequestController extends Controller
                     'assigned_to' => 'Assigned to is required when marking as in progress.'
                 ]);
             }
-
-            $maintenanceRequest->update([
+            // Update main fields
+            $updateData = [
                 'status' => $newStatus,
                 'costs' => $costs,
                 'how_we_fixed_it' => $howWeFixedIt,
-                'assigned_to' => $newStatus === 'in_progress' ? $assignedTo : null,
-                'due_date' => $newStatus === 'in_progress' ? $dueDate : null,
-            ]);
+            ];
 
+            if ($newStatus == 'in_progress' && $assignedTo) {
+                // Direct assignment from admin
+                $maintenanceRequest->assignDirectly($assignedTo, $dueDate);
+            } elseif ($newStatus !== 'in_progress') {
+                // Clear assignment if not in progress
+                $updateData['assigned_to'] = null;
+                $updateData['due_date'] = null;
+                $updateData['assignment_source'] = 'direct';
+                $updateData['current_task_assignment_id'] = null;
+            }
+
+            $maintenanceRequest->update($updateData);
+
+            // Record status change
             $maintenanceRequest->statusHistories()->create([
                 'old_status' => $maintenanceRequest->getOriginal('status'),
                 'new_status' => $newStatus,
@@ -338,7 +352,6 @@ class MaintenanceRequestController extends Controller
                 'changed_at' => now(),
                 'notes' => $newStatus === 'done' ? $howWeFixedIt : null,
             ]);
-
             // Get form ID dynamically from the maintenance request
             $formId = $maintenanceRequest->form_id; // Use the stored form_id
             $entryId = $maintenanceRequest->entry_number;

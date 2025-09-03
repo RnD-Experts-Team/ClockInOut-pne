@@ -364,20 +364,22 @@
                                     @endswitch
                                 </td>
                                 <td class="px-4 py-4 text-sm text-gray-600">
-                                    @if($request->latestTaskAssignment && $request->latestTaskAssignment->assignedUser)
+                                    @if($request->effective_assigned_user)
                                         <div class="flex items-center">
                                             <div class="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center mr-2">
                 <span class="text-xs font-medium text-white">
-                    {{ substr($request->latestTaskAssignment->assignedUser->name, 0, 1) }}
+                    {{ substr($request->effective_assigned_user->name, 0, 1) }}
                 </span>
                                             </div>
                                             <div>
-                                                <div class="font-medium text-gray-900">{{ $request->latestTaskAssignment->assignedUser->name }}</div>
-                                                <div class="text-xs text-gray-500">Task Assignment</div>
+                                                <div class="font-medium text-gray-900">{{ $request->effective_assigned_user->name }}</div>
+                                                <div class="text-xs text-gray-500">
+                                                    {{ $request->assignment_source === 'task_assignment' ? 'Task Assignment' : 'Direct Assignment' }}
+                                                </div>
                                             </div>
                                         </div>
                                     @else
-                                        <span class="text-gray-400 italic">No Task Assignment</span>
+                                        <span class="text-gray-400 italic">Not Assigned</span>
                                     @endif
                                 </td>
 
