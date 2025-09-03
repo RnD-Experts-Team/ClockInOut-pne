@@ -20,16 +20,17 @@
                             <col style="width: 7%">   <!-- AWS -->
                             <col style="width: 7%">   <!-- Total Rent -->
                             <col style="width: 6%">   <!-- L2S Ratio -->
-                            <col style="width: 10%">  <!-- Time Left -->
-                            <col style="width: 10%">  <!-- Total Lease Life -->
+                            <col style="width: 9%">   <!-- Time Left -->
+                            <col style="width: 6%">   <!-- Current Term NEW -->
+                            <col style="width: 9%">   <!-- Total Lease Life -->
                             <col style="width: 8%">   <!-- Initial Lease Exp -->
                             <col style="width: 7%">   <!-- Term 1 -->
                             <col style="width: 7%">   <!-- Term 2 -->
                             <col style="width: 7%">   <!-- Term 3 -->
                             <col style="width: 7%">   <!-- Term 4 -->
                             <col style="width: 7%">   <!-- Term 5 -->
-                            <col style="width: 9%">   <!-- Franchise Exp -->
-                            <col style="width: 7%">   <!-- Status -->
+                            <col style="width: 7%">   <!-- Franchise Exp -->
+                            <col style="width: 6%">   <!-- Status -->
                         </colgroup>
                         <thead>
                         <tr class="bg-[#ff671b] text-white">
@@ -72,27 +73,28 @@
                                     <span class="text-xs opacity-75" id="leasetracker-sort-indicator-4">A↓</span>
                                 </div>
                             </th>
+                            <!-- NEW: Current Term Column -->
                             <th class="border border-gray-300 px-1 py-2 text-center text-xs font-semibold cursor-pointer hover:bg-[#e55b17] transition-colors select-none"
-                                onclick="sortLeaseTrackerTable(5, 'text')" id="leasetracker-header-5">
+                                onclick="sortLeaseTrackerTable(5, 'number')" id="leasetracker-header-5">
                                 <div class="flex flex-col items-center">
-                                    <span class="leading-tight">Total</span>
-                                    <span class="leading-tight">Lease Life</span>
-                                    <span class="text-xs opacity-75" id="leasetracker-sort-indicator-5">A↓</span>
+                                    <span class="leading-tight">Current</span>
+                                    <span class="leading-tight">Term</span>
+                                    <span class="text-xs opacity-75" id="leasetracker-sort-indicator-5">↑</span>
                                 </div>
                             </th>
-                            <!-- NEW: Initial Lease Expiration Column -->
                             <th class="border border-gray-300 px-1 py-2 text-center text-xs font-semibold cursor-pointer hover:bg-[#e55b17] transition-colors select-none"
                                 onclick="sortLeaseTrackerTable(6, 'text')" id="leasetracker-header-6">
                                 <div class="flex flex-col items-center">
-                                    <span class="leading-tight">Initial Lease</span>
-                                    <span class="leading-tight">Exp</span>
+                                    <span class="leading-tight">Total</span>
+                                    <span class="leading-tight">Lease Life</span>
                                     <span class="text-xs opacity-75" id="leasetracker-sort-indicator-6">A↓</span>
                                 </div>
                             </th>
+                            <!-- Initial Lease Expiration Column -->
                             <th class="border border-gray-300 px-1 py-2 text-center text-xs font-semibold cursor-pointer hover:bg-[#e55b17] transition-colors select-none"
                                 onclick="sortLeaseTrackerTable(7, 'text')" id="leasetracker-header-7">
                                 <div class="flex flex-col items-center">
-                                    <span class="leading-tight">Term 1</span>
+                                    <span class="leading-tight">Initial Lease</span>
                                     <span class="leading-tight">Exp</span>
                                     <span class="text-xs opacity-75" id="leasetracker-sort-indicator-7">A↓</span>
                                 </div>
@@ -100,7 +102,7 @@
                             <th class="border border-gray-300 px-1 py-2 text-center text-xs font-semibold cursor-pointer hover:bg-[#e55b17] transition-colors select-none"
                                 onclick="sortLeaseTrackerTable(8, 'text')" id="leasetracker-header-8">
                                 <div class="flex flex-col items-center">
-                                    <span class="leading-tight">Term 2</span>
+                                    <span class="leading-tight">Term 1</span>
                                     <span class="leading-tight">Exp</span>
                                     <span class="text-xs opacity-75" id="leasetracker-sort-indicator-8">A↓</span>
                                 </div>
@@ -108,7 +110,7 @@
                             <th class="border border-gray-300 px-1 py-2 text-center text-xs font-semibold cursor-pointer hover:bg-[#e55b17] transition-colors select-none"
                                 onclick="sortLeaseTrackerTable(9, 'text')" id="leasetracker-header-9">
                                 <div class="flex flex-col items-center">
-                                    <span class="leading-tight">Term 3</span>
+                                    <span class="leading-tight">Term 2</span>
                                     <span class="leading-tight">Exp</span>
                                     <span class="text-xs opacity-75" id="leasetracker-sort-indicator-9">A↓</span>
                                 </div>
@@ -116,7 +118,7 @@
                             <th class="border border-gray-300 px-1 py-2 text-center text-xs font-semibold cursor-pointer hover:bg-[#e55b17] transition-colors select-none"
                                 onclick="sortLeaseTrackerTable(10, 'text')" id="leasetracker-header-10">
                                 <div class="flex flex-col items-center">
-                                    <span class="leading-tight">Term 4</span>
+                                    <span class="leading-tight">Term 3</span>
                                     <span class="leading-tight">Exp</span>
                                     <span class="text-xs opacity-75" id="leasetracker-sort-indicator-10">A↓</span>
                                 </div>
@@ -124,7 +126,7 @@
                             <th class="border border-gray-300 px-1 py-2 text-center text-xs font-semibold cursor-pointer hover:bg-[#e55b17] transition-colors select-none"
                                 onclick="sortLeaseTrackerTable(11, 'text')" id="leasetracker-header-11">
                                 <div class="flex flex-col items-center">
-                                    <span class="leading-tight">Term 5</span>
+                                    <span class="leading-tight">Term 4</span>
                                     <span class="leading-tight">Exp</span>
                                     <span class="text-xs opacity-75" id="leasetracker-sort-indicator-11">A↓</span>
                                 </div>
@@ -132,7 +134,7 @@
                             <th class="border border-gray-300 px-1 py-2 text-center text-xs font-semibold cursor-pointer hover:bg-[#e55b17] transition-colors select-none"
                                 onclick="sortLeaseTrackerTable(12, 'text')" id="leasetracker-header-12">
                                 <div class="flex flex-col items-center">
-                                    <span class="leading-tight">Franchise</span>
+                                    <span class="leading-tight">Term 5</span>
                                     <span class="leading-tight">Exp</span>
                                     <span class="text-xs opacity-75" id="leasetracker-sort-indicator-12">A↓</span>
                                 </div>
@@ -140,8 +142,16 @@
                             <th class="border border-gray-300 px-1 py-2 text-center text-xs font-semibold cursor-pointer hover:bg-[#e55b17] transition-colors select-none"
                                 onclick="sortLeaseTrackerTable(13, 'text')" id="leasetracker-header-13">
                                 <div class="flex flex-col items-center">
-                                    <span class="leading-tight">Status</span>
+                                    <span class="leading-tight">Franchise</span>
+                                    <span class="leading-tight">Exp</span>
                                     <span class="text-xs opacity-75" id="leasetracker-sort-indicator-13">A↓</span>
+                                </div>
+                            </th>
+                            <th class="border border-gray-300 px-1 py-2 text-center text-xs font-semibold cursor-pointer hover:bg-[#e55b17] transition-colors select-none"
+                                onclick="sortLeaseTrackerTable(14, 'text')" id="leasetracker-header-14">
+                                <div class="flex flex-col items-center">
+                                    <span class="leading-tight">Status</span>
+                                    <span class="text-xs opacity-75" id="leasetracker-sort-indicator-14">A↓</span>
                                 </div>
                             </th>
                         </tr>
@@ -179,6 +189,21 @@
                                         }
                                     }
                                 }
+
+                                // Color coding for Time Left on Current Term
+                                $timeLeftColorClass = 'bg-gray-100 text-gray-700';
+                                if ($currentTerm && !$currentTerm['time_left']['expired']) {
+                                    $totalDays = ($currentTerm['time_left']['years'] * 365) + ($currentTerm['time_left']['months'] * 30) + $currentTerm['time_left']['days'];
+                                    if ($totalDays <= 30) {
+                                        $timeLeftColorClass = 'bg-red-600 text-white';
+                                    } elseif ($totalDays <= 90) {
+                                        $timeLeftColorClass = 'bg-red-200 text-red-800';
+                                    } else {
+                                        $timeLeftColorClass = 'bg-gray-100 text-gray-700';
+                                    }
+                                } elseif ($isExpired) {
+                                    $timeLeftColorClass = 'bg-red-600 text-white';
+                                }
                             @endphp
 
                             <tr class="{{ $rowClass }} hover:bg-[#fff4ed]">
@@ -186,9 +211,33 @@
                                 <td class="border border-gray-300 px-1 py-2 text-xs text-right break-words" data-sort="{{ $lease->aws ?: 0 }}">${{ number_format($lease->aws ?: 0, 2) }}</td>
                                 <td class="border border-gray-300 px-1 py-2 text-xs text-right break-words" data-sort="{{ $lease->total_rent ?: 0 }}">${{ number_format($lease->total_rent ?: 0, 2) }}</td>
                                 <td class="border border-gray-300 px-1 py-2 text-xs text-right break-words" data-sort="{{ $lease->lease_to_sales_ratio ?: 0 }}">{{ $lease->lease_to_sales_ratio ? number_format($lease->lease_to_sales_ratio * 100, 2) . '%' : 'N/A' }}</td>
-                                <td class="border border-gray-300 px-1 py-2 text-xs text-center break-words leading-tight" data-sort="{{ $currentTerm ? ($currentTerm['time_left']['expired'] ? 'Expired' : $currentTerm['time_left']['formatted']) : 'N/A' }}">{{ $currentTerm ? ($currentTerm['time_left']['expired'] ? 'Expired' : $currentTerm['time_left']['formatted']) : 'N/A' }}</td>
+
+                                <!-- Color-coded Time Left on Current Term -->
+                                <td class="border border-gray-300 px-1 py-2 text-xs text-center break-words leading-tight" data-sort="{{ $currentTerm ? ($currentTerm['time_left']['expired'] ? 'Expired' : $currentTerm['time_left']['formatted']) : 'N/A' }}">
+                                    @if($currentTerm)
+                                        <span class="inline-flex items-center px-1 py-1 rounded text-xs font-medium {{ $timeLeftColorClass }}">
+                                            {{ $currentTerm['time_left']['expired'] ? 'Expired' : $currentTerm['time_left']['formatted'] }}
+                                        </span>
+                                    @else
+                                        <span class="text-gray-400 text-xs">N/A</span>
+                                    @endif
+                                </td>
+
+                                <!-- NEW: Current Term Column -->
+                                <td class="border border-gray-300 px-1 py-2 text-xs text-center break-words font-semibold" data-sort="{{ $lease->current_term ?: 0 }}">
+                                    @if($lease->current_term)
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                            {{ $lease->current_term }}
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                                            Auto
+                                        </span>
+                                    @endif
+                                </td>
+
                                 <td class="border border-gray-300 px-1 py-2 text-xs text-center break-words leading-tight" data-sort="{{ $lease->time_until_last_term_ends ? $lease->time_until_last_term_ends['formatted'] : 'N/A' }}">{{ $lease->time_until_last_term_ends ? $lease->time_until_last_term_ends['formatted'] : 'N/A' }}</td>
-                                <!-- NEW: Initial Lease Expiration Date Column -->
+                                <!-- Initial Lease Expiration Date Column -->
                                 <td class="border border-gray-300 px-1 py-2 text-xs text-center break-words" data-sort="{{ $lease->initial_lease_expiration_date ? $lease->initial_lease_expiration_date->format('m/d/Y') : 'N/A' }}">{{ $lease->initial_lease_expiration_date ? $lease->initial_lease_expiration_date->format('m/d/Y') : 'N/A' }}</td>
                                 <td class="border border-gray-300 px-1 py-2 text-xs text-center break-words" data-sort="{{ $termExpirations[0] }}">{{ $termExpirations[0] }}</td>
                                 <td class="border border-gray-300 px-1 py-2 text-xs text-center break-words" data-sort="{{ $termExpirations[1] }}">{{ $termExpirations[1] }}</td>
@@ -231,8 +280,8 @@
                 leaseTrackerSortColumn = column;
             }
 
-            // Clear all sort indicators
-            for (let i = 0; i <= 13; i++) {
+            // Clear all sort indicators (updated for 15 columns now)
+            for (let i = 0; i <= 14; i++) {
                 const indicator = document.getElementById(`leasetracker-sort-indicator-${i}`);
                 if (indicator) {
                     if (type === 'number') {

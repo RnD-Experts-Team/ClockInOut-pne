@@ -435,69 +435,69 @@
     </div>
 @endsection
 
-    <style>
-        .schedule-cell.has-assignment {
-            border: 2px solid #059669;
-            background: linear-gradient(135deg, #10b981, #047857);
-            color: white;
-            font-weight: 500;
-            position: relative;
+<style>
+    .schedule-cell.has-assignment {
+        border: 2px solid #059669;
+        background: linear-gradient(135deg, #10b981, #047857);
+        color: white;
+        font-weight: 500;
+        position: relative;
+    }
+
+    .schedule-cell.has-assignment:hover {
+        border-color: #047857;
+        background: linear-gradient(135deg, #059669, #065f46);
+    }
+
+    .shift-content {
+        text-align: center;
+        width: 100%;
+        padding: 4px;
+    }
+
+    .shift-time {
+        font-weight: 600;
+        margin-bottom: 2px;
+        font-size: 10px;
+    }
+
+    .shift-role {
+        font-size: 8px;
+        opacity: 0.9;
+        margin-bottom: 1px;
+        text-transform: uppercase;
+    }
+
+    .shift-hours {
+        font-size: 8px;
+        opacity: 0.8;
+        font-weight: 500;
+    }
+
+    .task-badge {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        background: rgba(255, 255, 255, 0.3);
+        color: white;
+        font-size: 7px;
+        padding: 1px 3px;
+        border-radius: 2px;
+        font-weight: 600;
+    }
+
+    @media (max-width: 768px) {
+        .grid-cols-8 {
+            display: block;
         }
 
-        .schedule-cell.has-assignment:hover {
-            border-color: #047857;
-            background: linear-gradient(135deg, #059669, #065f46);
+        .schedule-cell {
+            min-height: 60px;
         }
+    }
+</style>
 
-        .shift-content {
-            text-align: center;
-            width: 100%;
-            padding: 4px;
-        }
-
-        .shift-time {
-            font-weight: 600;
-            margin-bottom: 2px;
-            font-size: 10px;
-        }
-
-        .shift-role {
-            font-size: 8px;
-            opacity: 0.9;
-            margin-bottom: 1px;
-            text-transform: uppercase;
-        }
-
-        .shift-hours {
-            font-size: 8px;
-            opacity: 0.8;
-            font-weight: 500;
-        }
-
-        .task-badge {
-            position: absolute;
-            top: 2px;
-            right: 2px;
-            background: rgba(255, 255, 255, 0.3);
-            color: white;
-            font-size: 7px;
-            padding: 1px 3px;
-            border-radius: 2px;
-            font-weight: 600;
-        }
-
-        @media (max-width: 768px) {
-            .grid-cols-8 {
-                display: block;
-            }
-
-            .schedule-cell {
-                min-height: 60px;
-            }
-        }
-    </style>
-
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
     $(document).ready(function() {
         let deletedShiftIds = new Set(); // Track deleted shift IDs
