@@ -7,6 +7,7 @@ use App\Models\Payment;
 use App\Models\Company;
 use App\Models\Store;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
@@ -248,6 +249,18 @@ class PaymentController extends Controller
         } catch (\Exception $e) {
             DB::rollback();
             return back()->withErrors(['error' => 'Failed to update payment: ' . $e->getMessage()]);
+        }
+    }
+
+    public function dashboard()
+    {
+        $user = Auth::user();
+
+        // Ensure the role column exists and redirect accordingly
+        if ($user->role == 'admin') {
+            return redirect()->route('admin.clocking');
+        } elseif ($user->role == 'user') {
+            return redirect()->route('clocking.index');
         }
     }
 
@@ -507,40 +520,34 @@ class PaymentController extends Controller
     // Keep all other report methods exactly the same...
     public function costByCompanyReport(Request $request)
     {
+        $allCompanies = Company::all();
         // Get filters from index page
         $dateFrom = $request->get('date_from');
         $dateTo = $request->get('date_to');
-        $companyId = $request->get('company_id');
-        $search = $request->get('search');
-        $maintenanceType = $request->get('maintenance_type');
-        $paid = $request->get('paid');
 
-        // FIXED: Build base query with proper filters
+        // Apply date filters
         $paymentsQuery = Payment::with('company');
 
         // Apply date filters
-        if ($dateFrom && $dateTo) {
+        if ($request->get('date_from') && $request->get('date_to')) {
             $paymentsQuery->whereBetween('date', [
-                Carbon::parse($dateFrom)->startOfDay(),
-                Carbon::parse($dateTo)->endOfDay()
+                Carbon::parse($request->get('date_from'))->startOfDay(),
+                Carbon::parse($request->get('date_to'))->endOfDay()
             ]);
-        } elseif ($dateFrom) {
-            $paymentsQuery->whereDate('date', '>=', $dateFrom);
-        } elseif ($dateTo) {
-            $paymentsQuery->whereDate('date', '<=', $dateTo);
-        } else {
-            // Default to current month if no date filters
-            $paymentsQuery->whereMonth('date', now()->month)
-                ->whereYear('date', now()->year);
+        } elseif ($request->get('date_from')) {
+            $paymentsQuery->whereDate('date', '>=', $request->get('date_from'));
+        } elseif ($request->get('date_to')) {
+            $paymentsQuery->whereDate('date', '<=', $request->get('date_to'));
+        }
+        // Don't apply default date filter - let it show all data if no dates specified
+
+        // Apply other filters
+        if ($request->get('company_id') && $request->get('company_id') !== 'all') {
+            $paymentsQuery->where('company_id', $request->get('company_id'));
         }
 
-        // Apply company filter
-        if ($companyId && $companyId !== 'all') {
-            $paymentsQuery->where('company_id', $companyId);
-        }
-
-        // Apply search filter
-        if ($search) {
+        if ($request->get('search')) {
+            $search = $request->get('search');
             $paymentsQuery->where(function($q) use ($search) {
                 $q->where('store', 'like', "%{$search}%")
                     ->orWhere('what_got_fixed', 'like', "%{$search}%")
@@ -551,88 +558,44 @@ class PaymentController extends Controller
             });
         }
 
-        // Apply maintenance type filter
-        if ($maintenanceType && $maintenanceType !== 'all') {
-            $paymentsQuery->where('maintenance_type', $maintenanceType);
+        if ($request->get('maintenance_type') && $request->get('maintenance_type') !== 'all') {
+            $paymentsQuery->where('maintenance_type', $request->get('maintenance_type'));
         }
 
-        // Apply payment status filter
-        if ($paid && $paid !== 'all') {
-            $paymentsQuery->where('paid', $paid === '1');
+        if ($request->get('paid') && $request->get('paid') !== 'all') {
+            $paymentsQuery->where('paid', $request->get('paid') === '1');
         }
 
-        // FIXED: Get companies with aggregated data using query builder
-        $companies = DB::table('companies as c')
-            ->leftJoin('payments as p', 'c.id', '=', 'p.company_id')
-            ->when($dateFrom && $dateTo, function($query) use ($dateFrom, $dateTo) {
-                $query->whereBetween('p.date', [
-                    Carbon::parse($dateFrom)->startOfDay(),
-                    Carbon::parse($dateTo)->endOfDay()
-                ]);
-            })
-            ->when($dateFrom && !$dateTo, function($query) use ($dateFrom) {
-                $query->whereDate('p.date', '>=', $dateFrom);
-            })
-            ->when($dateTo && !$dateFrom, function($query) use ($dateTo) {
-                $query->whereDate('p.date', '<=', $dateTo);
-            })
-            ->when(!$dateFrom && !$dateTo, function($query) {
-                $query->whereMonth('p.date', now()->month)
-                    ->whereYear('p.date', now()->year);
-            })
-            ->when($companyId && $companyId !== 'all', function($query) use ($companyId) {
-                $query->where('c.id', $companyId);
-            })
-            ->when($search, function($query) use ($search) {
-                $query->where(function($q) use ($search) {
-                    $q->where('p.store', 'like', "%{$search}%")
-                        ->orWhere('p.what_got_fixed', 'like', "%{$search}%")
-                        ->orWhere('p.notes', 'like', "%{$search}%")
-                        ->orWhere('c.name', 'like', "%{$search}%");
-                });
-            })
-            ->when($maintenanceType && $maintenanceType !== 'all', function($query) use ($maintenanceType) {
-                $query->where('p.maintenance_type', $maintenanceType);
-            })
-            ->when($paid && $paid !== 'all', function($query) use ($paid) {
-                $query->where('p.paid', $paid === '1');
-            })
-            ->select([
-                'c.id',
-                'c.name',
-                DB::raw('COALESCE(SUM(p.cost), 0) as total_cost'),
-                DB::raw('COALESCE(SUM(CASE WHEN p.paid = 1 THEN p.cost ELSE 0 END), 0) as paid_cost'),
-                DB::raw('COALESCE(SUM(CASE WHEN p.paid = 0 THEN p.cost ELSE 0 END), 0) as unpaid_cost'),
-                DB::raw('COUNT(p.id) as payment_count')
-            ])
-            ->groupBy('c.id', 'c.name')
-            ->orderBy('total_cost', 'desc')
-            ->get();
+        // Get the filtered payments
+        $filteredPayments = $paymentsQuery->get();
 
-        // FIXED: Calculate 90-day costs separately for each company
-        $companiesWithNinetyDays = collect($companies)->map(function($company) use ($dateFrom, $dateTo) {
-            $ninetyDayQuery = Payment::where('company_id', $company->id);
+        // Group by company and calculate totals
+        $companies = $allCompanies->map(function($company) use ($filteredPayments) {
+            $companyPayments = $filteredPayments->where('company_id', $company->id);
 
-            if ($dateFrom && $dateTo) {
-                // Use the same date range as the main filter
-                $ninetyDayQuery->whereBetween('date', [
-                    Carbon::parse($dateFrom)->startOfDay(),
-                    Carbon::parse($dateTo)->endOfDay()
-                ]);
-            } else {
-                // Default 90 days
-                $ninetyDayQuery->where('date', '>=', now()->subDays(90));
-            }
-
-            $ninetyDayCost = $ninetyDayQuery->sum('cost');
-
-            return (object) [
+            return (object)[
                 'id' => $company->id,
                 'name' => $company->name,
-                'ninety_day_cost' => $ninetyDayCost,
-                'payments' => collect([]) // Add empty collection for compatibility
+                'total_cost' => $companyPayments->sum('cost'),
+                'paid_cost' => $companyPayments->where('paid', true)->sum('cost'),
+                'unpaid_cost' => $companyPayments->where('paid', false)->sum('cost'),
+                'payment_count' => $companyPayments->count()
+            ];
+        })->sortByDesc('total_cost');
+
+        // Calculate 90-day costs
+        $companiesWithNinetyDays = $allCompanies->map(function($company) {
+            $ninetyDayQuery = Payment::where('company_id', $company->id)
+                ->where('date', '>=', now()->subDays(90));
+
+            return (object)[
+                'id' => $company->id,
+                'name' => $company->name,
+                'ninety_day_cost' => $ninetyDayQuery->sum('cost'),
+                'payments' => collect([])
             ];
         });
+
 
         return view('admin.payments.reports.cost-by-company', compact(
             'companies',
