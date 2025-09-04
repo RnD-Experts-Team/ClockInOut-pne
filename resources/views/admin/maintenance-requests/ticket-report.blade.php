@@ -117,10 +117,10 @@
                             <td class="border border-gray-300 px-3 py-3 text-sm" data-sort="{{ $request->effective_assigned_user ? $request->effective_assigned_user->name : 'Not Assigned' }}">
                                 @if($request->effective_assigned_user)
                                     <div class="flex items-center">
-                                        <span class="font-medium">{{ $request->effective_assigned_user->name }}</span>
-                                        <span class="ml-1 text-xs text-gray-500">
+                                        <div class="font-medium">{{ $request->effective_assigned_user->name }}</div>
+                                        <div class="text-xs text-gray-500">
                                             ({{ $request->assignment_source === 'task_assignment' ? 'Task' : 'Direct' }})
-                                        </span>
+                                        </div>
                                     </div>
                                 @else
                                     <span class="text-gray-500">Not Assigned</span>
