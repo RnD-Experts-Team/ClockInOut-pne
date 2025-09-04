@@ -47,6 +47,7 @@ Route::get('/dashboard', function () {
 
 // Clocking - Only for Users
 Route::middleware(['auth', RoleMiddleware::class . ':user'])->group(function () {
+    Route::get('/', [PaymentController::class, 'dashboard']);
     Route::get('/clocking', [ClockingController::class, 'index'])->name('clocking.index');
     Route::post('/clock-in', [ClockingController::class, 'clockIn'])->name('clocking.clockIn');
     Route::post('/clock-out', [ClockingController::class, 'clockOut'])->name('clocking.clockOut');
