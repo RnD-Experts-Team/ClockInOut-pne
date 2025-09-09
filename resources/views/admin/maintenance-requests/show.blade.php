@@ -55,23 +55,24 @@
                             </dd>
                         </div>
                         <div>
-                            <dt class="text-sm font-medium text-black-500">Reviewed By</dt>
+                            <dt class="text-sm font-medium text-black-500">Assigned To</dt>
                             <dd class="mt-1 text-sm text-black-900">
-                                @if($maintenanceRequest->reviewedByManager)
-                                    {{ $maintenanceRequest->reviewedByManager->first_name }} {{ $maintenanceRequest->reviewedByManager->last_name }}
+                                @if($maintenanceRequest->effective_assigned_user)
+                                    <div class="flex items-center">
+                                        <span class="font-medium">{{ $maintenanceRequest->effective_assigned_user->name }}</span>
+                                        <span class="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                    {{ $maintenanceRequest->assignment_source === 'task_assignment' ? 'Task Assignment' : 'Direct Assignment' }}
+                </span>
+                                    </div>
                                 @else
-                                    No Manager
+                                    Not Assigned
                                 @endif
                             </dd>
                         </div>
                         <div>
-                            <dt class="text-sm font-medium text-black-500">Assigned To</dt>
+                            <dt class="text-sm font-medium text-black-500">Due Date</dt>
                             <dd class="mt-1 text-sm text-black-900">
-                                @if($maintenanceRequest->assignedTo)
-                                    {{ $maintenanceRequest->assignedTo->name }}
-                                @else
-                                    Not Assigned
-                                @endif
+                                {{ $maintenanceRequest->effective_due_date ? $maintenanceRequest->effective_due_date->format('M d, Y') : 'N/A' }}
                             </dd>
                         </div>
                         <div>

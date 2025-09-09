@@ -364,31 +364,39 @@
                                     @endswitch
                                 </td>
                                 <td class="px-4 py-4 text-sm text-gray-600">
-                                    @if($request->assignedTo)
+                                    @if($request->effective_assigned_user)
                                         <div class="flex items-center">
                                             <div class="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center mr-2">
                 <span class="text-xs font-medium text-white">
-                    {{ substr($request->assignedTo->name, 0, 1) }}
+                    {{ substr($request->effective_assigned_user->name, 0, 1) }}
                 </span>
                                             </div>
-                                            <span class="font-medium">{{ $request->assignedTo->name }}</span>
+                                            <div>
+                                                <div class="font-medium text-gray-900">{{ $request->effective_assigned_user->name }}</div>
+                                                <div class="text-xs text-gray-500">
+                                                    {{ $request->assignment_source === 'task_assignment' ? 'Task Assignment' : 'Direct Assignment' }}
+                                                </div>
+                                            </div>
                                         </div>
                                     @else
                                         <span class="text-gray-400 italic">Not Assigned</span>
                                     @endif
-                                </td>                                <td class="px-4 py-4 text-sm text-gray-600">
-                                    @if($request->due_date)
+                                </td>
+
+                                <!-- ✅ Display due date from latest TaskAssignment -->
+                                <td class="px-4 py-4 text-sm text-gray-600">
+                                    @if($request->latestTaskAssignment && $request->latestTaskAssignment->due_date)
                                         <div class="flex items-center">
-                                            <svg class="w-4 h-4 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <svg class="w-4 h-4 mr-1 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                                             </svg>
-                                            <span class="font-medium">{{ $request->due_date ?
-   (is_string($request->due_date) ? $request->due_date : $request->due_date->format('M d, Y'))
-   : 'N/A' }}</span>
-
+                                            <div>
+                                                <div class="font-medium text-gray-900">{{ $request->latestTaskAssignment->due_date->format('M d, Y') }}</div>
+                                                <div class="text-xs text-gray-500">{{ $request->latestTaskAssignment->due_date->format('g:i A') }}</div>
+                                            </div>
                                         </div>
                                     @else
-                                        <span class="text-gray-400">N/A</span>
+                                        <span class="text-gray-400">No Due Date Set</span>
                                     @endif
                                 </td>
                                 <td class="px-4 py-4 text-sm text-gray-600">
@@ -860,8 +868,8 @@
                                 // Fix table specifically
                                 const table = clonedContent.querySelector('table');
                                 if (table) {
-                                    table.style.tableLayout = 'fixed';
-                                    table.style.width = '100%';
+                                    table.style.tableLayout = 'auto';
+                                    table.style.width = 'auto';
                                     table.style.borderCollapse = 'collapse';
                                     table.style.display = 'table';
                                     table.style.margin = '0';
@@ -950,17 +958,53 @@
                 contentElement.style.direction = 'rtl';
                 contentElement.style.textAlign = 'right';
 
+                // Fix table layout for RTL
+                const table = contentElement.querySelector('table');
+                if (table) {
+                    table.style.direction = 'rtl';
+                    table.style.textAlign = 'right';
+
+                    // Fix table cells alignment
+                    const allCells = table.querySelectorAll('th, td');
+                    allCells.forEach(cell => {
+                        cell.style.textAlign = 'right';
+                        cell.style.direction = 'rtl';
+                        cell.style.verticalAlign = 'middle';
+                        cell.style.whiteSpace = 'nowrap';
+                        cell.style.overflow = 'hidden';
+                        cell.style.textOverflow = 'ellipsis';
+                    });
+
+                    // Reverse the order of header columns for proper RTL display
+                    const headerRow = table.querySelector('thead tr');
+                    if (headerRow) {
+                        const headers = Array.from(headerRow.children);
+                        headers.reverse().forEach(header => {
+                            headerRow.appendChild(header);
+                        });
+                    }
+
+                    // Reverse the order of data cells in each row
+                    const dataRows = table.querySelectorAll('tbody tr');
+                    dataRows.forEach(row => {
+                        const cells = Array.from(row.children);
+                        cells.reverse().forEach(cell => {
+                            row.appendChild(cell);
+                        });
+                    });
+                }
+
                 // Update header text to Arabic
                 const header = contentElement.querySelector('h1');
                 if (header) {
                     header.setAttribute('data-original-text', header.textContent);
                     header.textContent = 'تقرير طلبات الصيانة';
+                    header.style.textAlign = 'right';
                 }
 
-                // Arabic translations for maintenance request terms
+                // Rest of your translation code...
                 const elementsToTranslate = {
                     'Ticket Report': 'تقرير التذاكر',
-                    'Maintenance Requests': 'طلبات الصيانة',
                     'Entry #': 'رقم الإدخال',
                     'Store': 'المتجر',
                     'Requester': 'مقدم الطلب',
@@ -972,57 +1016,24 @@
                     'Due Date': 'تاريخ الاستحقاق',
                     'Created Date': 'تاريخ الإنشاء',
                     'Costs': 'التكاليف',
-                    'Actions': 'الإجراءات',
-                    'Total': 'الإجمالي',
                     'On Hold': 'قيد الانتظار',
                     'In Progress': 'قيد التنفيذ',
                     'Done': 'تم',
-                    'Canceled': 'ملغى',
-                    'Critical': 'حرج',
                     'High': 'عالي',
                     'Medium': 'متوسط',
                     'Low': 'منخفض',
-                    'Generated on': 'تم الإنشاء في',
-                    'Not Assigned': 'غير معين',
-                    'Local Only': 'محلي فقط',
-                    'Synced': 'متزامن',
-                    'View': 'عرض',
-                    'Edit': 'تعديل',
-                    'Delete': 'حذف',
-                    'Export CSV': 'تصدير CSV',
-                    'Filter': 'تصفية',
-                    'Search': 'بحث'
+                    'Not Assigned': 'غير معين'
                 };
 
-                // Translate table headers and common elements
+                // Apply translations
                 Object.keys(elementsToTranslate).forEach(englishText => {
-                    const elements = contentElement.querySelectorAll('th, td, p, span, button, h1, h2, h3, label');
+                    const elements = contentElement.querySelectorAll('th, td, p, span, h1, h2, h3');
                     elements.forEach(el => {
                         if (el.textContent && el.textContent.trim() === englishText) {
                             el.setAttribute('data-original-text', el.textContent);
                             el.textContent = elementsToTranslate[englishText];
-                        } else if (el.textContent && el.textContent.includes(englishText)) {
-                            el.setAttribute('data-original-text', el.textContent);
-                            el.textContent = el.textContent.replace(englishText, elementsToTranslate[englishText]);
                         }
                     });
-                });
-
-                // Update date format to Arabic
-                const dateElements = contentElement.querySelectorAll('p, span, td');
-                dateElements.forEach(el => {
-                    if (el.textContent && el.textContent.includes('Generated on')) {
-                        el.setAttribute('data-original-text', el.textContent);
-                        const now = new Date();
-                        const arabicDate = now.toLocaleDateString('ar-SA', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                        });
-                        el.textContent = `تم الإنشاء في ${arabicDate}`;
-                    }
                 });
 
             } else {
@@ -1030,6 +1041,7 @@
                 resetLanguageStyles();
             }
         }
+
 
         function resetLanguageStyles() {
             const contentElement = document.querySelector('#ticketReportContent');

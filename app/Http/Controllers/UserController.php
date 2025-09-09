@@ -65,8 +65,17 @@ class UserController extends Controller
 
     public function destroy(User $user)
     {
+        // Delete all related records first
+        $user->statusHistories()->delete();
+        $user->taskAssignments()->delete();
+        $user->shifts()->delete();
+
+        // Now delete the user
         $user->delete();
+
         return redirect()->route('users.index')
             ->with('success', 'User deleted successfully.');
     }
+
+
 }

@@ -1,20 +1,23 @@
 <?php
 
 use App\Http\Controllers\Admin\ApartmentLeaseController;
+use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\ClockingController;
 use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\ExportController;
+use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\LeaseController;
+use App\Http\Controllers\MaintenanceRequestController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\StoreController;
+use App\Http\Controllers\TaskAssignmentController;
 use App\Http\Controllers\UserController;
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\ClockingController;
-use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\UserScheduleController;
+use App\Http\Controllers\UserTaskController;
 use App\Http\Middleware\RoleMiddleware;
-use App\Http\Controllers\ExportController;
-use App\Http\Controllers\AttendanceController;
-use App\Http\Controllers\MaintenanceRequestController;
-use App\Http\Controllers\LanguageController;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('auth.login');
@@ -22,11 +25,14 @@ Route::get('/', function () {
 
 Route::get('/maintenance-requests/ticket-report', [MaintenanceRequestController::class, 'ticketReport'])
     ->name('maintenance-requests.ticket-report');
+
 // Language switching route
 Route::post('/language/switch', [LanguageController::class, 'switch'])->name('language.switch');
+
 Route::get('/leases/landlord-contact', [LeaseController::class, 'landlordContact'])->name('leases.landlord-contact');
 Route::get('/leases/cost-breakdown', [LeaseController::class, 'costBreakdown'])->name('leases.cost-breakdown');
 Route::get('/leases/lease-tracker', [LeaseController::class, 'leaseTracker'])->name('leases.lease-tracker');
+
 //export Clock in out data to excel
 Route::get('/export-clocking/{startDate?}/{endDate?}', [ExportController::class, 'exportToExcel'])->name('export.clocking');
 
@@ -41,6 +47,7 @@ Route::get('/dashboard', function () {
 
 // Clocking - Only for Users
 Route::middleware(['auth', RoleMiddleware::class . ':user'])->group(function () {
+    Route::get('/', [PaymentController::class, 'dashboard']);
     Route::get('/clocking', [ClockingController::class, 'index'])->name('clocking.index');
     Route::post('/clock-in', [ClockingController::class, 'clockIn'])->name('clocking.clockIn');
     Route::post('/clock-out', [ClockingController::class, 'clockOut'])->name('clocking.clockOut');
@@ -74,6 +81,13 @@ Route::post('/admin/clocking/update', [ClockingController::class, 'updateClockin
 
 // FIXED: Apartment Lease Routes - Properly organized
 Route::prefix('admin')->name('admin.')->middleware(['auth', RoleMiddleware::class . ':admin'])->group(function () {
+
+
+
+    Route::get('scorecards', [\App\Http\Controllers\Admin\ScorecardController::class, 'index'])->name('scorecards.index');
+    Route::get('scorecards/export', [\App\Http\Controllers\Admin\ScorecardController::class, 'export'])->name('scorecards.export');
+
+
     // Custom routes BEFORE resource routes to prevent conflicts
     Route::get('apartment-leases/export', [ApartmentLeaseController::class, 'export'])->name('apartment-leases.export');
     Route::get('apartment-leases/import/form', [ApartmentLeaseController::class, 'importForm'])->name('apartment-leases.import.form');
@@ -83,6 +97,31 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', RoleMiddleware::clas
 
     // Resource routes AFTER custom routes
     Route::resource('apartment-leases', ApartmentLeaseController::class);
+    Route::delete('schedules/shift-types', [ScheduleController::class, 'deleteShiftType'])
+        ->name('schedules.delete-shift-type');
+    Route::delete('schedules/roles', [ScheduleController::class, 'deleteRole'])
+        ->name('schedules.delete-role');
+    // === SCHEDULE MANAGEMENT ROUTES - ADMIN ONLY ===
+    Route::resource('schedules', ScheduleController::class);
+
+    // Schedule Actions
+    Route::post('schedules/{schedule}/publish', [ScheduleController::class, 'publish'])
+        ->name('schedules.publish');
+    Route::post('schedules/{schedule}/activate', [ScheduleController::class, 'activate'])
+        ->name('schedules.activate');
+
+
+
+    // Task Management
+    Route::resource('task-assignments', TaskAssignmentController::class)
+        ->except(['create', 'store']);
+    Route::patch('task-assignments/{taskAssignment}/status', [TaskAssignmentController::class, 'updateStatus'])
+        ->name('task-assignments.update-status');
+
+
+    // API endpoints for AJAX
+    Route::get('api/tasks/available', [ScheduleController::class, 'getAvailableTasks'])
+        ->name('api.tasks.available');
 });
 
 Route::middleware(['auth'])->group(function () {
@@ -115,10 +154,11 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('stores/{store}/toggle-status', [StoreController::class, 'toggleStatus'])
         ->name('stores.toggle-status');
 
-// Optional: API routes for AJAX calls
+    // Optional: API routes for AJAX calls
     Route::prefix('api')->group(function () {
         Route::get('stores/search', [StoreController::class, 'search'])->name('api.stores.search');
     });
+
     Route::post('/apartment-leases/import-xlsx', [ApartmentLeaseController::class, 'importXlsx'])->name('admin.apartment-leases.import-xlsx');
     Route::get('/leases/export/landlord-contact-image', [LeaseController::class, 'exportLandlordContactImage'])->name('leases.export.landlord-contact-image');
     Route::get('/leases/export/cost-breakdown-image', [LeaseController::class, 'exportCostBreakdownImage'])->name('leases.export.cost-breakdown-image');
@@ -138,6 +178,14 @@ Route::middleware(['auth'])->group(function () {
     Route::get('payments/reports/weekly-maintenance', [PaymentController::class, 'weeklyMaintenanceReport'])->name('payments.weekly-maintenance');
     Route::get('payments/reports/cost-per-store-yearly', [PaymentController::class, 'costPerStoreYearlyReport'])->name('payments.cost-per-store-yearly');
     Route::get('payments/reports/pending-projects', [PaymentController::class, 'pendingProjectsReport'])->name('payments.pending-projects');
+
+    // === USER SCHEDULE & TASK VIEWS - ALL AUTHENTICATED USERS ===
+    Route::get('my-schedule', [UserScheduleController::class, 'index'])->name('user.schedule.index');
+    Route::get('my-tasks', [UserTaskController::class, 'index'])->name('user.tasks.index');
+    Route::patch('my-tasks/{taskAssignment}/status', [UserTaskController::class, 'updateStatus'])
+        ->name('user.tasks.update-status');
+
+
 });
 
 require __DIR__.'/auth.php';

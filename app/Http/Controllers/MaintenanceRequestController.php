@@ -24,7 +24,10 @@ class MaintenanceRequestController extends Controller
             'attachments',
             'links',
             'store',
-            'assignedTo'
+            'assignedTo',
+            'taskAssignments' => function($q) {
+                $q->orderBy('assigned_at', 'desc')->with('assignedUser');
+            }
         ]);
 
         // Create a base query for status counts
@@ -36,10 +39,9 @@ class MaintenanceRequestController extends Controller
             $baseQuery->where('urgency_level_id', $request->urgency);
         }
 
-        // Filter by store if provided - FIXED VERSION
+        // Filter by store if provided
         if ($request->has('store') && $request->store !== 'all') {
             if ($request->store) {
-                // Try to parse as JSON first (if it's coming as object)
                 $storeValue = $request->store;
                 if (is_string($storeValue) && str_starts_with($storeValue, '{')) {
                     $storeData = json_decode($storeValue, true);
@@ -49,19 +51,20 @@ class MaintenanceRequestController extends Controller
                 }
 
                 if ($storeId) {
-                    $storeFilter = function($q) use ($storeId, $storeValue) {
-                        $q->where('store_id', $storeId)
-                            ->orWhereHas('store', function($subQ) use ($storeValue) {
-                                $subQ->where('store_number', 'LIKE', '%' . $storeValue . '%')
-                                    ->orWhere('name', 'LIKE', '%' . $storeValue . '%');
-                            });
+                    $storeFilter = function($q) use ($storeId) {
+                        $q->where('store_id', $storeId);
                     };
                 } else {
-                    // Fallback for text-based search
                     $storeFilter = function($q) use ($storeValue) {
                         $q->whereHas('store', function($subQ) use ($storeValue) {
-                            $subQ->where('store_number', 'LIKE', '%' . $storeValue . '%')
-                                ->orWhere('name', 'LIKE', '%' . $storeValue . '%');
+                            // Try exact match first, then partial match
+                            $subQ->where('store_number', $storeValue)
+                                ->orWhere('name', $storeValue)
+                                // Only if no exact match, do partial search
+                                ->orWhere(function($partialQ) use ($storeValue) {
+                                    $partialQ->where('store_number', 'LIKE', '%' . $storeValue . '%')
+                                        ->orWhere('name', 'LIKE', '%' . $storeValue . '%');
+                                });
                         });
                     };
                 }
@@ -71,7 +74,6 @@ class MaintenanceRequestController extends Controller
             }
         }
 
-        // Rest of your filters remain the same...
         // Date range filter
         if ($request->has('date_range') && $request->date_range !== 'all') {
             $dateFilter = function($q) use ($request) {
@@ -117,7 +119,9 @@ class MaintenanceRequestController extends Controller
                     ->orWhere('equipment_with_issue', 'like', "%{$search}%")
                     ->orWhere('entry_number', 'like', "%{$search}%")
                     ->orWhereHas('requester', function($q) use ($search) {
-                        $q->where('name', 'like', "%{$search}%");
+                        $q->where('first_name', 'like', "%{$search}%")
+                            ->orWhere('last_name', 'like', "%{$search}%")
+                            ->orWhere(DB::raw("CONCAT(first_name, ' ', last_name)"), 'like', "%{$search}%");
                     })
                     ->orWhereHas('store', function($q) use ($search) {
                         $q->where('store_number', 'like', "%{$search}%")
@@ -131,7 +135,6 @@ class MaintenanceRequestController extends Controller
             $query->where($searchFilter);
             $baseQuery->where($searchFilter);
         }
-
         // Apply status filter to main query
         $selectedStatus = null;
         if ($request->has('status') && $request->status !== 'all') {
@@ -150,7 +153,7 @@ class MaintenanceRequestController extends Controller
         $stores = Store::orderBy('store_number')->get();
         $users = User::where('role', 'user')->orderBy('name')->get();
 
-        // Calculate status counts (rest remains the same)...
+        // Calculate status counts
         if ($selectedStatus) {
             $totalCount = $baseQuery->count();
             $statusCounts = [
@@ -170,10 +173,34 @@ class MaintenanceRequestController extends Controller
             ];
         }
 
-        $assignedUsers = User::whereHas('assignedMaintenanceRequests')
+//        $assignedUserIds = DB::table('task_assignments')
+//            ->distinct()
+//            ->whereNotNull('assigned_user_id')
+//            ->pluck('assigned_user_id');
+//
+//        $assignedUsers = User::whereIn('id', $assignedUserIds)
+//            ->orderBy('name')
+//            ->get();
+//
+//        dd($assignedUsers);
+
+// Method 2: Using exists query
+//        $assignedUsers = User::whereExists(function ($query) {
+//            $query->select(DB::raw(1))
+//                ->from('task_assignments')
+//                ->whereColumn('task_assignments.assigned_user_id', 'users.id')
+//                ->whereNotNull('assigned_user_id');
+//        })
+//            ->orderBy('name')
+//            ->get();
+//
+//        dd($assignedUsers);
+
+        $assignedUsers = User::whereHas('taskAssignments')
             ->orderBy('name')
             ->get();
 
+//        dd($maintenanceRequests);
         return view('admin.maintenance-requests.index', compact(
             'maintenanceRequests',
             'urgencyLevels',
@@ -266,17 +293,18 @@ class MaintenanceRequestController extends Controller
 
     public function updateStatus(Request $request, MaintenanceRequest $maintenanceRequest): RedirectResponse
     {
+
         $request->validate([
             'status' => 'required|in:on_hold,in_progress,done,canceled',
             'costs' => 'required_if:status,done|nullable|numeric|min:0',
             'how_we_fixed_it' => 'required_if:status,done|nullable|string|max:1000',
             'assigned_to' => 'required_if:status,in_progress|nullable|exists:users,id',
-            'due_date' => 'nullable|date|after_or_equal:request_date'
+            'due_date' => 'nullable|date|after_or_equal:today'
         ]);
+
 
         try {
             DB::beginTransaction();
-
             $newStatus = $request->input('status');
             $costs = $request->input('costs');
             $howWeFixedIt = $request->input('how_we_fixed_it');
@@ -284,6 +312,7 @@ class MaintenanceRequestController extends Controller
             $dueDate = $request->input('due_date');
             $userId = auth()->id() ?? 1;
 
+            // Validation checks
             if ($newStatus === 'done' && (empty($costs) || empty($howWeFixedIt))) {
                 return back()->withErrors([
                     'costs' => 'Costs and how we fixed it are required when marking as done.'
@@ -295,15 +324,27 @@ class MaintenanceRequestController extends Controller
                     'assigned_to' => 'Assigned to is required when marking as in progress.'
                 ]);
             }
-
-            $maintenanceRequest->update([
+            // Update main fields
+            $updateData = [
                 'status' => $newStatus,
                 'costs' => $costs,
                 'how_we_fixed_it' => $howWeFixedIt,
-                'assigned_to' => $newStatus === 'in_progress' ? $assignedTo : null,
-                'due_date' => $newStatus === 'in_progress' ? $dueDate : null,
-            ]);
+            ];
 
+            if ($newStatus == 'in_progress' && $assignedTo) {
+                // Direct assignment from admin
+                $maintenanceRequest->assignDirectly($assignedTo, $dueDate);
+            } elseif ($newStatus !== 'in_progress') {
+                // Clear assignment if not in progress
+                $updateData['assigned_to'] = null;
+                $updateData['due_date'] = null;
+                $updateData['assignment_source'] = 'direct';
+                $updateData['current_task_assignment_id'] = null;
+            }
+
+            $maintenanceRequest->update($updateData);
+
+            // Record status change
             $maintenanceRequest->statusHistories()->create([
                 'old_status' => $maintenanceRequest->getOriginal('status'),
                 'new_status' => $newStatus,
@@ -311,7 +352,6 @@ class MaintenanceRequestController extends Controller
                 'changed_at' => now(),
                 'notes' => $newStatus === 'done' ? $howWeFixedIt : null,
             ]);
-
             // Get form ID dynamically from the maintenance request
             $formId = $maintenanceRequest->form_id; // Use the stored form_id
             $entryId = $maintenanceRequest->entry_number;
