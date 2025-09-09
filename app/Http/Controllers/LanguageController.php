@@ -15,7 +15,7 @@ class LanguageController extends Controller
         $language = $request->input('language', 'ar');
         
         // Validate language
-        if (!in_array($language, ['ar', 'en'])) {
+        if (!in_array($language, ['ar', 'en', 'es'])) {
             $language = 'ar';
         }
         

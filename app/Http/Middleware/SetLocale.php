@@ -34,7 +34,7 @@ class SetLocale
         }
         
         // Validate locale
-        if (!in_array($locale, ['en', 'ar'])) {
+        if (!in_array($locale, ['en', 'ar', 'es'])) {
             $locale = 'ar';
         }
         

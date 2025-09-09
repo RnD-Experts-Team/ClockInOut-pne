@@ -36,6 +36,18 @@
                         <div class="w-3 h-3 bg-orange-500 rounded-full hidden selected-indicator"></div>
                     </div>
                 </button>
+                
+                <button onclick="selectLanguage('es')" 
+                        class="w-full flex items-center justify-between p-4 border-2 border-gray-200 rounded-lg hover:border-orange-500 hover:bg-orange-50 transition-all duration-200 language-option" 
+                        data-lang="es">
+                    <div class="flex items-center">
+                        <span class="text-2xl mr-3">🇪🇸</span>
+                        <span class="font-medium text-gray-900">{{ __('messages.spanish') }}</span>
+                    </div>
+                    <div class="w-5 h-5 border-2 border-gray-300 rounded-full flex items-center justify-center">
+                        <div class="w-3 h-3 bg-orange-500 rounded-full hidden selected-indicator"></div>
+                    </div>
+                </button>
             </div>
         </div>
         
@@ -131,7 +143,7 @@ function setApplicationLanguage(lang) {
     document.documentElement.lang = lang;
     
     // Add language class to body for CSS targeting
-    document.body.classList.remove('lang-en', 'lang-ar');
+    document.body.classList.remove('lang-en', 'lang-ar', 'lang-es');
     document.body.classList.add(`lang-${lang}`);
     
     // Store current language for other scripts
@@ -163,7 +175,16 @@ document.addEventListener('DOMContentLoaded', function() {
 // Language toggle function for manual switching
 function toggleLanguage() {
     const currentLang = localStorage.getItem('preferred_language') || 'ar';
-    const newLang = currentLang === 'ar' ? 'en' : 'ar';
+    let newLang;
+    
+    // Cycle through languages: ar -> en -> es -> ar
+    if (currentLang === 'ar') {
+        newLang = 'en';
+    } else if (currentLang === 'en') {
+        newLang = 'es';
+    } else {
+        newLang = 'ar';
+    }
     
     localStorage.setItem('preferred_language', newLang);
     setApplicationLanguage(newLang);
@@ -184,6 +205,10 @@ function openLanguageModal() {
 }
 
 .lang-en {
+    font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.lang-es {
     font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 

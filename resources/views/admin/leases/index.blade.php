@@ -970,6 +970,12 @@
                         <span class="text-2xl mr-3">🇸🇦</span>
                         <span class="font-medium">العربية (Arabic)</span>
                     </button>
+
+                    <button onclick="proceedWithScreenshot('${modalId}', '${type}', 'es')"
+                            class="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors">
+                        <span class="text-2xl mr-3">🇪🇸</span>
+                        <span class="font-medium">Español (Spanish)</span>
+                    </button>
                 </div>
 
                 <div class="mt-6 text-center">
