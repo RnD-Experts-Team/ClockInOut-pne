@@ -59,7 +59,7 @@ class MaintenanceWebhookController extends Controller
                 'request_date' => Carbon::parse($payload['TodaysDate'])->format('Y-m-d'),
                 'date_submitted' => Carbon::parse($payload['Entry']['DateSubmitted'])->format('Y-m-d H:i:s'),
                 'entry_number' => $payload['Entry']['Number'],
-                'status' => 'on_hold',
+                'status' => 'reserved',
                 'requester_id' => $requester->id,
                 'reviewed_by_manager_id' => $manager->id,
                 'webhook_id' => $payload['Id']

@@ -250,28 +250,34 @@
                     <div class="text-center">
                         @switch($maintenanceRequest->status)
                             @case('on_hold')
-                                <svg class="w-16 h-16 mx-auto mb-3 text-black-600" fill="currentColor" viewBox="0 0 20 20">
+                                <svg class="w-16 h-16 mx-auto mb-3 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clip-rule="evenodd" />
                                 </svg>
-                                <h3 class="text-xl font-semibold text-black-600 mb-2">On Hold</h3>
+                                <h3 class="text-xl font-semibold text-orange-600 mb-2">On Hold</h3>
+                                @break
+                            @case('reserved')
+                                <svg class="w-16 h-16 mx-auto mb-3 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clip-rule="evenodd" />
+                                </svg>
+                                <h3 class="text-xl font-semibold text-purple-600 mb-2">Reserved</h3>
                                 @break
                             @case('in_progress')
-                                <svg class="w-16 h-16 mx-auto mb-3 text-black-600" fill="currentColor" viewBox="0 0 20 20">
+                                <svg class="w-16 h-16 mx-auto mb-3 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
                                 </svg>
-                                <h3 class="text-xl font-semibold text-black-600 mb-2">In Progress</h3>
+                                <h3 class="text-xl font-semibold text-blue-600 mb-2">In Progress</h3>
                                 @break
                             @case('done')
-                                <svg class="w-16 h-16 mx-auto mb-3 text-black-600" fill="currentColor" viewBox="0 0 20 20">
+                                <svg class="w-16 h-16 mx-auto mb-3 text-green-600" fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
                                 </svg>
-                                <h3 class="text-xl font-semibold text-black-600 mb-2">Done</h3>
+                                <h3 class="text-xl font-semibold text-green-600 mb-2">Done</h3>
                                 @break
                             @case('canceled')
-                                <svg class="w-16 h-16 mx-auto mb-3 text-black-600" fill="currentColor" viewBox="0 0 20 20">
+                                <svg class="w-16 h-16 mx-auto mb-3 text-red-600" fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
                                 </svg>
-                                <h3 class="text-xl font-semibold text-black-600 mb-2">Canceled</h3>
+                                <h3 class="text-xl font-semibold text-red-600 mb-2">Canceled</h3>
                                 @break
                         @endswitch
 
@@ -293,6 +299,11 @@
                                 </div>
                             </div>
                         @endif
+
+                        @if(in_array($maintenanceRequest->status, ['on_hold', 'reserved']) && $maintenanceRequest->reason)
+                            <div class="mt-4 p-4 bg-orange-100 rounded-lg">
+                            </div>
+                        @endif
                     </div>
                 </div>
 
@@ -312,34 +323,43 @@
                                 <label for="status" class="block text-sm font-medium text-black-700 mb-2">New Status</label>
                                 <select name="status" id="status" class="block w-full rounded-lg border-orange-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm">
                                     <option value="on_hold" {{ $maintenanceRequest->status === 'on_hold' ? 'selected' : '' }}>On Hold</option>
+                                    <option value="reserved" {{ $maintenanceRequest->status === 'reserved' ? 'selected' : '' }}>Reserved</option>
                                     <option value="in_progress" {{ $maintenanceRequest->status === 'in_progress' ? 'selected' : '' }}>In Progress</option>
                                     <option value="done" {{ $maintenanceRequest->status === 'done' ? 'selected' : '' }}>Done</option>
                                     <option value="canceled" {{ $maintenanceRequest->status === 'canceled' ? 'selected' : '' }}>Canceled</option>
                                 </select>
                             </div>
-                            <div id="assignedToField" style="display: {{ $maintenanceRequest->status === 'in_progress' ? 'block' : 'none' }};">
+
+                            <div id="reasonField" style="display: {{ in_array($maintenanceRequest->status, ['on_hold']) ? 'block' : 'none' }};">
+                                <label for="reason" class="block text-sm font-medium text-black-700 mb-2">Reason *</label>
+                                <textarea name="reason" id="reason" rows="3" class="block w-full rounded-lg border-orange-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm" placeholder="Please provide a reason...">{{ $maintenanceRequest->reason ?? '' }}</textarea>
+                            </div>
+
+                            <div id="assignedToField" style="display: {{ in_array($maintenanceRequest->status, ['in_progress', 'done']) ? 'block' : 'none' }};">
                                 <label for="assigned_to" class="block text-sm font-medium text-black-700 mb-2">Assigned To *</label>
                                 <select name="assigned_to" id="assigned_to" class="block w-full rounded-lg border-orange-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm">
                                     <option value="">Select User</option>
                                     @foreach($users as $user)
-                                        <option value="{{ $user->id }}">{{ $user->name }}</option>
+                                        <option value="{{ $user->id }}" {{ $user->id == $maintenanceRequest->assigned_to ? 'selected' : '' }}>{{ $user->name }}</option>
                                     @endforeach
                                 </select>
                             </div>
-                            <div id="dueDateField" style="display: {{ $maintenanceRequest->status === 'in_progress' ? 'block' : 'none' }};">
+
+                            <div id="dueDateField" style="display: {{ in_array($maintenanceRequest->status, ['in_progress', 'done']) ? 'block' : 'none' }};">
                                 <label for="due_date" class="block text-sm font-medium text-black-700 mb-2">Due Date</label>
-                                <input type="date" name="due_date" id="due_date" class="block w-full rounded-lg border-orange-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm" value="{{ $maintenanceRequest->due_date ?
-   (is_string($maintenanceRequest->due_date) ? $maintenanceRequest->due_date : $maintenanceRequest->due_date->format('M d, Y'))
-   : 'N/A' }}">
+                                <input type="date" name="due_date" id="due_date" class="block w-full rounded-lg border-orange-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm" value="{{ $maintenanceRequest->due_date ? $maintenanceRequest->due_date->format('Y-m-d') : '' }}">
                             </div>
+
                             <div id="costsField" style="display: {{ $maintenanceRequest->status === 'done' ? 'block' : 'none' }};">
                                 <label for="costs" class="block text-sm font-medium text-black-700 mb-2">Costs *</label>
                                 <input type="number" name="costs" id="costs" step="0.01" min="0" class="block w-full rounded-lg border-orange-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm" placeholder="0.00" value="{{ $maintenanceRequest->costs ?? '' }}">
                             </div>
+
                             <div id="fixField" style="display: {{ $maintenanceRequest->status === 'done' ? 'block' : 'none' }};">
                                 <label for="how_we_fixed_it" class="block text-sm font-medium text-black-700 mb-2">How We Fixed It *</label>
                                 <textarea name="how_we_fixed_it" id="how_we_fixed_it" rows="4" class="block w-full rounded-lg border-orange-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm" placeholder="Please describe how the issue was fixed...">{{ $maintenanceRequest->how_we_fixed_it ?? '' }}</textarea>
                             </div>
+
                             <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors duration-200 font-medium">
                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -365,7 +385,7 @@
                         @csrf
                         @method('DELETE')
                         <button type="submit"
-                                class="w-full inline-flex justify-center items-center px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors duration-200 font-medium">
+                                class="w-full inline-flex justify-center items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200 font-medium">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
@@ -399,22 +419,27 @@
                                             bg-orange-100">
                                             @switch($history->new_status)
                                                 @case('on_hold')
-                                                    <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                    <svg class="w-4 h-4 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clip-rule="evenodd" />
+                                                    </svg>
+                                                    @break
+                                                @case('reserved')
+                                                    <svg class="w-4 h-4 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
                                                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clip-rule="evenodd" />
                                                     </svg>
                                                     @break
                                                 @case('in_progress')
-                                                    <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                    <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
                                                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
                                                     </svg>
                                                     @break
                                                 @case('done')
-                                                    <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                    <svg class="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
                                                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
                                                     </svg>
                                                     @break
                                                 @case('canceled')
-                                                    <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                    <svg class="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 20 20">
                                                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
                                                     </svg>
                                                     @break
@@ -459,30 +484,44 @@
             const fixField = document.getElementById('fixField');
             const assignedToField = document.getElementById('assignedToField');
             const dueDateField = document.getElementById('dueDateField');
+            const reasonField = document.getElementById('reasonField');
             const costsInput = document.getElementById('costs');
             const fixTextarea = document.getElementById('how_we_fixed_it');
             const assignedToSelect = document.getElementById('assigned_to');
+            const reasonTextarea = document.getElementById('reason');
 
             if (statusSelect) {
                 statusSelect.addEventListener('change', function() {
                     const value = this.value;
+
+                    // Hide all fields first
                     costsField.style.display = 'none';
                     fixField.style.display = 'none';
                     assignedToField.style.display = 'none';
                     dueDateField.style.display = 'none';
+                    reasonField.style.display = 'none';
+
+                    // Reset requirements
                     costsInput.required = false;
                     fixTextarea.required = false;
                     assignedToSelect.required = false;
+                    reasonTextarea.required = false;
 
                     if (value === 'done') {
                         costsField.style.display = 'block';
                         fixField.style.display = 'block';
+                        assignedToField.style.display = 'block';
+                        dueDateField.style.display = 'block';
                         costsInput.required = true;
                         fixTextarea.required = true;
+                        assignedToSelect.required = true;
                     } else if (value === 'in_progress') {
                         assignedToField.style.display = 'block';
                         dueDateField.style.display = 'block';
                         assignedToSelect.required = true;
+                    } else if (value === 'on_hold') {
+                        reasonField.style.display = 'block';
+                        reasonTextarea.required = true;
                     }
                 });
             }
