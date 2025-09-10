@@ -159,6 +159,7 @@ class MaintenanceRequestController extends Controller
             $statusCounts = [
                 'all' => $totalCount,
                 'on_hold' => $selectedStatus === 'on_hold' ? $totalCount : 0,
+                'reserved' => $selectedStatus === 'reserved' ? $totalCount : 0, // ADD THIS LINE
                 'in_progress' => $selectedStatus === 'in_progress' ? $totalCount : 0,
                 'done' => $selectedStatus === 'done' ? $totalCount : 0,
                 'canceled' => $selectedStatus === 'canceled' ? $totalCount : 0,
@@ -167,6 +168,7 @@ class MaintenanceRequestController extends Controller
             $statusCounts = [
                 'all' => $baseQuery->count(),
                 'on_hold' => (clone $baseQuery)->where('status', 'on_hold')->count(),
+                'reserved' => (clone $baseQuery)->where('status', 'reserved')->count(), // ADD THIS LINE
                 'in_progress' => (clone $baseQuery)->where('status', 'in_progress')->count(),
                 'done' => (clone $baseQuery)->where('status', 'done')->count(),
                 'canceled' => (clone $baseQuery)->where('status', 'canceled')->count(),
@@ -295,17 +297,17 @@ class MaintenanceRequestController extends Controller
     {
 
         $request->validate([
-            'status' => 'required|in:on_hold,in_progress,done,canceled',
+            'status' => 'required|in:on_hold,reserved,in_progress,done,canceled',
+            'reason' => 'required_if:status,on_hold|nullable|string|max:1000',
             'costs' => 'required_if:status,done|nullable|numeric|min:0',
             'how_we_fixed_it' => 'required_if:status,done|nullable|string|max:1000',
-            'assigned_to' => 'required_if:status,in_progress|nullable|exists:users,id',
+            'assigned_to' => 'required_if:status,in_progress,done|nullable|exists:users,id', // FIX: Add "done" here
             'due_date' => 'nullable|date|after_or_equal:today'
         ]);
-
-
         try {
             DB::beginTransaction();
             $newStatus = $request->input('status');
+            $reason = $request->input('reason');
             $costs = $request->input('costs');
             $howWeFixedIt = $request->input('how_we_fixed_it');
             $assignedTo = $request->input('assigned_to');
@@ -319,29 +321,37 @@ class MaintenanceRequestController extends Controller
                 ]);
             }
 
-            if ($newStatus === 'in_progress' && empty($assignedTo)) {
+            // FIX: Check assigned_to for BOTH in_progress AND done
+            if (($newStatus === 'in_progress' || $newStatus === 'done') && empty($assignedTo)) {
                 return back()->withErrors([
-                    'assigned_to' => 'Assigned to is required when marking as in progress.'
+                    'assigned_to' => 'Assigned to is required when marking as in progress or done.'
+                ]);
+            }
+
+            if (($newStatus === 'on_hold') && empty($reason)) {
+                return back()->withErrors([
+                    'reason' => 'Reason is required when marking as on hold or reserved.'
                 ]);
             }
             // Update main fields
             $updateData = [
                 'status' => $newStatus,
+                'reason' => $reason,
                 'costs' => $costs,
                 'how_we_fixed_it' => $howWeFixedIt,
             ];
 
-            if ($newStatus == 'in_progress' && $assignedTo) {
+            // FIX: Handle assignment for BOTH in_progress AND done
+            if (($newStatus == 'in_progress' || $newStatus == 'done') && $assignedTo) {
                 // Direct assignment from admin
                 $maintenanceRequest->assignDirectly($assignedTo, $dueDate);
-            } elseif ($newStatus !== 'in_progress') {
-                // Clear assignment if not in progress
+            } elseif ($newStatus !== 'in_progress' && $newStatus !== 'done') {
+                // Clear assignment if not in progress or done
                 $updateData['assigned_to'] = null;
                 $updateData['due_date'] = null;
                 $updateData['assignment_source'] = 'direct';
                 $updateData['current_task_assignment_id'] = null;
             }
-
             $maintenanceRequest->update($updateData);
 
             // Record status change
@@ -350,10 +360,11 @@ class MaintenanceRequestController extends Controller
                 'new_status' => $newStatus,
                 'changed_by' => $userId,
                 'changed_at' => now(),
-                'notes' => $newStatus === 'done' ? $howWeFixedIt : null,
+                'notes' => $newStatus === 'done' ? $howWeFixedIt : ($newStatus === 'on_hold' ? $reason : null), // FIX: Add reason to notes
             ]);
+
             // Get form ID dynamically from the maintenance request
-            $formId = $maintenanceRequest->form_id; // Use the stored form_id
+            $formId = $maintenanceRequest->form_id;
             $entryId = $maintenanceRequest->entry_number;
 
             // Only update Cognito if we have a form ID
@@ -362,6 +373,7 @@ class MaintenanceRequestController extends Controller
 
                 $cognitoStatusMap = [
                     'on_hold' => 'On Hold',
+                    'reserved' => 'Reserved',
                     'in_progress' => 'In Progress',
                     'done' => 'Done',
                     'canceled' => 'Canceled'
@@ -415,7 +427,8 @@ class MaintenanceRequestController extends Controller
         $request->validate([
             'request_ids' => 'required|array',
             'request_ids.*' => 'exists:maintenance_requests,id',
-            'status' => 'required|in:on_hold,in_progress,done,canceled',
+            'status' => 'required|in:on_hold,reserved,in_progress,done,canceled', // ADD reserved HERE
+            'reason' => 'required_if:status,on_hold,reserved|nullable|string|max:1000', // ADD THIS LINE
             'costs' => 'required_if:status,done|nullable|numeric|min:0',
             'how_we_fixed_it' => 'required_if:status,done|nullable|string|max:1000',
             'assigned_to' => 'required_if:status,in_progress|nullable|exists:users,id',
@@ -427,6 +440,7 @@ class MaintenanceRequestController extends Controller
 
             $requestIds = $request->input('request_ids');
             $newStatus = $request->input('status');
+            $reason = $request->input('reason'); // ADD THIS LINE
             $costs = $request->input('costs');
             $howWeFixedIt = $request->input('how_we_fixed_it');
             $assignedTo = $request->input('assigned_to');
@@ -442,11 +456,13 @@ class MaintenanceRequestController extends Controller
 
                 $maintenanceRequest->update([
                     'status' => $newStatus,
+                    'reason' => ($newStatus === 'on_hold' || $newStatus === 'reserved') ? $reason : null, // ADD THIS LINE
                     'costs' => $newStatus === 'done' ? $costs : null,
                     'how_we_fixed_it' => $newStatus === 'done' ? $howWeFixedIt : null,
                     'assigned_to' => $newStatus === 'in_progress' ? $assignedTo : null,
                     'due_date' => $newStatus === 'in_progress' ? $dueDate : null,
                 ]);
+
 
                 $maintenanceRequest->statusHistories()->create([
                     'old_status' => $maintenanceRequest->getOriginal('status'),

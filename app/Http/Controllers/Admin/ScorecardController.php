@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Configuration;
 use App\Models\User;
 use App\Models\Clocking;
 use Illuminate\Http\Request;
@@ -49,6 +50,8 @@ class ScorecardController extends Controller
 
     private function calculateUserScorecard($user, $request)
     {
+        $gasPaymentRate = Configuration::getGasPaymentRate();
+
         // Build date range constraints
         $clockingQuery = Clocking::where('user_id', $user->id);
 
@@ -105,6 +108,11 @@ class ScorecardController extends Controller
                 $clockOut = Carbon::parse($clocking->clock_out);
                 $hoursWorked = $clockIn->diffInHours($clockOut, false);
                 $totalHours += $hoursWorked;
+                $miles = $clocking->miles_out - $clocking->miles_in;
+                $gasPayment = $miles * $gasPaymentRate;
+                // Add gas payments (fuel cost)
+
+                $totalFuelCost +=  $gasPayment;
             }
 
             // Add payments made to company (if user bought something)
@@ -112,10 +120,7 @@ class ScorecardController extends Controller
                 $totalPaymentsToCompany += $clocking->purchase_cost;
             }
 
-            // Add gas payments (fuel cost)
-            if ($clocking->gas_payment) {
-                $totalFuelCost += $clocking->gas_payment;
-            }
+
         }
 
         $hourlyRate = $user->hourly_pay ?? 0;

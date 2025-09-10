@@ -15,8 +15,12 @@ use Carbon\Carbon;
 
 class ClockingController extends Controller
 {
+
     public function index()
     {
+
+        date_default_timezone_set(config('app.timezone'));
+//dd(now());
         // Retrieve the latest clocking record for the authenticated user
         $clocking = Clocking::where('user_id', Auth::id())
             ->whereNull('clock_out')
@@ -86,11 +90,17 @@ class ClockingController extends Controller
                 $totalGasPayment += $gasPayment;
             }
 
-            // Calculate hours and earnings
+            // Calculate hours and earnings - WITH DATA VALIDATION
             if ($clocking->clock_in && $clocking->clock_out) {
                 $start = Carbon::parse($clocking->clock_in);
                 $end = Carbon::parse($clocking->clock_out);
                 $diffInSeconds = $end->timestamp - $start->timestamp;
+
+                // Skip records with invalid time (clock_out before clock_in)
+                if ($diffInSeconds <= 0) {
+                    continue;
+                }
+
                 $totalSeconds += $diffInSeconds;
 
                 if (isset($clocking->user->hourly_pay)) {
@@ -104,15 +114,15 @@ class ClockingController extends Controller
             $totalPurchaseCost += $clocking->purchase_cost ?? 0;
         }
 
-        // Format total hours
+        // Calculate total salary for all filtered records
+        $totalSalary = $totalEarnings + $totalGasPayment + $totalPurchaseCost;
+
+        // FIXED: Format total hours to handle hours exceeding 24
         $totalHoursFormatted = sprintf('%02d:%02d:%02d',
             floor($totalSeconds / 3600),
             floor(($totalSeconds % 3600) / 60),
             $totalSeconds % 60
         );
-
-        // Calculate total salary for all filtered records
-        $totalSalary = $totalEarnings + $totalGasPayment + $totalPurchaseCost;
 
         // Process individual records for display
         foreach ($clockings as $clocking) {
@@ -127,19 +137,27 @@ class ClockingController extends Controller
                 $end = Carbon::parse($clocking->clock_out);
                 $diffInSeconds = $end->timestamp - $start->timestamp;
 
-                $clocking->total_hours = gmdate('H:i:s', $diffInSeconds);
+                if ($diffInSeconds <= 0) {
+                    $clocking->total_hours = 'Invalid Time';
+                    $clocking->earnings = 0;
+                } else {
+                    // FIXED: Calculate actual total hours (can exceed 24 hours)
+                    $hours = floor($diffInSeconds / 3600);
+                    $minutes = floor(($diffInSeconds % 3600) / 60);
+                    $seconds = $diffInSeconds % 60;
+                    $clocking->total_hours = sprintf('%02d:%02d:%02d', $hours, $minutes, $seconds);
 
-                if (isset($clocking->user->hourly_pay)) {
-                    $hoursDecimal = $diffInSeconds / 3600;
-                    $clocking->earnings = $hoursDecimal * $clocking->user->hourly_pay;
+                    if (isset($clocking->user->hourly_pay)) {
+                        $hoursDecimal = $diffInSeconds / 3600;
+                        $clocking->earnings = $hoursDecimal * $clocking->user->hourly_pay;
+                    }
                 }
             }
 
             // Calculate total salary for individual record
             $clocking->total_salary = ($clocking->earnings ?? 0) +
-                                     ($clocking->gas_payment ?? 0) +
-                                     ($clocking->purchase_cost ?? 0);
-            $totalSalary += $clocking->total_salary;
+                ($clocking->gas_payment ?? 0) +
+                ($clocking->purchase_cost ?? 0);
 
             // Format dates for display
             $clocking->formatted_date = $clocking->clock_in ? Carbon::parse($clocking->clock_in)->format('M d, Y') : '';
@@ -147,15 +165,6 @@ class ClockingController extends Controller
             $clocking->formatted_clock_out = $clocking->clock_out ? Carbon::parse($clocking->clock_out)->format('g:i A') : '';
         }
 
-        // Format total hours
-        $totalHoursFormatted = sprintf('%02d:%02d:%02d',
-            floor($totalSeconds / 3600),
-            floor(($totalSeconds % 3600) / 60),
-            $totalSeconds % 60
-        );
-
-        // Get all users for filter
-        $users = User::all();
 
         return view('clockingTable', compact(
             'clockings',
@@ -174,6 +183,8 @@ class ClockingController extends Controller
             'totalSalary'
         ));
     }
+
+
 
     public function updateGasRate(Request $request)
     {
@@ -216,6 +227,8 @@ public function destroy($id)
 
     public function clockIn(Request $request)
     {
+        date_default_timezone_set(config('app.timezone'));
+
         $request->validate([
             'using_car' => 'required|boolean',
             'miles_in' => 'required_if:using_car,1|nullable|integer',
@@ -237,12 +250,13 @@ public function destroy($id)
             'is_clocked_in' => true,
             'using_car'     => $request->using_car,
         ]);
-
         return back()->with('success', 'تم تسجيل الحضور بنجاح');
     }
 
    public function clockOut(Request $request)
 {
+    date_default_timezone_set(config('app.timezone'));
+
     // Log all incoming request data for debugging
     Log::info('Clock-out request received', [
         'user_id' => Auth::id(),
@@ -253,7 +267,7 @@ public function destroy($id)
         'bought_something_value' => $request->input('bought_something'),
         'bought_something_type' => gettype($request->input('bought_something')),
     ]);
-    
+
     // Specific logging for purchase fields when bought_something is 'yes' or '1'
     $boughtSomething = $request->input('bought_something');
     if ($boughtSomething == '1' || $boughtSomething === true || $boughtSomething === 'true') {
@@ -278,7 +292,7 @@ public function destroy($id)
             'will_require_purchase_cost' => $request->input('bought_something') == '1',
             'will_require_purchase_receipt' => $request->input('bought_something') == '1'
         ]);
-        
+
         // Validate new fields as well
         $request->validate([
             'miles_out'         => 'nullable|integer',
@@ -287,7 +301,7 @@ public function destroy($id)
             'purchase_cost'     => 'required_if:bought_something,1|nullable|numeric',
             'purchase_receipt'  => 'required_if:bought_something,1|nullable|image|mimes:jpg,png,jpeg',
         ]);
-        
+
         Log::info('Clock-out validation passed');
     } catch (\Illuminate\Validation\ValidationException $e) {
         Log::error('Clock-out validation failed', [
@@ -318,17 +332,17 @@ public function destroy($id)
 
     // Retrieve the existing clocking record for clock out
     Log::info('Looking for active clocking record', ['user_id' => Auth::id()]);
-    
+
     $clocking = Clocking::where('user_id', Auth::id())
         ->whereNull('clock_out')
         ->where('is_clocked_in', true)
         ->first();
-        
+
     if (!$clocking) {
         Log::error('No active clocking record found for user', ['user_id' => Auth::id()]);
         return back()->withErrors(['error' => 'No active clock-in record found. Please clock in first.']);
     }
-    
+
     Log::info('Found active clocking record', ['clocking_id' => $clocking->id]);
 
     // Prepare update data
@@ -341,12 +355,12 @@ public function destroy($id)
         'purchase_cost'    => $request->purchase_cost,
         'purchase_receipt' => $receiptPath,
     ];
-    
+
     Log::info('Updating clocking record with data', $updateData);
 
     // Update the record with clock-out details
     $clocking->update($updateData);
-    
+
     Log::info('Clock-out completed successfully', ['clocking_id' => $clocking->id]);
 
     return back()->with('success', 'تم تسجيل الإنصراف بنجاح');

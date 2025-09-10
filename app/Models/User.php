@@ -17,6 +17,7 @@ class User extends Authenticatable
         'role',
         'is_active',
         'hourly_pay',
+        'timezone',
     ];
 
     protected $hidden = [

@@ -19,12 +19,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             SetLocale::class,
         ]);
-        
+
         // Use custom CSRF middleware
         $middleware->validateCsrfTokens(except: [
             '/language/switch',
         ]);
-        
+
         $middleware->alias([
             'role' => RoleMiddleware::class,
         ]);
