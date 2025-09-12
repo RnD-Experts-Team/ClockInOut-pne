@@ -37,8 +37,11 @@
     <link rel="icon" type="image/svg+xml" sizes="512x512" href="/icons/icon-512x512.svg">
     <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#ff671b">
     <link rel="shortcut icon" href="/favicon.ico">
+{{--    @vite(['resources/css/app.css', 'resources/js/app.js']);--}}
+{{--    <script src="https://cdn.tailwindcss.com"></script>--}}
 
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{asset('/build/assets/app-0igVw8Lk.css')}}">
+    <script src="{{asset('/build/assets/app-BGDHvcUF.js')}}"></script>
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ URL::asset('build/assets/forms.css') }}">

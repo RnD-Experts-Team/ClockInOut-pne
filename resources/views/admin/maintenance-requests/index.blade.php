@@ -32,10 +32,10 @@
         </div>
 
         <!-- Enhanced Status Counts with Icons and Better Colors -->
-        <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-6 gap-6 mb-6 items-stretch">
             <!-- Total -->
-            <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
-                <div class="flex items-center">
+            <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow h-full flex flex-col">
+                <div class="flex items-center flex-1">
                     <div class="flex-shrink-0">
                         <div class="w-12 h-12 bg-gray-600 rounded-lg flex items-center justify-center">
                             <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -43,7 +43,7 @@
                             </svg>
                         </div>
                     </div>
-                    <div class="ml-4">
+                    <div class="ml-4 flex-1">
                         <p class="text-sm font-medium text-gray-600">Total</p>
                         <p class="text-3xl font-bold text-gray-900">{{ $statusCounts['all'] ?? 0 }}</p>
                     </div>
@@ -51,8 +51,8 @@
             </div>
 
             <!-- On Hold -->
-            <div class="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl shadow-sm border border-yellow-200 p-6 hover:shadow-md transition-shadow">
-                <div class="flex items-center">
+            <div class="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl shadow-sm border border-yellow-200 p-6 hover:shadow-md transition-shadow h-full flex flex-col">
+                <div class="flex items-center flex-1">
                     <div class="flex-shrink-0">
                         <div class="w-12 h-12 bg-yellow-500 rounded-lg flex items-center justify-center">
                             <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -60,16 +60,16 @@
                             </svg>
                         </div>
                     </div>
-                    <div class="ml-4">
+                    <div class="ml-4 flex-1">
                         <p class="text-sm font-medium text-yellow-700">On Hold</p>
                         <p class="text-3xl font-bold text-yellow-900">{{ $statusCounts['on_hold'] ?? 0 }}</p>
                     </div>
                 </div>
             </div>
 
-            <!-- Reserved -->
-            <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl shadow-sm border border-purple-200 p-6 hover:shadow-md transition-shadow">
-                <div class="flex items-center">
+            <!-- Received -->
+            <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl shadow-sm border border-purple-200 p-6 hover:shadow-md transition-shadow h-full flex flex-col">
+                <div class="flex items-center flex-1">
                     <div class="flex-shrink-0">
                         <div class="w-12 h-12 bg-purple-500 rounded-lg flex items-center justify-center">
                             <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -77,17 +77,16 @@
                             </svg>
                         </div>
                     </div>
-                    <div class="ml-4">
+                    <div class="ml-4 flex-1">
                         <p class="text-sm font-medium text-purple-700">Received</p>
                         <p class="text-3xl font-bold text-purple-900">{{ $statusCounts['received'] ?? 0 }}</p>
                     </div>
                 </div>
             </div>
 
-
             <!-- In Progress -->
-            <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow-sm border border-blue-200 p-6 hover:shadow-md transition-shadow">
-                <div class="flex items-center">
+            <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow-sm border border-blue-200 p-6 hover:shadow-md transition-shadow h-full flex flex-col">
+                <div class="flex items-center flex-1">
                     <div class="flex-shrink-0">
                         <div class="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center">
                             <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -95,7 +94,7 @@
                             </svg>
                         </div>
                     </div>
-                    <div class="ml-4">
+                    <div class="ml-4 flex-1">
                         <p class="text-sm font-medium text-blue-700">In Progress</p>
                         <p class="text-3xl font-bold text-blue-900">{{ $statusCounts['in_progress'] ?? 0 }}</p>
                     </div>
@@ -103,8 +102,8 @@
             </div>
 
             <!-- Done -->
-            <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-xl shadow-sm border border-green-200 p-6 hover:shadow-md transition-shadow">
-                <div class="flex items-center">
+            <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-xl shadow-sm border border-green-200 p-6 hover:shadow-md transition-shadow h-full flex flex-col">
+                <div class="flex items-center flex-1">
                     <div class="flex-shrink-0">
                         <div class="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center">
                             <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -112,7 +111,7 @@
                             </svg>
                         </div>
                     </div>
-                    <div class="ml-4">
+                    <div class="ml-4 flex-1">
                         <p class="text-sm font-medium text-green-700">Done</p>
                         <p class="text-3xl font-bold text-green-900">{{ $statusCounts['done'] ?? 0 }}</p>
                     </div>
@@ -120,8 +119,8 @@
             </div>
 
             <!-- Canceled -->
-            <div class="bg-gradient-to-br from-red-50 to-red-100 rounded-xl shadow-sm border border-red-200 p-6 hover:shadow-md transition-shadow">
-                <div class="flex items-center">
+            <div class="bg-gradient-to-br from-red-50 to-red-100 rounded-xl shadow-sm border border-red-200 p-6 hover:shadow-md transition-shadow h-full flex flex-col">
+                <div class="flex items-center flex-1">
                     <div class="flex-shrink-0">
                         <div class="w-12 h-12 bg-red-500 rounded-lg flex items-center justify-center">
                             <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -129,7 +128,7 @@
                             </svg>
                         </div>
                     </div>
-                    <div class="ml-4">
+                    <div class="ml-4 flex-1">
                         <p class="text-sm font-medium text-red-700">Canceled</p>
                         <p class="text-3xl font-bold text-red-900">{{ $statusCounts['canceled'] ?? 0 }}</p>
                     </div>
