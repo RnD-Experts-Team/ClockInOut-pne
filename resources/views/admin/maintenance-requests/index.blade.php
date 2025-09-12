@@ -73,13 +73,13 @@
                     <div class="flex-shrink-0">
                         <div class="w-12 h-12 bg-purple-500 rounded-lg flex items-center justify-center">
                             <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                             </svg>
                         </div>
                     </div>
                     <div class="ml-4">
-                        <p class="text-sm font-medium text-purple-700">Reserved</p>
-                        <p class="text-3xl font-bold text-purple-900">{{ $statusCounts['reserved'] ?? 0 }}</p>
+                        <p class="text-sm font-medium text-purple-700">Received</p>
+                        <p class="text-3xl font-bold text-purple-900">{{ $statusCounts['received'] ?? 0 }}</p>
                     </div>
                 </div>
             </div>
@@ -147,7 +147,7 @@
                         <select name="status" id="status" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 sm:text-sm transition-all duration-200 hover:border-gray-400 py-3 px-4">
                             <option value="all" {{ request('status') === 'all' || !request('status') ? 'selected' : '' }}>All Statuses</option>
                             <option value="on_hold" {{ request('status') === 'on_hold' ? 'selected' : '' }}>On Hold</option>
-                            <option value="reserved" {{ request('status') === 'reserved' ? 'selected' : '' }}>Reserved</option> <!-- ADD THIS -->
+                            <option value="received" {{ request('status') === 'received' ? 'selected' : '' }}>Received</option> <!-- UPDATED -->
                             <option value="in_progress" {{ request('status') === 'in_progress' ? 'selected' : '' }}>In Progress</option>
                             <option value="done" {{ request('status') === 'done' ? 'selected' : '' }}>Done</option>
                             <option value="canceled" {{ request('status') === 'canceled' ? 'selected' : '' }}>Canceled</option>
@@ -356,14 +356,15 @@
             On Hold
         </span>
                                             @break
-                                        @case('reserved') {{-- ADD THIS CASE --}}
+                                        @case('received') {{-- CHANGED from reserved --}}
                                         <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-800 border border-purple-200">
-            <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"></path>
-            </svg>
-            Reserved
-        </span>
+    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+    </svg>
+    Received
+</span>
                                         @break
+
                                         @case('in_progress')
                                             <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-200">
                                                 <svg class="w-3 h-3 mr-1 animate-spin" fill="currentColor" viewBox="0 0 20 20">
@@ -1070,23 +1071,123 @@
         }
 
 
-        function resetLanguageStyles() {
+        function applyLanguageStyles(language) {
             const contentElement = document.querySelector('#ticketReportContent');
             if (!contentElement) return;
 
-            // Reset direction and text alignment
-            contentElement.style.direction = '';
-            contentElement.style.textAlign = '';
+            if (language === 'ar') {
+                // Apply Arabic styling
+                contentElement.style.direction = 'rtl';
+                contentElement.style.textAlign = 'right';
 
-            // Restore original text content
-            contentElement.querySelectorAll('[data-original-text]').forEach(element => {
-                const originalText = element.getAttribute('data-original-text');
-                if (originalText) {
-                    element.textContent = originalText;
-                    element.removeAttribute('data-original-text');
+                // Fix table layout for RTL
+                const table = contentElement.querySelector('table');
+                if (table) {
+                    table.style.direction = 'rtl';
+                    table.style.textAlign = 'right';
+
+                    // Fix table cells alignment
+                    const allCells = table.querySelectorAll('th, td');
+                    allCells.forEach(cell => {
+                        cell.style.textAlign = 'right';
+                        cell.style.direction = 'rtl';
+                    });
                 }
-            });
+
+                // Enhanced translation mapping with more comprehensive coverage
+                const elementsToTranslate = {
+                    'Ticket Report': 'تقرير طلبات الصيانة',
+                    'Entry #': 'رقم الإدخال',
+                    'Store': 'المتجر',
+                    'Requester': 'مقدم الطلب',
+                    'Equipment': 'المعدات',
+                    'Issue Description': 'وصف المشكلة',
+                    'Description': 'الوصف',
+                    'Urgency': 'الأولوية',
+                    'Status': 'الحالة',
+                    'Assigned to': 'مُسند إلى',           // Header translation
+                    'Due Date': 'تاريخ الاستحقاق',
+                    'Created Date': 'تاريخ الإنشاء',
+                    'Date Created': 'تاريخ الإنشاء',
+                    'Costs': 'التكاليف',
+                    'Total Cost': 'إجمالي التكلفة',
+                    'Actions': 'الإجراءات',
+                    'On Hold': 'قيد الانتظار',
+                    'In Progress': 'قيد التنفيذ',
+                    'Done': 'مكتمل',
+                    'Completed': 'مكتمل',
+                    'Canceled': 'ملغي',
+                    'Cancelled': 'ملغي',
+                    'received': 'تم تلقيه',
+                    'High': 'عالي',
+                    'Medium': 'متوسط',
+                    'Low': 'منخفض',
+                    'Critical': 'حرج',
+                    'Impacts Sales': 'يؤثر على المبيعات',
+                    'Not Assigned': 'غير مُعيَّن',
+                    'No Due Date': 'لا يوجد تاريخ استحقاق',
+                    'N/A': 'غير متاح',
+                    'Total': 'الإجمالي',
+                    'Summary': 'ملخص',
+                    // Add header variations that might exist
+                    'Maintenance Requests Report': 'تقرير طلبات الصيانة',
+                    'Report': 'تقرير'
+                };
+
+                // Apply translations with more thorough searching
+                function translateElement(element, englishText, arabicText) {
+                    // Check exact match
+                    if (element.textContent && element.textContent.trim() === englishText) {
+                        element.setAttribute('data-original-text', element.textContent);
+                        element.textContent = arabicText;
+                        return true;
+                    }
+
+                    // Check if element contains the text (for cases where there might be extra spaces)
+                    if (element.textContent && element.textContent.trim().includes(englishText)) {
+                        element.setAttribute('data-original-text', element.textContent);
+                        element.textContent = element.textContent.replace(englishText, arabicText);
+                        return true;
+                    }
+
+                    return false;
+                }
+
+                // Apply translations to all possible elements
+                Object.keys(elementsToTranslate).forEach(englishText => {
+                    const arabicText = elementsToTranslate[englishText];
+
+                    // Search in headers first
+                    const headers = contentElement.querySelectorAll('h1, h2, h3, h4, h5, h6');
+                    headers.forEach(header => translateElement(header, englishText, arabicText));
+
+                    // Search in table headers
+                    const tableHeaders = contentElement.querySelectorAll('th');
+                    tableHeaders.forEach(th => translateElement(th, englishText, arabicText));
+
+                    // Search in table cells
+                    const tableCells = contentElement.querySelectorAll('td');
+                    tableCells.forEach(td => translateElement(td, englishText, arabicText));
+
+                    // Search in other elements
+                    const otherElements = contentElement.querySelectorAll('p, span, div, label');
+                    otherElements.forEach(el => translateElement(el, englishText, arabicText));
+                });
+
+                // Force update for main header if it exists
+                const mainHeader = contentElement.querySelector('h1');
+                if (mainHeader && !mainHeader.getAttribute('data-original-text')) {
+                    mainHeader.setAttribute('data-original-text', mainHeader.textContent);
+                    mainHeader.textContent = 'تقرير طلبات الصيانة';
+                    mainHeader.style.textAlign = 'right';
+                }
+
+            } else {
+                // English is default, reset any previous Arabic styling
+                resetLanguageStyles();
+            }
         }
+
 
         function showScreenshotLoading(modalId) {
             const modal = document.getElementById(modalId);
@@ -1168,6 +1269,23 @@
                     }
                 }, 300);
             }, 5000);
+        }
+        function resetLanguageStyles(modalId) {
+            const contentElement = document.querySelector(`#${modalId} .modal-content`);
+            if (!contentElement) return;
+
+            // Reset direction and text alignment
+            contentElement.style.direction = '';
+            contentElement.style.textAlign = '';
+
+            // Restore original text content
+            contentElement.querySelectorAll('[data-original-text]').forEach(element => {
+                const originalText = element.getAttribute('data-original-text');
+                if (originalText) {
+                    element.textContent = originalText;
+                    element.removeAttribute('data-original-text');
+                }
+            });
         }
 
     </script>

@@ -593,7 +593,84 @@
         </div>
     </div>
     <script>
+        // SIMPLIFIED AND FIXED Read More/Read Less Implementation + All Original Code
         document.addEventListener('DOMContentLoaded', function() {
+            let TRUNCATE_LENGTH = 200; // Start with 200, but can be changed
+
+// Function to change truncate length dynamically
+            window.changeTruncateLength = function(newLength) {
+                TRUNCATE_LENGTH = newLength;
+
+                // Reset all processed elements
+                document.querySelectorAll('.truncatable').forEach(el => {
+                    el.removeAttribute('data-truncated');
+                    // Restore original text if it was already truncated
+                    const originalText = el.getAttribute('data-original-text');
+                    if (originalText) {
+                        el.textContent = originalText;
+                        el.removeAttribute('data-original-text');
+                    }
+                });
+
+                // Re-run truncation with new length
+                initTruncation();
+
+                console.log(`Truncate length changed to: ${newLength}`);
+            };
+            // Use event delegation for Read More/Read Less buttons
+            document.body.addEventListener('click', function(event) {
+                if (event.target.classList.contains('read-more-btn')) {
+                    const parent = event.target.closest('.truncatable');
+                    if (parent) {
+                        parent.querySelector('.truncated-content').style.display = 'none';
+                        parent.querySelector('.full-content').style.display = 'inline';
+                    }
+                } else if (event.target.classList.contains('read-less-btn')) {
+                    const parent = event.target.closest('.truncatable');
+                    if (parent) {
+                        parent.querySelector('.truncated-content').style.display = 'inline';
+                        parent.querySelector('.full-content').style.display = 'none';
+                    }
+                }
+            });
+
+            // Function to initialize truncation
+            function initTruncation() {
+                document.querySelectorAll('.truncatable').forEach(function(element) {
+                    const originalText = element.textContent.trim();
+
+                    // Skip if already processed or text is short
+                    if (originalText.length <= TRUNCATE_LENGTH || element.hasAttribute('data-truncated')) {
+                        return;
+                    }
+
+                    // Mark as processed
+                    element.setAttribute('data-truncated', 'true');
+
+                    // Create truncated version
+                    const truncatedText = originalText.substring(0, TRUNCATE_LENGTH);
+
+                    // Replace content
+                    element.innerHTML = `
+                <span class="truncated-content">
+                    ${truncatedText}...
+                    <button type="button" class="read-more-btn" style="color:#ff671b; background:none; border:none; text-decoration:underline; cursor:pointer; font-size:inherit; padding:0; margin-left:5px;">
+                        Read More
+                    </button>
+                </span>
+                <span class="full-content" style="display:none;">
+                    ${originalText}
+                    <button type="button" class="read-less-btn" style="color:#ff671b; background:none; border:none; text-decoration:underline; cursor:pointer; font-size:inherit; padding:0; margin-left:5px;">
+                        Read Less
+                    </button>
+                </span>
+            `;
+                });
+            }
+
+            // Initialize truncation on page load
+            initTruncation();
+
             // Modal controls
             const portfolioModal = document.getElementById('portfolioModal');
             const openModalBtn = document.getElementById('openPortfolioModal');
@@ -774,56 +851,269 @@
                 const portfolioTotals = document.getElementById('portfolioTotals');
                 if (portfolioTotals && data.totals) {
                     portfolioTotals.innerHTML = `
-                    <div class="text-center p-4 bg-blue-50 rounded-lg">
-                        <p class="text-sm font-medium text-gray-600">Total AWS</p>
-                        <p class="text-xl font-bold text-[#3B82F6]">$${Number(data.totals.aws || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
-                    </div>
-                    <div class="text-center p-4 bg-green-50 rounded-lg">
-                        <p class="text-sm font-medium text-gray-600">Total Rent</p>
-                        <p class="text-xl font-bold text-green-600">$${Number(data.totals.total_rent || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
-                    </div>
-                    <div class="text-center p-4 bg-purple-50 rounded-lg">
-                        <p class="text-sm font-medium text-gray-600">Lease to Sales Ratio</p>
-                        <p class="text-xl font-bold text-purple-600">${((data.totals.lease_to_sales_ratio || 0) * 100).toFixed(2)}%</p>
-                    </div>
-                    <div class="text-center p-4 bg-indigo-50 rounded-lg">
-                        <p class="text-sm font-medium text-gray-600">Total Base Rent</p>
-                        <p class="text-xl font-bold text-indigo-600">$${Number(data.totals.base_rent || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
-                    </div>
-                    <div class="text-center p-4 bg-gray-50 rounded-lg">
-                        <p class="text-sm font-medium text-gray-600">% Increase Per Year</p>
-                        <p class="text-xl font-bold text-gray-600">${Number(data.totals.percent_increase_per_year || 0).toFixed(2)}%</p>
-                    </div>
-                `;
+            <div class="text-center p-4 bg-blue-50 rounded-lg">
+                <p class="text-sm font-medium text-gray-600">Total AWS</p>
+                <p class="text-xl font-bold text-[#3B82F6]">$${Number(data.totals.aws || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
+            </div>
+            <div class="text-center p-4 bg-green-50 rounded-lg">
+                <p class="text-sm font-medium text-gray-600">Total Rent</p>
+                <p class="text-xl font-bold text-green-600">$${Number(data.totals.total_rent || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
+            </div>
+            <div class="text-center p-4 bg-purple-50 rounded-lg">
+                <p class="text-sm font-medium text-gray-600">Lease to Sales Ratio</p>
+                <p class="text-xl font-bold text-purple-600">${((data.totals.lease_to_sales_ratio || 0) * 100).toFixed(2)}%</p>
+            </div>
+            <div class="text-center p-4 bg-indigo-50 rounded-lg">
+                <p class="text-sm font-medium text-gray-600">Total Base Rent</p>
+                <p class="text-xl font-bold text-indigo-600">$${Number(data.totals.base_rent || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
+            </div>
+            <div class="text-center p-4 bg-gray-50 rounded-lg">
+                <p class="text-sm font-medium text-gray-600">% Increase Per Year</p>
+                <p class="text-xl font-bold text-gray-600">${Number(data.totals.percent_increase_per_year || 0).toFixed(2)}%</p>
+            </div>
+        `;
                 }
 
                 // Update averages
                 const portfolioAverages = document.getElementById('portfolioAverages');
                 if (portfolioAverages && data.averages) {
                     portfolioAverages.innerHTML = `
-                    <div class="text-center p-4 bg-blue-50 rounded-lg">
-                        <p class="text-sm font-medium text-gray-600">Average AWS</p>
-                        <p class="text-lg font-bold text-[#3B82F6]">$${Number(data.averages.aws || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
-                    </div>
-                    <div class="text-center p-4 bg-green-50 rounded-lg">
-                        <p class="text-sm font-medium text-gray-600">Average Total Rent</p>
-                        <p class="text-lg font-bold text-green-600">$${Number(data.averages.total_rent || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
-                    </div>
-                    <div class="text-center p-4 bg-purple-50 rounded-lg">
-                        <p class="text-sm font-medium text-gray-600">Average Lease to Sales Ratio</p>
-                        <p class="text-lg font-bold text-purple-600">${((data.averages.lease_to_sales_ratio || 0) * 100).toFixed(2)}%</p>
-                    </div>
-                    <div class="text-center p-4 bg-indigo-50 rounded-lg">
-                        <p class="text-sm font-medium text-gray-600">Average Base Rent</p>
-                        <p class="text-lg font-bold text-indigo-600">$${Number(data.averages.base_rent || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
-                    </div>
-                    <div class="text-center p-4 bg-gray-50 rounded-lg">
-                        <p class="text-sm font-medium text-gray-600">Average % Increase Per Year</p>
-                        <p class="text-lg font-bold text-gray-600">${Number(data.averages.percent_increase_per_year || 0).toFixed(2)}%</p>
-                    </div>
-                `;
+            <div class="text-center p-4 bg-blue-50 rounded-lg">
+                <p class="text-sm font-medium text-gray-600">Average AWS</p>
+                <p class="text-lg font-bold text-[#3B82F6]">$${Number(data.averages.aws || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
+            </div>
+            <div class="text-center p-4 bg-green-50 rounded-lg">
+                <p class="text-sm font-medium text-gray-600">Average Total Rent</p>
+                <p class="text-lg font-bold text-green-600">$${Number(data.averages.total_rent || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
+            </div>
+            <div class="text-center p-4 bg-purple-50 rounded-lg">
+                <p class="text-sm font-medium text-gray-600">Average Lease to Sales Ratio</p>
+                <p class="text-lg font-bold text-purple-600">${((data.averages.lease_to_sales_ratio || 0) * 100).toFixed(2)}%</p>
+            </div>
+            <div class="text-center p-4 bg-indigo-50 rounded-lg">
+                <p class="text-sm font-medium text-gray-600">Average Base Rent</p>
+                <p class="text-lg font-bold text-indigo-600">$${Number(data.averages.base_rent || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
+            </div>
+            <div class="text-center p-4 bg-gray-50 rounded-lg">
+                <p class="text-sm font-medium text-gray-600">Average % Increase Per Year</p>
+                <p class="text-lg font-bold text-gray-600">${Number(data.averages.percent_increase_per_year || 0).toFixed(2)}%</p>
+            </div>
+        `;
                 }
             }
+
+            // Landlord Table Sorting functionality
+            let landlordSortDirection = {};
+
+            window.sortLandlordTable = function(columnIndex, type) {
+                const tbody = document.getElementById('landlordTableBody');
+                if (!tbody) return;
+
+                const rows = Array.from(tbody.querySelectorAll('tr'));
+                if (rows.length === 0) return;
+
+                const currentDirection = landlordSortDirection[columnIndex] || 'asc';
+                const newDirection = currentDirection === 'asc' ? 'desc' : 'asc';
+                landlordSortDirection[columnIndex] = newDirection;
+
+                // Clear all sort indicators
+                for (let i = 0; i <= 8; i++) {
+                    const indicator = document.getElementById(`landlord-sort-indicator-${i}`);
+                    if (indicator) {
+                        if (i === 0 || i === 6 || i === 7) {
+                            indicator.textContent = '↑';
+                        } else {
+                            indicator.textContent = 'A↓';
+                        }
+                        indicator.style.opacity = '0.5';
+                    }
+                }
+
+                // Set active sort indicator
+                const activeIndicator = document.getElementById(`landlord-sort-indicator-${columnIndex}`);
+                if (activeIndicator) {
+                    if (type === 'number') {
+                        activeIndicator.textContent = newDirection === 'asc' ? '↑' : '↓';
+                    } else {
+                        activeIndicator.textContent = newDirection === 'asc' ? 'A↓' : 'Z↑';
+                    }
+                    activeIndicator.style.opacity = '1';
+                }
+
+                // Sort rows
+                rows.sort((a, b) => {
+                    let aValue, bValue;
+
+                    if (type === 'number') {
+                        if (columnIndex === 0) {
+                            aValue = parseInt(a.cells[columnIndex].getAttribute('data-sort')) || 0;
+                            bValue = parseInt(b.cells[columnIndex].getAttribute('data-sort')) || 0;
+                        } else {
+                            aValue = parseFloat(a.cells[columnIndex].getAttribute('data-sort')) || 0;
+                            bValue = parseFloat(b.cells[columnIndex].getAttribute('data-sort')) || 0;
+                        }
+                    } else {
+                        aValue = (a.cells[columnIndex].getAttribute('data-sort') || '').toLowerCase();
+                        bValue = (b.cells[columnIndex].getAttribute('data-sort') || '').toLowerCase();
+
+                        if (aValue === 'n/a') aValue = 'zzzz';
+                        if (bValue === 'n/a') bValue = 'zzzz';
+                    }
+
+                    if (newDirection === 'asc') {
+                        return aValue > bValue ? 1 : (aValue < bValue ? -1 : 0);
+                    } else {
+                        return aValue < bValue ? 1 : (aValue > bValue ? -1 : 0);
+                    }
+                });
+
+                // Re-append sorted rows with alternating colors
+                rows.forEach((row, index) => {
+                    row.className = (index % 2 === 0 ? 'bg-white' : 'bg-gray-50') + ' hover:bg-[#fff4ed]';
+                    tbody.appendChild(row);
+                });
+
+                // IMPORTANT: Re-initialize truncation after sorting
+                // Reset truncation flags first
+                document.querySelectorAll('.truncatable').forEach(el => {
+                    el.removeAttribute('data-truncated');
+                });
+                initTruncation();
+            };
+
+            // Cost Breakdown Table Sorting
+            let costBreakdownSortDirection = {};
+            window.sortCostBreakdownTable = function(columnIndex, type) {
+                const tbody = document.getElementById('costBreakdownBody');
+                if (!tbody) return;
+
+                const rows = Array.from(tbody.querySelectorAll('tr'));
+                if (rows.length === 0) return;
+
+                const currentDirection = costBreakdownSortDirection[columnIndex] || 'asc';
+                const newDirection = currentDirection === 'asc' ? 'desc' : 'asc';
+                costBreakdownSortDirection[columnIndex] = newDirection;
+
+                rows.sort((a, b) => {
+                    let aValue, bValue;
+                    if (type === 'number') {
+                        if (columnIndex === 0) {
+                            aValue = parseInt(a.cells[columnIndex].getAttribute('data-sort')) || 0;
+                            bValue = parseInt(b.cells[columnIndex].getAttribute('data-sort')) || 0;
+                        } else {
+                            aValue = parseFloat(a.cells[columnIndex].getAttribute('data-sort')) || 0;
+                            bValue = parseFloat(b.cells[columnIndex].getAttribute('data-sort')) || 0;
+                        }
+                    } else {
+                        aValue = (a.cells[columnIndex].getAttribute('data-sort') || '').toLowerCase();
+                        bValue = (b.cells[columnIndex].getAttribute('data-sort') || '').toLowerCase();
+                    }
+                    return newDirection === 'asc' ? (aValue > bValue ? 1 : -1) : (aValue < bValue ? 1 : -1);
+                });
+
+                rows.forEach((row, index) => {
+                    row.className = (index % 2 === 0 ? 'bg-white' : 'bg-gray-50') + ' hover:bg-[#fff4ed]';
+                    tbody.appendChild(row);
+                });
+
+                // Re-initialize truncation after sorting
+                document.querySelectorAll('.truncatable').forEach(el => {
+                    el.removeAttribute('data-truncated');
+                });
+                initTruncation();
+            };
+
+            // Lease Tracker Table Sorting
+            let leaseTrackerSortDirection = {};
+
+            window.sortLeaseTrackerTable = function(columnIndex, type) {
+                const table = document.getElementById('leaseTrackerTable');
+                const tbody = document.getElementById('leaseTrackerBody');
+
+                if (!table || !tbody) return;
+
+                const rows = Array.from(tbody.querySelectorAll('tr'));
+                if (rows.length === 0) return;
+
+                const currentDirection = leaseTrackerSortDirection[columnIndex] || 'asc';
+                const newDirection = currentDirection === 'asc' ? 'desc' : 'asc';
+                leaseTrackerSortDirection[columnIndex] = newDirection;
+
+                // Clear all sort indicators
+                for (let i = 0; i <= 13; i++) {
+                    const indicator = document.getElementById(`leasetracker-sort-indicator-${i}`);
+                    if (indicator) {
+                        if (i === 0 || i === 1 || i === 2 || i === 3) {
+                            indicator.textContent = '↑';
+                        } else {
+                            indicator.textContent = 'A↓';
+                        }
+                        indicator.style.opacity = '0.5';
+                    }
+                }
+
+                // Set active sort indicator
+                const activeIndicator = document.getElementById(`leasetracker-sort-indicator-${columnIndex}`);
+                if (activeIndicator) {
+                    if (type === 'number') {
+                        activeIndicator.textContent = newDirection === 'asc' ? '↑' : '↓';
+                    } else {
+                        activeIndicator.textContent = newDirection === 'asc' ? 'A↓' : 'Z↑';
+                    }
+                    activeIndicator.style.opacity = '1';
+                }
+
+                // Sort rows
+                rows.sort((a, b) => {
+                    let aValue, bValue;
+
+                    if (type === 'number') {
+                        const aRaw = a.cells[columnIndex].getAttribute('data-sort');
+                        const bRaw = b.cells[columnIndex].getAttribute('data-sort');
+
+                        if (columnIndex === 0) {
+                            aValue = parseInt(aRaw) || 0;
+                            bValue = parseInt(bRaw) || 0;
+                        } else {
+                            aValue = parseFloat(aRaw) || 0;
+                            bValue = parseFloat(bRaw) || 0;
+                        }
+                    } else {
+                        aValue = (a.cells[columnIndex].getAttribute('data-sort') || '').toLowerCase();
+                        bValue = (b.cells[columnIndex].getAttribute('data-sort') || '').toLowerCase();
+
+                        if (aValue === 'n/a') aValue = 'zzzz';
+                        if (bValue === 'n/a') bValue = 'zzzz';
+                    }
+
+                    if (newDirection === 'asc') {
+                        return aValue > bValue ? 1 : (aValue < bValue ? -1 : 0);
+                    } else {
+                        return aValue < bValue ? 1 : (aValue > bValue ? -1 : 0);
+                    }
+                });
+
+                // Re-append sorted rows with updated row colors
+                rows.forEach((row, index) => {
+                    const statusCell = row.cells[13].getAttribute('data-sort');
+                    let rowClass = '';
+                    if (statusCell === 'EXPIRED') {
+                        rowClass = 'bg-red-100';
+                    } else if (statusCell === 'WARNING') {
+                        rowClass = 'bg-yellow-100';
+                    } else {
+                        rowClass = index % 2 === 0 ? 'bg-white' : 'bg-gray-50';
+                    }
+                    row.className = `${rowClass} hover:bg-[#fff4ed]`;
+                    tbody.appendChild(row);
+                });
+
+                // Re-initialize truncation after sorting
+                document.querySelectorAll('.truncatable').forEach(el => {
+                    el.removeAttribute('data-truncated');
+                });
+                initTruncation();
+            };
         });
 
         // Modal functionality for reports
@@ -873,6 +1163,13 @@
                     }
 
                     document.getElementById('landlordContactContent').innerHTML = content ? content.outerHTML : '<p>Error loading content</p>';
+
+                    // Re-initialize truncation for modal content
+                    setTimeout(() => {
+                        if (window.reinitTextTruncation) {
+                            window.reinitTextTruncation();
+                        }
+                    }, 100);
                 })
                 .catch(error => {
                     console.error('Error:', error);
@@ -888,7 +1185,6 @@
                     const doc = parser.parseFromString(html, 'text/html');
                     let content = doc.querySelector('main') || doc.querySelector('.container') || doc.body;
 
-                    // Remove navigation elements
                     if (content === doc.body) {
                         content = content.cloneNode(true);
                         const navElements = content.querySelectorAll('[role="menu"], .dropdown, #payments-dropdown');
@@ -896,6 +1192,12 @@
                     }
 
                     document.getElementById('costBreakdownContent').innerHTML = content ? content.outerHTML : '<p>Error loading content</p>';
+
+                    setTimeout(() => {
+                        if (window.reinitTextTruncation) {
+                            window.reinitTextTruncation();
+                        }
+                    }, 100);
                 })
                 .catch(error => {
                     console.error('Error:', error);
@@ -911,7 +1213,6 @@
                     const doc = parser.parseFromString(html, 'text/html');
                     let content = doc.querySelector('main') || doc.querySelector('.container') || doc.body;
 
-                    // Remove navigation elements
                     if (content === doc.body) {
                         content = content.cloneNode(true);
                         const navElements = content.querySelectorAll('[role="menu"], .dropdown, #payments-dropdown');
@@ -919,6 +1220,12 @@
                     }
 
                     document.getElementById('leaseTrackerContent').innerHTML = content ? content.outerHTML : '<p>Error loading content</p>';
+
+                    setTimeout(() => {
+                        if (window.reinitTextTruncation) {
+                            window.reinitTextTruncation();
+                        }
+                    }, 100);
                 })
                 .catch(error => {
                     console.error('Error:', error);
@@ -952,40 +1259,40 @@
             languageModal.id = 'languageSelectionModal';
             languageModal.className = 'fixed inset-0 bg-black bg-opacity-50 z-[110] flex items-center justify-center';
             languageModal.innerHTML = `
-            <div class="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
-                <div class="text-center mb-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Select Language for Screenshot</h3>
-                    <p class="text-sm text-gray-600">Choose the language for your screenshot export</p>
-                </div>
+    <div class="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+        <div class="text-center mb-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">Select Language for Screenshot</h3>
+            <p class="text-sm text-gray-600">Choose the language for your screenshot export</p>
+        </div>
 
-                <div class="space-y-3">
-                    <button onclick="proceedWithScreenshot('${modalId}', '${type}', 'en')"
-                            class="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors">
-                        <span class="text-2xl mr-3">🇺🇸</span>
-                        <span class="font-medium">English</span>
-                    </button>
+        <div class="space-y-3">
+            <button onclick="proceedWithScreenshot('${modalId}', '${type}', 'en')"
+                    class="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors">
+                <span class="text-2xl mr-3">🇺🇸</span>
+                <span class="font-medium">English</span>
+            </button>
 
-                    <button onclick="proceedWithScreenshot('${modalId}', '${type}', 'ar')"
-                            class="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors">
-                        <span class="text-2xl mr-3">🇸🇦</span>
-                        <span class="font-medium">العربية (Arabic)</span>
-                    </button>
+            <button onclick="proceedWithScreenshot('${modalId}', '${type}', 'ar')"
+                    class="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors">
+                <span class="text-2xl mr-3">🇸🇦</span>
+                <span class="font-medium">العربية (Arabic)</span>
+            </button>
 
-                    <button onclick="proceedWithScreenshot('${modalId}', '${type}', 'es')"
-                            class="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors">
-                        <span class="text-2xl mr-3">🇪🇸</span>
-                        <span class="font-medium">Español (Spanish)</span>
-                    </button>
-                </div>
+            <button onclick="proceedWithScreenshot('${modalId}', '${type}', 'es')"
+                    class="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors">
+                <span class="text-2xl mr-3">🇪🇸</span>
+                <span class="font-medium">Español (Spanish)</span>
+            </button>
+        </div>
 
-                <div class="mt-6 text-center">
-                    <button onclick="hideLanguageSelection()"
-                            class="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 focus:outline-none">
-                        Cancel
-                    </button>
-                </div>
-            </div>
-        `;
+        <div class="mt-6 text-center">
+            <button onclick="hideLanguageSelection()"
+                    class="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 focus:outline-none">
+                Cancel
+            </button>
+        </div>
+    </div>
+`;
 
             document.body.appendChild(languageModal);
         }
@@ -1004,6 +1311,16 @@
             applyLanguageStyles(language, modalId);
 
             showScreenshotLoading(modalId);
+
+            // **NEW: Hide Responsibilities column ONLY if this is landlord contact modal**
+            if (modalId === 'landlordContactModal') {
+                const modal = document.getElementById(modalId);
+                const contentElement = modal.querySelector('.modal-content');
+                const table = contentElement.querySelector('table');
+                if (table) {
+                    table.classList.add('hide-last-column');
+                }
+            }
 
             loadHtml2Canvas().then(html2canvas => {
                 const modal = document.getElementById(modalId);
@@ -1045,18 +1362,47 @@
 
                         // Reset language styles after screenshot
                         resetLanguageStyles(modalId);
+
+                        // **NEW: Show column again ONLY if this was landlord contact modal**
+                        if (modalId === 'landlordContactModal') {
+                            const table = contentElement.querySelector('table');
+                            if (table) {
+                                table.classList.remove('hide-last-column');
+                            }
+                        }
                     }, 'image/png', 0.95);
                 }).catch(error => {
                     console.error('html2canvas error:', error);
                     showScreenshotError(modalId, 'Failed to capture screenshot');
                     resetLanguageStyles(modalId);
+
+                    // **NEW: Show column again even if error occurs**
+                    if (modalId === 'landlordContactModal') {
+                        const modal = document.getElementById(modalId);
+                        const contentElement = modal.querySelector('.modal-content');
+                        const table = contentElement.querySelector('table');
+                        if (table) {
+                            table.classList.remove('hide-last-column');
+                        }
+                    }
                 });
             }).catch(error => {
                 console.error('Failed to load html2canvas:', error);
                 showScreenshotError(modalId, 'Failed to load screenshot library');
                 resetLanguageStyles(modalId);
+
+                // **NEW: Show column again even if error occurs**
+                if (modalId === 'landlordContactModal') {
+                    const modal = document.getElementById(modalId);
+                    const contentElement = modal.querySelector('.modal-content');
+                    const table = contentElement.querySelector('table');
+                    if (table) {
+                        table.classList.remove('hide-last-column');
+                    }
+                }
             });
         }
+
 
         function applyLanguageStyles(language, modalId) {
             const contentElement = document.querySelector(`#${modalId} .modal-content`);
@@ -1086,25 +1432,51 @@
 
                 // Apply Arabic translations to common table headers and elements
                 const elementsToTranslate = {
-                    'Store #': 'رقم المتجر',
+                    // Basic table headers
+                    'Store': 'المتجر',
                     'Store Number': 'رقم المتجر',
                     'Store Name': 'اسم المتجر',
                     'Landlord': 'المالك',
+                    'Landlord Name': 'اسم المالك',
                     'Contact Info': 'معلومات الاتصال',
                     'Phone': 'الهاتف',
                     'Email': 'البريد الإلكتروني',
                     'Address': 'العنوان',
-                    'AWS': 'المساحة المؤجرة',
+                    'AWS': 'متوسط المبيعات المرجح',
                     'Total Rent': 'إجمالي الإيجار',
                     'Base Rent': 'الإيجار الأساسي',
                     'L2S Ratio': 'نسبة الإيجار للمبيعات',
-                    'SQF': 'المساحة بالقدم المربع',
+                    'SQF': 'القدم المربع',
                     'Term': 'المدة',
                     'Status': 'الحالة',
                     'Current Term': 'المدة الحالية',
-                    'Expiration Date': 'تاريخ انتهاء الصلاحية',
-                    'Generated on': 'تم الإنشاء في',
-                    'TOTAL': 'المجموع'
+                    'Expiration Date': 'تاريخ الانتهاء',
+                    'Generated on': 'تم إنشاؤه في',
+                    'TOTAL': 'المجموع',
+
+                    // Additional headers for lease tracker
+                    'Franchise Expiry': 'انتهاء الامتياز',
+                    'Time Left': 'الوقت المتبقي',
+                    'Lease Expiry': 'انتهاء الإيجار',
+                    'Expired': 'منتهي الصلاحية',
+                    'Active': 'نشط',
+                    'Warning': 'تحذير',
+
+                    // Cost breakdown headers
+                    'Security Deposit': 'التأمين',
+                    'RE Taxes': 'ضرائب العقارات',
+                    'CAM': 'تكاليف المنطقة المشتركة',
+                    'Insurance': 'التأمين',
+                    'Others': 'أخرى',
+                    'Increase %': 'نسبة الزيادة',
+                    'Monthly Rate': 'المعدل الشهري',
+
+                    // Action buttons and labels
+                    'Actions': 'الإجراءات',
+                    'Edit': 'تعديل',
+                    'View': 'عرض',
+                    'Delete': 'حذف',
+                    'Close': 'إغلاق'
                 };
 
                 // Translate table headers and common elements
@@ -1148,12 +1520,12 @@
 
             if (screenshotButton) {
                 screenshotButton.innerHTML = `
-            <svg class="animate-spin w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            Generating...
-        `;
+    <svg class="animate-spin w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+    </svg>
+    Generating...
+`;
                 screenshotButton.disabled = true;
             }
         }
@@ -1173,33 +1545,33 @@
             instructionDiv.id = 'screenshotInstructions';
             instructionDiv.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-6 py-4 rounded-lg shadow-lg z-[100] max-w-md';
             instructionDiv.innerHTML = `
-            <div class="text-center">
-                <div class="flex items-center justify-center mb-3">
-                    <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                    </svg>
-                    <strong>Screenshot Generated Successfully!</strong>
-                </div>
-                <div class="space-y-3">
-                    <div>
-                        <img src="${screenshotUrl}" alt="Generated Screenshot" class="max-w-full mx-auto rounded border shadow" style="max-height: 200px;">
-                    </div>
-                    <div class="flex space-x-3 justify-center">
-                        <button onclick="downloadScreenshot('${downloadUrl}', '${filename}')"
-                               class="inline-flex items-center px-4 py-2 bg-white text-green-600 rounded hover:bg-gray-100 font-medium">
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                            </svg>
-                            Download
-                        </button>
-                        <button onclick="hideScreenshotInstructions()"
-                                class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
-                            Close
-                        </button>
-                    </div>
-                </div>
+    <div class="text-center">
+        <div class="flex items-center justify-center mb-3">
+            <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            <strong>Screenshot Generated Successfully!</strong>
+        </div>
+        <div class="space-y-3">
+            <div>
+                <img src="${screenshotUrl}" alt="Generated Screenshot" class="max-w-full mx-auto rounded border shadow" style="max-height: 200px;">
             </div>
-        `;
+            <div class="flex space-x-3 justify-center">
+                <button onclick="downloadScreenshot('${downloadUrl}', '${filename}')"
+                       class="inline-flex items-center px-4 py-2 bg-white text-green-600 rounded hover:bg-gray-100 font-medium">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    Download
+                </button>
+                <button onclick="hideScreenshotInstructions()"
+                        class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+`;
             document.body.appendChild(instructionDiv);
 
             // Auto-hide after 15 seconds
@@ -1227,20 +1599,20 @@
             instructionDiv.id = 'screenshotInstructions';
             instructionDiv.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-red-600 text-white px-6 py-4 rounded-lg shadow-lg z-[100]';
             instructionDiv.innerHTML = `
-            <div class="text-center">
-                <div class="flex items-center justify-center mb-2">
-                    <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                    <strong>Screenshot Error</strong>
-                </div>
-                <p class="text-sm mb-3">${message}</p>
-                <button onclick="hideScreenshotInstructions()"
-                        class="inline-flex items-center px-4 py-2 bg-white text-red-600 rounded hover:bg-gray-100">
-                    Close
-                </button>
-            </div>
-        `;
+    <div class="text-center">
+        <div class="flex items-center justify-center mb-2">
+            <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+            <strong>Screenshot Error</strong>
+        </div>
+        <p class="text-sm mb-3">${message}</p>
+        <button onclick="hideScreenshotInstructions()"
+                class="inline-flex items-center px-4 py-2 bg-white text-red-600 rounded hover:bg-gray-100">
+            Close
+        </button>
+    </div>
+`;
             document.body.appendChild(instructionDiv);
         }
 
@@ -1262,176 +1634,53 @@
             });
         }
 
-        // Landlord Table Sorting
-        document.addEventListener('DOMContentLoaded', function() {
-            // === LANDLORD TABLE SORTING ===
-            let landlordSortDirection = {};
-            window.sortLandlordTable = function(columnIndex, type) {
-                const tbody = document.getElementById('landlordTableBody');
-                if (!tbody) return;
+        // Make reinitTextTruncation available globally for modal reinitialization
+        window.reinitTextTruncation = function() {
+            document.querySelectorAll('.truncatable').forEach(el => {
+                el.removeAttribute('data-truncated');
+            });
 
-                const rows = Array.from(tbody.querySelectorAll('tr'));
-                if (rows.length === 0) return;
+            document.querySelectorAll('.truncatable').forEach(function(element) {
+                const originalText = element.textContent.trim();
 
-                const currentDirection = landlordSortDirection[columnIndex] || 'asc';
-                const newDirection = currentDirection === 'asc' ? 'desc' : 'asc';
-                landlordSortDirection[columnIndex] = newDirection;
-
-                // Sort and reattach rows
-                rows.sort((a, b) => {
-                    let aValue, bValue;
-                    if (type === 'number') {
-                        aValue = parseFloat(a.cells[columnIndex].getAttribute('data-sort')) || 0;
-                        bValue = parseFloat(b.cells[columnIndex].getAttribute('data-sort')) || 0;
-                    } else {
-                        aValue = (a.cells[columnIndex].getAttribute('data-sort') || '').toLowerCase();
-                        bValue = (b.cells[columnIndex].getAttribute('data-sort') || '').toLowerCase();
-                    }
-                    return newDirection === 'asc' ? (aValue > bValue ? 1 : -1) : (aValue < bValue ? 1 : -1);
-                });
-
-                rows.forEach((row, index) => {
-                    row.className = (index % 2 === 0 ? 'bg-white' : 'bg-gray-50') + ' hover:bg-[#fff4ed]';
-                    tbody.appendChild(row);
-                });
-            };
-        });
-
-        // Cost Breakdown Table Sorting
-        document.addEventListener('DOMContentLoaded', function() {
-            let costBreakdownSortDirection = {};
-            window.sortCostBreakdownTable = function(columnIndex, type) {
-                const tbody = document.getElementById('costBreakdownBody');
-                if (!tbody) return;
-
-                const rows = Array.from(tbody.querySelectorAll('tr'));
-                if (rows.length === 0) return;
-
-                const currentDirection = costBreakdownSortDirection[columnIndex] || 'asc';
-                const newDirection = currentDirection === 'asc' ? 'desc' : 'asc';
-                costBreakdownSortDirection[columnIndex] = newDirection;
-
-                rows.sort((a, b) => {
-                    let aValue, bValue;
-                    if (type === 'number') {
-                        // FIXED: Better number parsing for store numbers
-                        if (columnIndex === 0) {
-                            aValue = parseInt(a.cells[columnIndex].getAttribute('data-sort')) || 0;
-                            bValue = parseInt(b.cells[columnIndex].getAttribute('data-sort')) || 0;
-                        } else {
-                            aValue = parseFloat(a.cells[columnIndex].getAttribute('data-sort')) || 0;
-                            bValue = parseFloat(b.cells[columnIndex].getAttribute('data-sort')) || 0;
-                        }
-                    } else {
-                        aValue = (a.cells[columnIndex].getAttribute('data-sort') || '').toLowerCase();
-                        bValue = (b.cells[columnIndex].getAttribute('data-sort') || '').toLowerCase();
-                    }
-                    return newDirection === 'asc' ? (aValue > bValue ? 1 : -1) : (aValue < bValue ? 1 : -1);
-                });
-
-                rows.forEach((row, index) => {
-                    row.className = (index % 2 === 0 ? 'bg-white' : 'bg-gray-50') + ' hover:bg-[#fff4ed]';
-                    tbody.appendChild(row);
-                });
-            };
-        });
-
-        // Lease Tracker Table Sorting
-        // Lease Tracker Table Sorting - FIXED VERSION
-        document.addEventListener('DOMContentLoaded', function() {
-            let leaseTrackerSortDirection = {};
-
-            window.sortLeaseTrackerTable = function(columnIndex, type) {
-                const table = document.getElementById('leaseTrackerTable');
-                const tbody = document.getElementById('leaseTrackerBody');
-
-                if (!table || !tbody) return;
-
-                const rows = Array.from(tbody.querySelectorAll('tr'));
-                if (rows.length === 0) return;
-
-                const currentDirection = leaseTrackerSortDirection[columnIndex] || 'asc';
-                const newDirection = currentDirection === 'asc' ? 'desc' : 'asc';
-                leaseTrackerSortDirection[columnIndex] = newDirection;
-
-                // Clear all sort indicators (UPDATED COLUMN COUNT TO 14)
-                for (let i = 0; i <= 13; i++) {
-                    const indicator = document.getElementById(`leasetracker-sort-indicator-${i}`);
-                    if (indicator) {
-                        // FIXED: Store # (0), AWS (1), Total Rent (2), L2S Ratio (3) are numbers
-                        if (i === 0 || i === 1 || i === 2 || i === 3) {
-                            indicator.textContent = '↑';
-                        } else {
-                            indicator.textContent = 'A↓';
-                        }
-                        indicator.style.opacity = '0.5';
-                    }
+                if (originalText.length <= 200 || element.hasAttribute('data-truncated')) {
+                    return;
                 }
 
-                // Set active sort indicator
-                const activeIndicator = document.getElementById(`leasetracker-sort-indicator-${columnIndex}`);
-                if (activeIndicator) {
-                    if (type === 'number') {
-                        activeIndicator.textContent = newDirection === 'asc' ? '↑' : '↓';
-                    } else {
-                        activeIndicator.textContent = newDirection === 'asc' ? 'A↓' : 'Z↑';
-                    }
-                    activeIndicator.style.opacity = '1';
-                }
+                element.setAttribute('data-truncated', 'true');
+                const truncatedText = originalText.substring(0, 200);
 
-                // Sort rows - IMPROVED SORTING LOGIC
-                rows.sort((a, b) => {
-                    let aValue, bValue;
-
-                    if (type === 'number') {
-                        // Get the raw data-sort value for numbers
-                        const aRaw = a.cells[columnIndex].getAttribute('data-sort');
-                        const bRaw = b.cells[columnIndex].getAttribute('data-sort');
-
-                        // FIXED: Better number parsing for store numbers and monetary values
-                        if (columnIndex === 0) {
-                            // Store numbers - parse as integers
-                            aValue = parseInt(aRaw) || 0;
-                            bValue = parseInt(bRaw) || 0;
-                        } else {
-                            // Other numbers - parse as floats
-                            aValue = parseFloat(aRaw) || 0;
-                            bValue = parseFloat(bRaw) || 0;
-                        }
-                    } else {
-                        // Text sorting
-                        aValue = (a.cells[columnIndex].getAttribute('data-sort') || '').toLowerCase();
-                        bValue = (b.cells[columnIndex].getAttribute('data-sort') || '').toLowerCase();
-
-                        // Handle special cases like "N/A", "Expired"
-                        if (aValue === 'n/a') aValue = 'zzzz'; // Put N/A at end
-                        if (bValue === 'n/a') bValue = 'zzzz';
-                    }
-
-                    if (newDirection === 'asc') {
-                        return aValue > bValue ? 1 : (aValue < bValue ? -1 : 0);
-                    } else {
-                        return aValue < bValue ? 1 : (aValue > bValue ? -1 : 0);
-                    }
-                });
-
-                // Re-append sorted rows with updated row colors
-                rows.forEach((row, index) => {
-                    const statusCell = row.cells[13].getAttribute('data-sort'); // FIXED: Status is column 13 now
-                    let rowClass = '';
-                    if (statusCell === 'EXPIRED') {
-                        rowClass = 'bg-red-100';
-                    } else if (statusCell === 'WARNING') {
-                        rowClass = 'bg-yellow-100';
-                    } else {
-                        rowClass = index % 2 === 0 ? 'bg-white' : 'bg-gray-50';
-                    }
-                    row.className = `${rowClass} hover:bg-[#fff4ed]`;
-                    tbody.appendChild(row);
-                });
-            };
-        });
+                element.innerHTML = `
+            <span class="truncated-content">
+                ${truncatedText}...
+                <button type="button" class="read-more-btn" style="color:#ff671b; background:none; border:none; text-decoration:underline; cursor:pointer; font-size:inherit; padding:0; margin-left:5px;">
+                    Read More
+                </button>
+            </span>
+            <span class="full-content" style="display:none;">
+                ${originalText}
+                <button type="button" class="read-less-btn" style="color:#ff671b; background:none; border:none; text-decoration:underline; cursor:pointer; font-size:inherit; padding:0; margin-left:5px;">
+                    Read Less
+                </button>
+            </span>
+        `;
+            });
+        };
     </script>
+<style>
+    /* Hide last column ONLY in landlord contact modal for screenshots */
+    #landlordContactModal table.hide-last-column th:last-child,
+    #landlordContactModal table.hide-last-column td:last-child {
+        display: none !important;
+    }
 
+    /* Also hide when printing landlord contact modal */
+    @media print {
+        #landlordContactModal table th:last-child,
+        #landlordContactModal table td:last-child {
+            display: none !important;
+        }
+    }
+</style>
 
 @endsection

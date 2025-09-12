@@ -86,7 +86,7 @@
                         <tbody id="landlordTableBody">
                         @foreach($leases as $index => $lease)
                             <tr class="{{ $index % 2 == 0 ? 'bg-white' : 'bg-gray-50' }} hover:bg-[#fff4ed]">
-                                <!-- Store Number - FIXED: Removed escape characters -->
+                                <!-- Store Number -->
                                 <td class="border border-gray-300 px-4 py-3 text-sm" data-sort="{{ $lease->store_number ?: 'N/A' }}">
                                     {{ $lease->store_number ?: 'N/A' }}
                                 </td>
@@ -95,11 +95,11 @@
                                     {{ $lease->name ?: 'N/A' }}
                                 </td>
                                 <!-- Landlord Name -->
-                                <td class="border border-gray-300 px-4 py-3 text-sm" data-sort="{{ $lease->landlord_name ?: 'N/A' }}">
+                                <td class="border border-gray-300 px-4 py-3 text-sm truncatable" data-sort="{{ $lease->landlord_name ?: 'N/A' }}">
                                     {{ $lease->landlord_name ?: 'N/A' }}
                                 </td>
                                 <!-- Email -->
-                                <td class="border border-gray-300 px-4 py-3 text-sm" data-sort="{{ $lease->landlord_email ?: 'N/A' }}">
+                                <td class="border border-gray-300 px-4 py-3 text-sm truncatable" data-sort="{{ $lease->landlord_email ?: 'N/A' }}">
                                     {{ $lease->landlord_email ?: 'N/A' }}
                                 </td>
                                 <!-- Phone -->
@@ -107,7 +107,7 @@
                                     {{ $lease->landlord_phone ?: 'N/A' }}
                                 </td>
                                 <!-- Address -->
-                                <td class="border border-gray-300 px-4 py-3 text-sm" data-sort="{{ $lease->landlord_address ?: 'N/A' }}">
+                                <td class="border border-gray-300 px-4 py-3 text-sm truncatable" data-sort="{{ $lease->landlord_address ?: 'N/A' }}">
                                     {{ $lease->landlord_address ?: 'N/A' }}
                                 </td>
                                 <!-- AWS -->
@@ -119,7 +119,7 @@
                                     ${{ number_format($lease->total_rent ?: 0, 0) }}
                                 </td>
                                 <!-- Responsibilities -->
-                                <td class="border border-gray-300 px-5 py-5 text-sm" data-sort="{{ $lease->landlord_responsibility ?: 'N/A' }}">
+                                <td class="border border-gray-300 px-5 py-5 text-sm truncatable" data-sort="{{ $lease->landlord_responsibility ?: 'N/A' }}">
                                     {{ $lease->landlord_responsibility ?: 'N/A' }}
                                 </td>
                             </tr>
@@ -154,8 +154,13 @@
     </div>
 
     <script>
-        // Fixed Landlord Table Sorting
+        // Combined DOMContentLoaded event listener
         document.addEventListener('DOMContentLoaded', function() {
+
+            // Configuration - you can easily change this number later
+            const TRUNCATE_LENGTH = 10;
+
+            // Sorting functionality
             let landlordSortDirection = {};
 
             window.sortLandlordTable = function(columnIndex, type) {
@@ -228,7 +233,108 @@
                     row.className = (index % 2 === 0 ? 'bg-white' : 'bg-gray-50') + ' hover:bg-[#fff4ed]';
                     tbody.appendChild(row);
                 });
+
+                // IMPORTANT: Re-initialize truncation after sorting
+                initTextTruncation();
             };
+
+            // Text truncation functionality
+            function initTextTruncation() {
+                // Only target elements with the 'truncatable' class
+                const elements = document.querySelectorAll('.truncatable');
+                elements.forEach(element => {
+                    processTruncation(element);
+                });
+            }
+
+            // Process individual element for truncation
+            function processTruncation(element) {
+                const originalText = element.textContent.trim();
+
+                // Skip if text is short enough or already processed
+                if (originalText.length <= TRUNCATE_LENGTH || element.hasAttribute('data-truncated')) {
+                    return;
+                }
+
+                // Mark as processed to avoid double-processing
+                element.setAttribute('data-truncated', 'true');
+
+                // Store original text
+                element.setAttribute('data-original-text', originalText);
+
+                // Create truncated version
+                const truncatedText = originalText.substring(0, TRUNCATE_LENGTH).trim();
+
+                // Create the truncated content with read more link
+                const truncatedContent = document.createElement('span');
+                truncatedContent.className = 'truncated-content';
+                truncatedContent.innerHTML = `
+                    <span class="truncated-text">${truncatedText}...</span>
+                    <button class="read-more-btn" type="button" style="color: #ff671b; background: none; border: none; text-decoration: underline; cursor: pointer; font-size: inherit; padding: 0; margin-left: 5px;">
+                        Read More
+                    </button>
+                `;
+
+                // Create the full content (initially hidden)
+                const fullContent = document.createElement('span');
+                fullContent.className = 'full-content';
+                fullContent.style.display = 'none';
+                fullContent.innerHTML = `
+                    <span class="full-text">${originalText}</span>
+                    <button class="read-less-btn" type="button" style="color: #ff671b; background: none; border: none; text-decoration: underline; cursor: pointer; font-size: inherit; padding: 0; margin-left: 5px;">
+                        Read Less
+                    </button>
+                `;
+
+                // Clear original content and add new structure
+                element.innerHTML = '';
+                element.appendChild(truncatedContent);
+                element.appendChild(fullContent);
+
+                // Add event listeners for toggle functionality
+                const readMoreBtn = truncatedContent.querySelector('.read-more-btn');
+                const readLessBtn = fullContent.querySelector('.read-less-btn');
+
+                readMoreBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    showFullText(element);
+                });
+
+                readLessBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    showTruncatedText(element);
+                });
+            }
+
+            // Show full text
+            function showFullText(element) {
+                const truncatedContent = element.querySelector('.truncated-content');
+                const fullContent = element.querySelector('.full-content');
+
+                if (truncatedContent && fullContent) {
+                    truncatedContent.style.display = 'none';
+                    fullContent.style.display = 'inline';
+                }
+            }
+
+            // Show truncated text
+            function showTruncatedText(element) {
+                const truncatedContent = element.querySelector('.truncated-content');
+                const fullContent = element.querySelector('.full-content');
+
+                if (truncatedContent && fullContent) {
+                    truncatedContent.style.display = 'inline';
+                    fullContent.style.display = 'none';
+                }
+            }
+
+            // Initialize truncation on page load
+            initTextTruncation();
+
+            // Make functions available globally for modal reinitialization
+            window.reinitTextTruncation = initTextTruncation;
         });
 
         function closeModal(modalId) {
@@ -236,4 +342,41 @@
             window.close(); // or whatever method you use to close the modal
         }
     </script>
+
+    <style>
+        /* Read More/Less Button Styling */
+        .read-more-btn,
+        .read-less-btn {
+            color: #ff671b !important;
+            background: none !important;
+            border: none !important;
+            text-decoration: underline !important;
+            cursor: pointer !important;
+            font-size: inherit !important;
+            font-weight: 500 !important;
+            padding: 0 !important;
+            margin-left: 5px !important;
+            transition: color 0.2s ease !important;
+        }
+
+        .read-more-btn:hover,
+        .read-less-btn:hover {
+            color: #e55b17 !important;
+            text-decoration: none !important;
+        }
+
+        /* Ensure buttons don't break layout */
+        .truncated-content,
+        .full-content {
+            display: inline;
+            word-wrap: break-word;
+        }
+
+        /* Optional: Add smooth transition */
+        .truncated-content,
+        .full-content {
+            transition: opacity 0.3s ease;
+        }
+    </style>
+
 @endsection

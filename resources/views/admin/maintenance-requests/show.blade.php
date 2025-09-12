@@ -255,11 +255,11 @@
                                 </svg>
                                 <h3 class="text-xl font-semibold text-orange-600 mb-2">On Hold</h3>
                                 @break
-                            @case('reserved')
+                            @case('received')
                                 <svg class="w-16 h-16 mx-auto mb-3 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clip-rule="evenodd" />
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
                                 </svg>
-                                <h3 class="text-xl font-semibold text-purple-600 mb-2">Reserved</h3>
+                                <h3 class="text-xl font-semibold text-purple-600 mb-2">Received</h3>
                                 @break
                             @case('in_progress')
                                 <svg class="w-16 h-16 mx-auto mb-3 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
@@ -300,7 +300,7 @@
                             </div>
                         @endif
 
-                        @if(in_array($maintenanceRequest->status, ['on_hold', 'reserved']) && $maintenanceRequest->reason)
+                        @if(in_array($maintenanceRequest->status, ['on_hold']) && $maintenanceRequest->reason)
                             <div class="mt-4 p-4 bg-orange-100 rounded-lg">
                             </div>
                         @endif
@@ -323,11 +323,12 @@
                                 <label for="status" class="block text-sm font-medium text-black-700 mb-2">New Status</label>
                                 <select name="status" id="status" class="block w-full rounded-lg border-orange-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm">
                                     <option value="on_hold" {{ $maintenanceRequest->status === 'on_hold' ? 'selected' : '' }}>On Hold</option>
-                                    <option value="reserved" {{ $maintenanceRequest->status === 'reserved' ? 'selected' : '' }}>Reserved</option>
+                                    <option value="received" {{ $maintenanceRequest->status === 'received' ? 'selected' : '' }}>Received</option>
                                     <option value="in_progress" {{ $maintenanceRequest->status === 'in_progress' ? 'selected' : '' }}>In Progress</option>
                                     <option value="done" {{ $maintenanceRequest->status === 'done' ? 'selected' : '' }}>Done</option>
                                     <option value="canceled" {{ $maintenanceRequest->status === 'canceled' ? 'selected' : '' }}>Canceled</option>
                                 </select>
+
                             </div>
 
                             <div id="reasonField" style="display: {{ in_array($maintenanceRequest->status, ['on_hold']) ? 'block' : 'none' }};">
@@ -423,11 +424,12 @@
                                                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clip-rule="evenodd" />
                                                     </svg>
                                                     @break
-                                                @case('reserved')
+                                                @case('received')
                                                     <svg class="w-4 h-4 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clip-rule="evenodd" />
-                                                    </svg>
+    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+</svg>
                                                     @break
+
                                                 @case('in_progress')
                                                     <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
                                                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />

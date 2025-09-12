@@ -105,7 +105,7 @@ return [
     'car_usage_validation' => 'When selecting "Yes" for using the car, you must enter miles and upload an image.',
     'car_clock_out_validation' => 'When clocking out using the car, you must enter miles and upload an image.',
     'purchase_validation' => 'When selecting "Yes" for purchase, you must enter purchase cost and upload receipt image.',
-    
+
     // Missing keys from views
     'Update Password' => 'Update Password',
     'Ensure your account is using a long, random password to stay secure.' => 'Ensure your account is using a long, random password to stay secure.',
@@ -138,7 +138,7 @@ return [
     'Cancel' => 'Cancel',
     'A new verification link has been sent to the email address you provided during registration.' => 'A new verification link has been sent to the email address you provided during registration.',
     'Resend Verification Email' => 'Resend Verification Email',
-    
+
     // Pagination keys
     'Pagination Navigation' => 'Pagination Navigation',
     'Showing' => 'Showing',
@@ -279,4 +279,22 @@ return [
     'maintenance' => 'Maintenance',
     'reports' => 'Reports',
     'settings' => 'Settings',
+
+    'fix_question' => 'Did you fix something?',
+    'fix_description' => 'Fix Description',
+    'fix_description_placeholder' => 'Describe what you fixed...',
+    'fix_image' => 'Fix Image',
+    'fix_validation' => 'Fix image is required when selecting yes',
+
+    // NEW: Add these keys for the clocking statistics cards
+    'scheduled_hours' => 'Scheduled Hours',
+    'actual_hours_worked' => 'Actual Hours Worked',
+    'from_schedule' => 'From Schedule',
+    'from_clocking' => 'From Clocking',
+    'weekly_earnings' => 'Weekly Earnings',
+    'based_on_actual_hours' => 'Based on Actual Hours',
+    'days_worked' => 'Days Worked',
+    'this_week' => 'This Week',
+    'average_daily_hours' => 'Average Daily Hours',
+    'per_working_day' => 'Per Working Day',
 ];
