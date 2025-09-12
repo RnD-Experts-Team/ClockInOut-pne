@@ -68,8 +68,17 @@ class AttendanceController extends Controller
 
             // Calculate total salary (earnings + gas payments + purchase cost)
             $clocking->total_salary = ($clocking->earnings ?? 0) +
-                                     ($clocking->gas_payment ?? 0) +
-                                     ($clocking->purchase_cost ?? 0);
+                ($clocking->gas_payment ?? 0) +
+                ($clocking->purchase_cost ?? 0);
+
+            // ✅ Process fix description for display (if exists)
+            if ($clocking->fix_description) {
+                $clocking->fix_description_short = strlen($clocking->fix_description) > 30
+                    ? substr($clocking->fix_description, 0, 30) . '...'
+                    : $clocking->fix_description;
+            } else {
+                $clocking->fix_description_short = null;
+            }
 
             // Format dates for display
             $clocking->formatted_date = $clocking->clock_in ? Carbon::parse($clocking->clock_in)->format('M d, Y') : '';
@@ -79,4 +88,5 @@ class AttendanceController extends Controller
 
         return view('attendance', compact('clockings', 'startDate', 'endDate'));
     }
+
 }

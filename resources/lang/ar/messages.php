@@ -104,7 +104,7 @@ return [
     'car_usage_validation' => 'عند اختيار "نعم" لاستخدام السيارة، يجب إدخال الأميال ورفع الصورة.',
     'car_clock_out_validation' => 'عند الانصراف باستخدام السيارة، يجب إدخال الأميال ورفع الصورة.',
     'purchase_validation' => 'عند اختيار نعم للشراء، يجب إدخال تكلفة الشراء وتحميل صورة الإيصال.',
-    
+
     // Missing keys from views
     'Update Password' => 'تحديث كلمة المرور',
     'Ensure your account is using a long, random password to stay secure.' => 'تأكد من أن حسابك يستخدم كلمة مرور طويلة وعشوائية للبقاء آمناً.',
@@ -138,7 +138,7 @@ return [
     'A new verification link has been sent to the email address you provided during registration.' => 'تم إرسال رابط تحقق جديد إلى عنوان البريد الإلكتروني الذي قدمته أثناء التسجيل.',
     'Resend Verification Email' => 'إعادة إرسال بريد التحقق',
     'spanish' => 'Español',
-    
+
     // Pagination keys
     'Pagination Navigation' => 'التنقل بين الصفحات',
     'Showing' => 'عرض',
@@ -280,4 +280,24 @@ return [
     'maintenance' => 'الصيانة',
     'reports' => 'التقارير',
     'settings' => 'الإعدادات',
+
+    'fix_question' => 'هل قمت بإصلاح شيء؟',
+    'fix_description' => 'وصف الإصلاح',
+    'fix_description_placeholder' => 'اكتب تفاصيل ما قمت بإصلاحه...',
+    'fix_image' => 'صورة الإصلاح',
+    'fix_validation' => 'يجب رفع صورة الإصلاح عند اختيار نعم',
+
+
+    // NEW: Add these keys for the clocking statistics cards
+    'scheduled_hours' => 'الساعات المجدولة',
+    'actual_hours_worked' => 'الساعات المعملة فعليًا',
+    'from_schedule' => 'من الجدولة',
+    'from_clocking' => 'من تسجيل الحضور',
+    'weekly_earnings' => 'الأرباح الأسبوعية',
+    'based_on_actual_hours' => 'بناءً على الساعات الفعلية',
+    'days_worked' => 'أيام العمل',
+    'this_week' => 'هذا الأسبوع',
+    'average_daily_hours' => 'متوسط الساعات اليومية',
+    'per_working_day' => 'لكل يوم عمل',
+
 ];

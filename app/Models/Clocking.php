@@ -22,10 +22,13 @@ class Clocking extends Model
         'bought_something',
         'purchase_cost',
         'purchase_receipt',
-        'gas_payment',     // Add this new field
-        'total_salary'     // Add this new field
+        'fixed_something',
+        'fix_description',
+        'fix_image',
+        'gas_payment',
+        'total_salary'
     ];
-    
+
     protected $casts = [
         'using_car'        => 'boolean',
         'is_clocked_in'    => 'boolean',
@@ -35,6 +38,7 @@ class Clocking extends Model
         'total_salary'     => 'decimal:2',  // Add this new field
         'clock_in'         => 'datetime',
         'clock_out'        => 'datetime',
+        'fixed_something'  => 'boolean',  // New cast
     ];
 
     /**

@@ -72,6 +72,10 @@
                                 <th scope="col" class="px-3 py-3.5 {{ isRtl() ? 'text-right' : 'text-left' }} text-sm font-semibold text-black-900">{{ __('messages.gas_payments') }}</th>
                                 <th scope="col" class="px-3 py-3.5 {{ isRtl() ? 'text-right' : 'text-left' }} text-sm font-semibold text-black-900">{{ __('messages.purchase_cost') }}</th>
                                 <th scope="col" class="px-3 py-3.5 {{ isRtl() ? 'text-right' : 'text-left' }} text-sm font-semibold text-black-900">{{ __('messages.work_duration') }}</th>
+                                <!-- ✅ NEW: Fixed Something Column -->
+                                <th scope="col" class="px-3 py-3.5 {{ isRtl() ? 'text-right' : 'text-left' }} text-sm font-semibold text-black-900">Fixed Something</th>
+                                <!-- ✅ NEW: Fix Description Column -->
+                                <th scope="col" class="px-3 py-3.5 {{ isRtl() ? 'text-right' : 'text-left' }} text-sm font-semibold text-black-900">Fix Description</th>
                                 <th scope="col" class="px-3 py-3.5 {{ isRtl() ? 'text-right' : 'text-left' }} text-sm font-semibold text-black-900">{{ __('messages.total_salary') }}</th>
                                 <th scope="col" class="px-3 py-3.5 {{ isRtl() ? 'text-right' : 'text-left' }} text-sm font-semibold text-black-900">{{ __('messages.images') }}</th>
                             </tr>
@@ -100,6 +104,28 @@
                                     <td class="whitespace-nowrap px-3 py-4 text-sm text-black-500">
                                         {{ $clocking->total_hours }}
                                     </td>
+                                    <!-- ✅ NEW: Fixed Something Status -->
+                                    <td class="whitespace-nowrap px-3 py-4 text-sm">
+                                        @if($clocking->fixed_something)
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                ✓ Yes
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                                ✗ No
+                                            </span>
+                                        @endif
+                                    </td>
+                                    <!-- ✅ NEW: Fix Description -->
+                                    <td class="px-3 py-4 text-sm text-black-500 max-w-xs">
+                                        @if($clocking->fix_description)
+                                            <div class="truncate" title="{{ $clocking->fix_description }}">
+                                                {{ $clocking->fix_description_short }}
+                                            </div>
+                                        @else
+                                            <span class="text-gray-400">-</span>
+                                        @endif
+                                    </td>
                                     <td class="whitespace-nowrap px-3 py-4 text-sm text-black-500">
                                         ${{ number_format($clocking->total_salary ?? 0, 2) }}
                                     </td>
@@ -119,6 +145,17 @@
                                                 <a href="{{ asset('storage/' . $clocking->purchase_receipt) }}" target="_blank" class="group">
                                                     <img src="{{ asset('storage/' . $clocking->purchase_receipt) }}" alt="Receipt" class="h-10 w-10 rounded-lg object-cover ring-1 ring-orange-200 hover:ring-orange-500">
                                                 </a>
+                                            @endif
+                                            <!-- ✅ NEW: Fix Image -->
+                                            @if ($clocking->fix_image)
+                                                <div class="relative">
+                                                    <a href="{{ asset('storage/' . $clocking->fix_image) }}" target="_blank" class="group">
+                                                        <img src="{{ asset('storage/' . $clocking->fix_image) }}" alt="Fix Image" class="h-10 w-10 rounded-lg object-cover ring-1 ring-green-200 hover:ring-green-500">
+                                                    </a>
+                                                    <div class="absolute -top-1 -right-1 bg-green-500 text-white text-xs px-1 py-0.5 rounded-full text-[10px] font-bold">
+                                                        FIX
+                                                    </div>
+                                                </div>
                                             @endif
                                         </div>
                                     </td>
@@ -166,8 +203,24 @@
                                     <dt class="text-xs font-medium text-black-500">{{ __('messages.total_salary') }}</dt>
                                     <dd class="mt-1 text-sm text-black-900">${{ number_format($clocking->total_salary ?? 0, 2) }}</dd>
                                 </div>
+                                <!-- ✅ NEW: Fix Information for Mobile -->
+                                @if($clocking->fixed_something)
+                                    <div class="col-span-2">
+                                        <dt class="text-xs font-medium text-black-500">Fixed Something</dt>
+                                        <dd class="mt-1 text-sm text-black-900">
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                ✓ Yes
+                                            </span>
+                                            @if($clocking->fix_description)
+                                                <div class="mt-1 text-xs text-black-600">
+                                                    {{ $clocking->fix_description }}
+                                                </div>
+                                            @endif
+                                        </dd>
+                                    </div>
+                                @endif
                             </dl>
-                            @if($clocking->image_in || $clocking->image_out || $clocking->purchase_receipt)
+                            @if($clocking->image_in || $clocking->image_out || $clocking->purchase_receipt || $clocking->fix_image)
                                 <div class="mt-4">
                                     <dt class="text-xs font-medium text-black-500 mb-2">{{ __('messages.images') }}</dt>
                                     <div class="flex flex-row space-x-2">
@@ -185,6 +238,17 @@
                                             <a href="{{ asset('storage/' . $clocking->purchase_receipt) }}" target="_blank" class="group">
                                                 <img src="{{ asset('storage/' . $clocking->purchase_receipt) }}" alt="Receipt" class="h-10 w-10 rounded-lg object-cover ring-1 ring-orange-200 hover:ring-orange-500">
                                             </a>
+                                        @endif
+                                        <!-- ✅ NEW: Fix Image for Mobile -->
+                                        @if ($clocking->fix_image)
+                                            <div class="relative">
+                                                <a href="{{ asset('storage/' . $clocking->fix_image) }}" target="_blank" class="group">
+                                                    <img src="{{ asset('storage/' . $clocking->fix_image) }}" alt="Fix Image" class="h-10 w-10 rounded-lg object-cover ring-1 ring-green-200 hover:ring-green-500">
+                                                </a>
+                                                <div class="absolute -top-1 -right-1 bg-green-500 text-white text-xs px-1 py-0.5 rounded-full text-[10px] font-bold">
+                                                    FIX
+                                                </div>
+                                            </div>
                                         @endif
                                     </div>
                                 </div>

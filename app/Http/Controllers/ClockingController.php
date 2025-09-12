@@ -73,6 +73,7 @@ class ClockingController extends Controller
         // Initialize totals
         $totalMilesIn = $totalMilesOut = $totalMiles = $totalSeconds = 0;
         $totalGasPayment = $totalPurchaseCost = $totalEarnings = $totalSalary = 0;
+        $totalFixCount = 0; // Track total fixes
 
         // Calculate totals from all filtered records
         $allFilteredClockings = $totalQuery->get();
@@ -112,12 +113,17 @@ class ClockingController extends Controller
 
             // Add purchase cost to totals
             $totalPurchaseCost += $clocking->purchase_cost ?? 0;
+
+            // ✅ Count fixes
+            if ($clocking->fixed_something) {
+                $totalFixCount++;
+            }
         }
 
         // Calculate total salary for all filtered records
         $totalSalary = $totalEarnings + $totalGasPayment + $totalPurchaseCost;
 
-        // FIXED: Format total hours to handle hours exceeding 24
+        // Format total hours to handle hours exceeding 24
         $totalHoursFormatted = sprintf('%02d:%02d:%02d',
             floor($totalSeconds / 3600),
             floor(($totalSeconds % 3600) / 60),
@@ -141,7 +147,7 @@ class ClockingController extends Controller
                     $clocking->total_hours = 'Invalid Time';
                     $clocking->earnings = 0;
                 } else {
-                    // FIXED: Calculate actual total hours (can exceed 24 hours)
+                    // Calculate actual total hours (can exceed 24 hours)
                     $hours = floor($diffInSeconds / 3600);
                     $minutes = floor(($diffInSeconds % 3600) / 60);
                     $seconds = $diffInSeconds % 60;
@@ -159,12 +165,21 @@ class ClockingController extends Controller
                 ($clocking->gas_payment ?? 0) +
                 ($clocking->purchase_cost ?? 0);
 
+            // ✅ FIXED: Process fix description for display
+            if ($clocking->fix_description) {
+                // Create shortened version (first 50 characters)
+                $clocking->fix_description_short = strlen($clocking->fix_description) > 50
+                    ? substr($clocking->fix_description, 0, 50) . '...'
+                    : $clocking->fix_description;
+            } else {
+                $clocking->fix_description_short = null;
+            }
+
             // Format dates for display
             $clocking->formatted_date = $clocking->clock_in ? Carbon::parse($clocking->clock_in)->format('M d, Y') : '';
             $clocking->formatted_clock_in = $clocking->clock_in ? Carbon::parse($clocking->clock_in)->format('g:i A') : '';
             $clocking->formatted_clock_out = $clocking->clock_out ? Carbon::parse($clocking->clock_out)->format('g:i A') : '';
         }
-
 
         return view('clockingTable', compact(
             'clockings',
@@ -180,9 +195,11 @@ class ClockingController extends Controller
             'totalGasPayment',
             'totalPurchaseCost',
             'totalEarnings',
+            'totalFixCount',
             'totalSalary'
         ));
     }
+
 
 
 
@@ -200,25 +217,29 @@ class ClockingController extends Controller
 
 
     // Add this method to the ClockingController class
-public function destroy($id)
-{
-    $clocking = Clocking::findOrFail($id);
+    public function destroy($id)
+    {
+        $clocking = Clocking::findOrFail($id);
 
-    // Delete associated images if they exist
-    if ($clocking->image_in) {
-        Storage::disk('public')->delete($clocking->image_in);
-    }
-    if ($clocking->image_out) {
-        Storage::disk('public')->delete($clocking->image_out);
-    }
-    if ($clocking->purchase_receipt) {
-        Storage::disk('public')->delete($clocking->purchase_receipt);
-    }
+        // Delete associated images if they exist
+        if ($clocking->image_in) {
+            Storage::disk('public')->delete($clocking->image_in);
+        }
+        if ($clocking->image_out) {
+            Storage::disk('public')->delete($clocking->image_out);
+        }
+        if ($clocking->purchase_receipt) {
+            Storage::disk('public')->delete($clocking->purchase_receipt);
+        }
+        // NEW: Delete fix image if it exists
+        if ($clocking->fix_image) {
+            Storage::disk('public')->delete($clocking->fix_image);
+        }
 
-    $clocking->delete();
+        $clocking->delete();
 
-    return back()->with('success', 'Record deleted successfully');
-}
+        return back()->with('success', 'Record deleted successfully');
+    }
 
 
 
@@ -253,129 +274,140 @@ public function destroy($id)
         return back()->with('success', 'تم تسجيل الحضور بنجاح');
     }
 
-   public function clockOut(Request $request)
-{
-    date_default_timezone_set(config('app.timezone'));
+    public function clockOut(Request $request)
+    {
+        date_default_timezone_set(config('app.timezone'));
 
-    // Log all incoming request data for debugging
-    Log::info('Clock-out request received', [
-        'user_id' => Auth::id(),
-        'all_request_data' => $request->all(),
-        'files' => $request->allFiles(),
-        'has_image_out' => $request->hasFile('image_out'),
-        'has_purchase_receipt' => $request->hasFile('purchase_receipt'),
-        'bought_something_value' => $request->input('bought_something'),
-        'bought_something_type' => gettype($request->input('bought_something')),
-    ]);
-
-    // Specific logging for purchase fields when bought_something is 'yes' or '1'
-    $boughtSomething = $request->input('bought_something');
-    if ($boughtSomething == '1' || $boughtSomething === true || $boughtSomething === 'true') {
-        Log::info('Purchase detected - detailed validation check', [
-            'bought_something' => $boughtSomething,
-            'purchase_cost' => $request->input('purchase_cost'),
-            'purchase_cost_type' => gettype($request->input('purchase_cost')),
-            'purchase_cost_empty' => empty($request->input('purchase_cost')),
-            'has_purchase_receipt_file' => $request->hasFile('purchase_receipt'),
-            'purchase_receipt_file_info' => $request->hasFile('purchase_receipt') ? [
-                'name' => $request->file('purchase_receipt')->getClientOriginalName(),
-                'size' => $request->file('purchase_receipt')->getSize(),
-                'mime' => $request->file('purchase_receipt')->getMimeType()
-            ] : null
-        ]);
-    }
-
-    try {
-        // Log validation rules being applied
-        Log::info('Applying validation rules', [
-            'bought_something_for_validation' => $request->input('bought_something'),
-            'will_require_purchase_cost' => $request->input('bought_something') == '1',
-            'will_require_purchase_receipt' => $request->input('bought_something') == '1'
+        // Log all incoming request data for debugging
+        Log::info('Clock-out request received', [
+            'user_id' => Auth::id(),
+            'all_request_data' => $request->all(),
+            'files' => $request->allFiles(),
+            'has_image_out' => $request->hasFile('image_out'),
+            'has_purchase_receipt' => $request->hasFile('purchase_receipt'),
+            'has_fix_image' => $request->hasFile('fix_image'), // New logging
+            'bought_something_value' => $request->input('bought_something'),
+            'fixed_something_value' => $request->input('fixed_something'), // New logging
         ]);
 
-        // Validate new fields as well
-        $request->validate([
-            'miles_out'         => 'nullable|integer',
-            'image_out'         => 'nullable|image|mimes:jpg,png,jpeg',
-            'bought_something'  => 'required|boolean',
-            'purchase_cost'     => 'required_if:bought_something,1|nullable|numeric',
-            'purchase_receipt'  => 'required_if:bought_something,1|nullable|image|mimes:jpg,png,jpeg',
-        ]);
+        // Log fix details when fixed_something is true
+        $fixedSomething = $request->input('fixed_something');
+        if ($fixedSomething == '1' || $fixedSomething === true || $fixedSomething === 'true') {
+            Log::info('Fix detected - detailed validation check', [
+                'fixed_something' => $fixedSomething,
+                'fix_description' => $request->input('fix_description'),
+                'has_fix_image_file' => $request->hasFile('fix_image'),
+                'fix_image_file_info' => $request->hasFile('fix_image') ? [
+                    'name' => $request->file('fix_image')->getClientOriginalName(),
+                    'size' => $request->file('fix_image')->getSize(),
+                    'mime' => $request->file('fix_image')->getMimeType()
+                ] : null
+            ]);
+        }
 
-        Log::info('Clock-out validation passed');
-    } catch (\Illuminate\Validation\ValidationException $e) {
-        Log::error('Clock-out validation failed', [
-            'errors' => $e->errors(),
-            'request_data' => $request->all(),
-            'specific_purchase_validation' => [
-                'bought_something' => $request->input('bought_something'),
-                'purchase_cost' => $request->input('purchase_cost'),
-                'has_purchase_receipt' => $request->hasFile('purchase_receipt'),
-                'purchase_cost_errors' => $e->errors()['purchase_cost'] ?? null,
-                'purchase_receipt_errors' => $e->errors()['purchase_receipt'] ?? null
-            ]
-        ]);
-        throw $e;
+        try {
+            Log::info('Applying validation rules with fix fields');
+
+            // Updated validation rules
+            $request->validate([
+                'miles_out'         => 'nullable|integer',
+                'image_out'         => 'nullable|image|mimes:jpg,png,jpeg',
+                'bought_something'  => 'required|boolean',
+                'purchase_cost'     => 'required_if:bought_something,1|nullable|numeric',
+                'purchase_receipt'  => 'required_if:bought_something,1|nullable|image|mimes:jpg,png,jpeg',
+                'fixed_something'   => 'required|boolean', // New validation
+                'fix_description'   => 'nullable|string|max:1000', // New validation
+                'fix_image'         => 'required_if:fixed_something,1|nullable|image|mimes:jpg,png,jpeg', // New validation
+            ]);
+
+            Log::info('Clock-out validation passed');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Clock-out validation failed', [
+                'errors' => $e->errors(),
+                'request_data' => $request->all(),
+                'fix_validation' => [
+                    'fixed_something' => $request->input('fixed_something'),
+                    'fix_description' => $request->input('fix_description'),
+                    'has_fix_image' => $request->hasFile('fix_image'),
+                    'fix_errors' => [
+                        'fixed_something' => $e->errors()['fixed_something'] ?? null,
+                        'fix_description' => $e->errors()['fix_description'] ?? null,
+                        'fix_image' => $e->errors()['fix_image'] ?? null,
+                    ]
+                ]
+            ]);
+            throw $e;
+        }
+
+        // Handle clock-out image
+        $imagePath = null;
+        if ($request->hasFile('image_out')) {
+            $imagePath = $request->file('image_out')->store('clocking_images', 'public');
+        }
+
+        // Handle purchase receipt image
+        $receiptPath = null;
+        if ($request->hasFile('purchase_receipt')) {
+            $receiptPath = $request->file('purchase_receipt')->store('purchase_receipts', 'public');
+        }
+
+        // Handle fix image (NEW)
+        $fixImagePath = null;
+        if ($request->hasFile('fix_image')) {
+            $fixImagePath = $request->file('fix_image')->store('fix_images', 'public');
+            Log::info('Fix image uploaded', ['path' => $fixImagePath]);
+        }
+
+        // Retrieve the existing clocking record for clock out
+        Log::info('Looking for active clocking record', ['user_id' => Auth::id()]);
+        $clocking = Clocking::where('user_id', Auth::id())
+            ->whereNull('clock_out')
+            ->where('is_clocked_in', true)
+            ->first();
+
+        if (!$clocking) {
+            Log::error('No active clocking record found for user', ['user_id' => Auth::id()]);
+            return back()->withErrors(['error' => 'No active clock-in record found. Please clock in first.']);
+        }
+
+        Log::info('Found active clocking record', ['clocking_id' => $clocking->id]);
+
+        // Prepare update data with new fix fields
+        $updateData = [
+            'clock_out'        => now(),
+            'miles_out'        => $request->miles_out,
+            'image_out'        => $imagePath,
+            'is_clocked_in'    => false,
+            'bought_something' => $request->bought_something,
+            'purchase_cost'    => $request->purchase_cost,
+            'purchase_receipt' => $receiptPath,
+            'fixed_something'  => $request->fixed_something, // New field
+            'fix_description'  => $request->fix_description, // New field
+            'fix_image'        => $fixImagePath,            // New field
+        ];
+
+        Log::info('Updating clocking record with data including fix fields', $updateData);
+
+        // Update the record with clock-out details
+        $clocking->update($updateData);
+
+        Log::info('Clock-out completed successfully with fix data', ['clocking_id' => $clocking->id]);
+
+        return back()->with('success', 'تم تسجيل الإنصراف بنجاح');
     }
-
-    // Handle clock-out image
-    $imagePath = null;
-    if ($request->hasFile('image_out')) {
-        $imagePath = $request->file('image_out')->store('clocking_images', 'public');
-    }
-
-    // Handle purchase receipt image
-    $receiptPath = null;
-    if ($request->hasFile('purchase_receipt')) {
-        $receiptPath = $request->file('purchase_receipt')->store('purchase_receipts', 'public');
-    }
-
-    // Retrieve the existing clocking record for clock out
-    Log::info('Looking for active clocking record', ['user_id' => Auth::id()]);
-
-    $clocking = Clocking::where('user_id', Auth::id())
-        ->whereNull('clock_out')
-        ->where('is_clocked_in', true)
-        ->first();
-
-    if (!$clocking) {
-        Log::error('No active clocking record found for user', ['user_id' => Auth::id()]);
-        return back()->withErrors(['error' => 'No active clock-in record found. Please clock in first.']);
-    }
-
-    Log::info('Found active clocking record', ['clocking_id' => $clocking->id]);
-
-    // Prepare update data
-    $updateData = [
-        'clock_out'        => now(),
-        'miles_out'        => $request->miles_out,
-        'image_out'        => $imagePath,
-        'is_clocked_in'    => false,
-        'bought_something' => $request->bought_something,
-        'purchase_cost'    => $request->purchase_cost,
-        'purchase_receipt' => $receiptPath,
-    ];
-
-    Log::info('Updating clocking record with data', $updateData);
-
-    // Update the record with clock-out details
-    $clocking->update($updateData);
-
-    Log::info('Clock-out completed successfully', ['clocking_id' => $clocking->id]);
-
-    return back()->with('success', 'تم تسجيل الإنصراف بنجاح');
-}
 
 
     public function updateClocking(Request $request)
     {
         $request->validate([
-            'clocking_id' => 'required|exists:clockings,id',
-            'clock_in'    => 'nullable|date',
-            'clock_out'   => 'nullable|date',
-            'miles_in'    => 'nullable|numeric',
-            'miles_out'   => 'nullable|numeric',
-            'purchase_cost' => 'nullable|numeric|min:0',
+            'clocking_id'     => 'required|exists:clockings,id',
+            'clock_in'        => 'nullable|date',
+            'clock_out'       => 'nullable|date',
+            'miles_in'        => 'nullable|numeric',
+            'miles_out'       => 'nullable|numeric',
+            'purchase_cost'   => 'nullable|numeric|min:0',
+            'fixed_something' => 'required|boolean',              // NEW validation
+            'fix_description' => 'nullable|string|max:1000',      // NEW validation
         ]);
 
         $clocking = Clocking::findOrFail($request->clocking_id);
@@ -401,11 +433,13 @@ public function destroy($id)
         }
 
         $updateData = [
-            'clock_in'      => $request->clock_in ?: null,
-            'clock_out'     => $request->clock_out ?: null,
-            'miles_in'      => $request->miles_in ?: null,
-            'miles_out'     => $request->miles_out ?: null,
-            'purchase_cost' => $request->purchase_cost ?: null,
+            'clock_in'        => $request->clock_in ?: null,
+            'clock_out'       => $request->clock_out ?: null,
+            'miles_in'        => $request->miles_in ?: null,
+            'miles_out'       => $request->miles_out ?: null,
+            'purchase_cost'   => $request->purchase_cost ?: null,
+            'fixed_something' => $request->fixed_something,        // NEW field
+            'fix_description' => $request->fix_description ?: null, // NEW field
         ];
 
         $clocking->update($updateData);

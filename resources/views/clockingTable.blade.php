@@ -133,6 +133,7 @@
                                     <th class="px-3 py-3.5 text-left text-sm font-semibold text-black-900">Total Miles</th>
                                     <th class="px-3 py-3.5 text-left text-sm font-semibold text-black-900">Gas Payment</th>
                                     <th class="px-3 py-3.5 text-left text-sm font-semibold text-black-900">Purchase Cost</th>
+                                    <th class="px-3 py-3.5 text-left text-sm font-semibold text-black-900">Fixed Something</th>
                                     <th class="px-3 py-3.5 text-left text-sm font-semibold text-black-900">Total Hours</th>
                                     <th class="px-3 py-3.5 text-left text-sm font-semibold text-black-900">Total Salary</th>
                                     <th class="px-3 py-3.5 text-left text-sm font-semibold text-black-900">Images</th>
@@ -169,6 +170,17 @@
                                         <td class="whitespace-nowrap px-3 py-4 text-sm text-black-500">
                                             ${{ number_format($clocking->purchase_cost ?? 0, 2) }}
                                         </td>
+
+                                        <!-- NEW: Fix Description Column -->
+                                        <td class="px-3 py-4 text-sm text-black-500 max-w-xs">
+                                            @if($clocking->fix_description)
+                                                <div class="truncate" title="{{ $clocking->fix_description }}">
+                                                    {{ $clocking->fix_description_short }}
+                                                </div>
+                                            @else
+                                                <span class="text-gray-400">-</span>
+                                            @endif
+                                        </td>
                                         <td class="whitespace-nowrap px-3 py-4 text-sm text-black-500">
                                             {{ $clocking->total_hours ?? '-' }}
                                         </td>
@@ -179,31 +191,52 @@
                                             <div class="flex flex-row space-x-2">
                                                 @if ($clocking->image_in)
                                                     <a href="{{ asset('storage/' . $clocking->image_in) }}"
-                                                       target="_blank" class="group">
+                                                       target="_blank" class="group relative" title="Clock In Image">
                                                         <img src="{{ asset('storage/' . $clocking->image_in) }}"
                                                              alt="Clock In"
                                                              class="h-10 w-10 rounded-lg object-cover ring-1 ring-orange-200 hover:ring-orange-500">
+                                                        <div class="absolute -top-1 -left-1 bg-blue-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center">
+                                                            IN
+                                                        </div>
                                                     </a>
                                                 @endif
                                                 @if ($clocking->image_out)
                                                     <a href="{{ asset('storage/' . $clocking->image_out) }}"
-                                                       target="_blank" class="group">
+                                                       target="_blank" class="group relative" title="Clock Out Image">
                                                         <img src="{{ asset('storage/' . $clocking->image_out) }}"
                                                              alt="Clock Out"
                                                              class="h-10 w-10 rounded-lg object-cover ring-1 ring-orange-200 hover:ring-orange-500">
+                                                        <div class="absolute -top-2 -left-2 bg-red-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center">
+                                                            <span class="text-xs font-bold">OUT</span>
+                                                        </div>
+
                                                     </a>
                                                 @endif
                                                 @if ($clocking->purchase_receipt)
                                                     <a href="{{ asset('storage/' . $clocking->purchase_receipt) }}"
-                                                       target="_blank" class="group">
+                                                       target="_blank" class="group relative" title="Purchase Receipt">
                                                         <img src="{{ asset('storage/' . $clocking->purchase_receipt) }}"
                                                              alt="Receipt"
                                                              class="h-10 w-10 rounded-lg object-cover ring-1 ring-orange-200 hover:ring-orange-500">
+                                                        <div class="absolute -top-1 -left-1 bg-green-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                                                            $
+                                                        </div>
+                                                    </a>
+                                                @endif
+                                                <!-- NEW: Fix Image -->
+                                                @if ($clocking->fix_image)
+                                                    <a href="{{ asset('storage/' . $clocking->fix_image) }}"
+                                                       target="_blank" class="group relative" title="Fix Image">
+                                                        <img src="{{ asset('storage/' . $clocking->fix_image) }}"
+                                                             alt="Fix"
+                                                             class="h-10 w-10 rounded-lg object-cover ring-1 ring-orange-200 hover:ring-orange-500">
+                                                        <div class="absolute -top-1 -left-1 bg-purple-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center">
+                                                            FIX
+                                                        </div>
                                                     </a>
                                                 @endif
                                             </div>
-                                        </td>
-                                        <td class="whitespace-nowrap px-3 py-4 text-sm text-black-500">
+                                        </td>                                        <td class="whitespace-nowrap px-3 py-4 text-sm text-black-500">
                                             <div class="flex space-x-2">
                                                 <button type="button"
                                                         class="edit-btn inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
@@ -212,7 +245,9 @@
                                                         data-clock-out="{{ $clocking->clock_out ? Carbon\Carbon::parse($clocking->clock_out)->format('Y-m-d\TH:i') : '' }}"
                                                         data-miles-in="{{ $clocking->miles_in ?? '' }}"
                                                         data-miles-out="{{ $clocking->miles_out ?? '' }}"
-                                                        data-purchase-cost="{{ $clocking->purchase_cost ?? '' }}">
+                                                        data-purchase-cost="{{ $clocking->purchase_cost ?? '' }}"
+                                                        data-fixed-something="{{ $clocking->fixed_something ? '1' : '0' }}"
+                                                        data-fix-description="{{ $clocking->fix_description ?? '' }}">
                                                     Edit
                                                 </button>
                                                 <button type="button"
@@ -228,23 +263,15 @@
                                 <!-- Totals Row -->
                                 <tfoot class="bg-orange-50">
                                 <tr>
-                                    <th colspan="4" class="py-3.5 text-right text-sm font-semibold text-black-900">
+                                    <th colspan="9" class="py-3.5 text-right text-sm font-semibold text-black-900">
                                         Totals:
                                     </th>
+                                    <!-- NEW: Show total fixes -->
                                     <th class="px-3 py-3.5 text-sm text-black-500">
-                                        {{ $totalMilesIn }}
+                                        {{ $totalFixCount }} fixes
                                     </th>
                                     <th class="px-3 py-3.5 text-sm text-black-500">
-                                        {{ $totalMilesOut }}
-                                    </th>
-                                    <th class="px-3 py-3.5 text-sm text-black-500">
-                                        {{ $totalMiles }}
-                                    </th>
-                                    <th class="px-3 py-3.5 text-sm text-black-500">
-                                        {{ '$' . number_format($totalGasPayment, 2) }}
-                                    </th>
-                                    <th class="px-3 py-3.5 text-sm text-black-500">
-                                        {{ '$' . number_format($totalPurchaseCost, 2) }}
+                                        -
                                     </th>
                                     <th class="px-3 py-3.5 text-sm text-black-500">
                                         {{ $totalHoursFormatted }}
@@ -253,8 +280,10 @@
                                         {{ '$' . number_format($totalEarnings, 2) }}
                                     </th>
                                     <th></th>
+                                    <th></th>
                                 </tr>
                                 </tfoot>
+
                             </table>
                         </div>
                     </div>
@@ -342,10 +371,26 @@
                                            class="block w-full rounded-lg border-orange-200 ring-1 ring-orange-900/5 focus:border-orange-500 focus:ring-orange-500 sm:text-sm transition-all duration-200">
                                 </div>
                                 <!-- Purchase Cost -->
-                                <div class="md:col-span-2">
+                                <div>
                                     <label for="purchase_cost" class="block text-sm font-medium text-black-700 mb-1">Purchase Cost ($)</label>
                                     <input type="number" name="purchase_cost" id="purchase_cost" step="0.01" min="0"
                                            class="block w-full rounded-lg border-orange-200 ring-1 ring-orange-900/5 focus:border-orange-500 focus:ring-orange-500 sm:text-sm transition-all duration-200">
+                                </div>
+                                <!-- NEW: Fixed Something -->
+                                <div>
+                                    <label for="fixed_something" class="block text-sm font-medium text-black-700 mb-1">Fixed Something</label>
+                                    <select name="fixed_something" id="fixed_something"
+                                            class="block w-full rounded-lg border-orange-200 ring-1 ring-orange-900/5 focus:border-orange-500 focus:ring-orange-500 sm:text-sm transition-all duration-200">
+                                        <option value="0">No</option>
+                                        <option value="1">Yes</option>
+                                    </select>
+                                </div>
+                                <!-- NEW: Fix Description -->
+                                <div class="md:col-span-2">
+                                    <label for="fix_description" class="block text-sm font-medium text-black-700 mb-1">Fix Description</label>
+                                    <textarea name="fix_description" id="fix_description" rows="3"
+                                              class="block w-full rounded-lg border-orange-200 ring-1 ring-orange-900/5 focus:border-orange-500 focus:ring-orange-500 sm:text-sm transition-all duration-200"
+                                              placeholder="Describe what was fixed..."></textarea>
                                 </div>
                             </div>
                         </div>
@@ -428,7 +473,35 @@
 
                         document.getElementById('editModal').classList.remove('hidden');
                     });
+                })// Update the edit button click handler
+                document.querySelectorAll('.edit-btn').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const clockingId = this.getAttribute('data-clocking-id');
+                        const clockIn = this.getAttribute('data-clock-in');
+                        const clockOut = this.getAttribute('data-clock-out');
+                        const milesIn = this.getAttribute('data-miles-in');
+                        const milesOut = this.getAttribute('data-miles-out');
+                        const purchaseCost = this.getAttribute('data-purchase-cost');
+                        const fixedSomething = this.getAttribute('data-fixed-something'); // NEW
+                        const fixDescription = this.getAttribute('data-fix-description'); // NEW
+
+                        // Clear previous values
+                        document.getElementById('editForm').reset();
+
+                        // Set new values
+                        document.getElementById('clocking_id').value = clockingId;
+                        document.getElementById('clock_in').value = clockIn || '';
+                        document.getElementById('clock_out').value = clockOut || '';
+                        document.getElementById('miles_in').value = milesIn || '';
+                        document.getElementById('miles_out').value = milesOut || '';
+                        document.getElementById('purchase_cost').value = purchaseCost || '';
+                        document.getElementById('fixed_something').value = fixedSomething || '0'; // NEW
+                        document.getElementById('fix_description').value = fixDescription || ''; // NEW
+
+                        document.getElementById('editModal').classList.remove('hidden');
+                    });
                 });
+
 
                 // Hide modal when close button or cancel button is clicked
                 closeModal.addEventListener('click', hideModal);

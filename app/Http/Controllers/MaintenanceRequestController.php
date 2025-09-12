@@ -57,10 +57,8 @@ class MaintenanceRequestController extends Controller
                 } else {
                     $storeFilter = function($q) use ($storeValue) {
                         $q->whereHas('store', function($subQ) use ($storeValue) {
-                            // Try exact match first, then partial match
                             $subQ->where('store_number', $storeValue)
                                 ->orWhere('name', $storeValue)
-                                // Only if no exact match, do partial search
                                 ->orWhere(function($partialQ) use ($storeValue) {
                                     $partialQ->where('store_number', 'LIKE', '%' . $storeValue . '%')
                                         ->orWhere('name', 'LIKE', '%' . $storeValue . '%');
@@ -135,6 +133,7 @@ class MaintenanceRequestController extends Controller
             $query->where($searchFilter);
             $baseQuery->where($searchFilter);
         }
+
         // Apply status filter to main query
         $selectedStatus = null;
         if ($request->has('status') && $request->status !== 'all') {
@@ -153,13 +152,13 @@ class MaintenanceRequestController extends Controller
         $stores = Store::orderBy('store_number')->get();
         $users = User::where('role', 'user')->orderBy('name')->get();
 
-        // Calculate status counts
+        // FIXED: Calculate status counts - changed 'reserved' to 'received'
         if ($selectedStatus) {
             $totalCount = $baseQuery->count();
             $statusCounts = [
                 'all' => $totalCount,
                 'on_hold' => $selectedStatus === 'on_hold' ? $totalCount : 0,
-                'reserved' => $selectedStatus === 'reserved' ? $totalCount : 0, // ADD THIS LINE
+                'received' => $selectedStatus === 'received' ? $totalCount : 0, // CHANGED: reserved → received
                 'in_progress' => $selectedStatus === 'in_progress' ? $totalCount : 0,
                 'done' => $selectedStatus === 'done' ? $totalCount : 0,
                 'canceled' => $selectedStatus === 'canceled' ? $totalCount : 0,
@@ -168,41 +167,18 @@ class MaintenanceRequestController extends Controller
             $statusCounts = [
                 'all' => $baseQuery->count(),
                 'on_hold' => (clone $baseQuery)->where('status', 'on_hold')->count(),
-                'reserved' => (clone $baseQuery)->where('status', 'reserved')->count(), // ADD THIS LINE
+                'received' => (clone $baseQuery)->where('status', 'received')->count(), // CHANGED: reserved → received
                 'in_progress' => (clone $baseQuery)->where('status', 'in_progress')->count(),
                 'done' => (clone $baseQuery)->where('status', 'done')->count(),
                 'canceled' => (clone $baseQuery)->where('status', 'canceled')->count(),
             ];
         }
 
-//        $assignedUserIds = DB::table('task_assignments')
-//            ->distinct()
-//            ->whereNotNull('assigned_user_id')
-//            ->pluck('assigned_user_id');
-//
-//        $assignedUsers = User::whereIn('id', $assignedUserIds)
-//            ->orderBy('name')
-//            ->get();
-//
-//        dd($assignedUsers);
-
-// Method 2: Using exists query
-//        $assignedUsers = User::whereExists(function ($query) {
-//            $query->select(DB::raw(1))
-//                ->from('task_assignments')
-//                ->whereColumn('task_assignments.assigned_user_id', 'users.id')
-//                ->whereNotNull('assigned_user_id');
-//        })
-//            ->orderBy('name')
-//            ->get();
-//
-//        dd($assignedUsers);
-
+        // Clean up commented code and get assigned users
         $assignedUsers = User::whereHas('taskAssignments')
             ->orderBy('name')
             ->get();
 
-//        dd($maintenanceRequests);
         return view('admin.maintenance-requests.index', compact(
             'maintenanceRequests',
             'urgencyLevels',
@@ -236,44 +212,90 @@ class MaintenanceRequestController extends Controller
             'request_date' => 'required|date',
             'assigned_to' => 'nullable|exists:users,id',
             'due_date' => 'nullable|date|after_or_equal:request_date',
+            'status' => 'nullable|in:on_hold,received,in_progress,complete,done,canceled', // Add status validation
+            'reason' => 'nullable|string', // Add reason field validation
         ]);
 
         DB::beginTransaction();
         try {
+            // Handle store creation or selection
             if (!$validated['store_id'] && $validated['new_store_number']) {
                 $store = Store::create([
                     'store_number' => $validated['new_store_number'],
-                    'name' => $validated['new_store_name'],
+                    'name' => $validated['new_store_name'] ?? '',
                     'is_active' => true,
                 ]);
                 $validated['store_id'] = $store->id;
-                $validated['store'] = $store->store_number;
-            } elseif ($validated['store_id']) {
-                $store = Store::find($validated['store_id']);
-                $validated['store'] = $store->store_number;
             }
 
-            $validated['form_id'] = 'MANUAL-' . time();
-            $validated['date_submitted'] = now();
-            $validated['entry_number'] = MaintenanceRequest::max('entry_number') + 1;
-            $validated['webhook_id'] = 'MANUAL-' . uniqid();
-            $validated['status'] = 'on_hold';
-            $validated['requester_id'] = auth()->id() ?? 1;
-            $validated['reviewed_by_manager_id'] = 1;
+            // Get store information if store_id is provided
+            if ($validated['store_id']) {
+                $store = Store::find($validated['store_id']);
+                if (!$store) {
+                    throw new \Exception('Selected store not found.');
+                }
+            }
 
-            unset($validated['new_store_number'], $validated['new_store_name']);
+            // Prepare maintenance request data
+            $maintenanceData = [
+                'store_id' => $validated['store_id'] ?? null,
+                'description_of_issue' => $validated['description_of_issue'],
+                'urgency_level_id' => $validated['urgency_level_id'],
+                'equipment_with_issue' => $validated['equipment_with_issue'],
+                'basic_troubleshoot_done' => $validated['basic_troubleshoot_done'] ?? false,
+                'request_date' => $validated['request_date'],
+                'status' => $validated['status'] ?? 'received', // Use provided status or default
+                'reason' => $validated['reason'] ?? null, // Add reason field
+                'form_id' => 'MANUAL-' . time(),
+                'date_submitted' => now(),
+                'entry_number' => MaintenanceRequest::max('entry_number') + 1,
+                'webhook_id' => 'MANUAL-' . uniqid(),
+                'requester_id' => auth()->id() ?? 1,
+                'reviewed_by_manager_id' => auth()->id() ?? 1, // Use current user or default
+            ];
 
-            MaintenanceRequest::create($validated);
+            // Create the maintenance request
+            $maintenanceRequest = MaintenanceRequest::create($maintenanceData);
+
+            // Handle task assignment if assigned_to is provided
+            if (!empty($validated['assigned_to'])) {
+                $taskAssignment = [
+                    'maintenance_request_id' => $maintenanceRequest->id,
+                    'assigned_to_user_id' => $validated['assigned_to'],
+                    'assigned_by_user_id' => auth()->id() ?? 1,
+                    'due_date' => $validated['due_date'] ?? null,
+                    'status' => 'assigned',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+
+                // Assuming you have a TaskAssignment model
+                DB::table('task_assignments')->insert($taskAssignment);
+
+                // Update maintenance request status if assigning
+                if ($validated['status'] ?? 'on_hold' === 'on_hold') {
+                    $maintenanceRequest->update(['status' => 'received']);
+                }
+            }
 
             DB::commit();
 
             return redirect()->route('maintenance-requests.index')
                 ->with('success', 'Maintenance request created successfully.');
+
         } catch (\Exception $e) {
             DB::rollback();
-            return back()->withErrors(['error' => 'Failed to create maintenance request: ' . $e->getMessage()]);
+            \Log::error('Failed to create maintenance request: ' . $e->getMessage(), [
+                'user_id' => auth()->id(),
+                'request_data' => $request->all()
+            ]);
+
+            return back()
+                ->withInput()
+                ->withErrors(['error' => 'Failed to create maintenance request: ' . $e->getMessage()]);
         }
     }
+
 
     public function show(MaintenanceRequest $maintenanceRequest): View
     {
@@ -295,17 +317,17 @@ class MaintenanceRequestController extends Controller
 
     public function updateStatus(Request $request, MaintenanceRequest $maintenanceRequest): RedirectResponse
     {
-
         $request->validate([
-            'status' => 'required|in:on_hold,reserved,in_progress,done,canceled',
+            'status' => 'required|in:on_hold,received,in_progress,done,canceled', // CHANGED: reserved → received
             'reason' => 'required_if:status,on_hold|nullable|string|max:1000',
             'costs' => 'required_if:status,done|nullable|numeric|min:0',
             'how_we_fixed_it' => 'required_if:status,done|nullable|string|max:1000',
-            'assigned_to' => 'required_if:status,in_progress,done|nullable|exists:users,id', // FIX: Add "done" here
+            'assigned_to' => 'required_if:status,in_progress,done|nullable|exists:users,id',
             'due_date' => 'nullable|date|after_or_equal:today'
         ]);
         try {
             DB::beginTransaction();
+
             $newStatus = $request->input('status');
             $reason = $request->input('reason');
             $costs = $request->input('costs');
@@ -321,16 +343,16 @@ class MaintenanceRequestController extends Controller
                 ]);
             }
 
-            // FIX: Check assigned_to for BOTH in_progress AND done
             if (($newStatus === 'in_progress' || $newStatus === 'done') && empty($assignedTo)) {
                 return back()->withErrors([
                     'assigned_to' => 'Assigned to is required when marking as in progress or done.'
                 ]);
             }
 
+            // CHANGED: Update validation message for received status
             if (($newStatus === 'on_hold') && empty($reason)) {
                 return back()->withErrors([
-                    'reason' => 'Reason is required when marking as on hold or reserved.'
+                    'reason' => 'Reason is required when marking as on hold or received.'
                 ]);
             }
             // Update main fields
@@ -341,7 +363,7 @@ class MaintenanceRequestController extends Controller
                 'how_we_fixed_it' => $howWeFixedIt,
             ];
 
-            // FIX: Handle assignment for BOTH in_progress AND done
+            // Handle assignment for in_progress and done statuses
             if (($newStatus == 'in_progress' || $newStatus == 'done') && $assignedTo) {
                 // Direct assignment from admin
                 $maintenanceRequest->assignDirectly($assignedTo, $dueDate);
@@ -352,17 +374,17 @@ class MaintenanceRequestController extends Controller
                 $updateData['assignment_source'] = 'direct';
                 $updateData['current_task_assignment_id'] = null;
             }
-            $maintenanceRequest->update($updateData);
 
+            $maintenanceRequest->update($updateData);
             // Record status change
             $maintenanceRequest->statusHistories()->create([
                 'old_status' => $maintenanceRequest->getOriginal('status'),
                 'new_status' => $newStatus,
                 'changed_by' => $userId,
                 'changed_at' => now(),
-                'notes' => $newStatus === 'done' ? $howWeFixedIt : ($newStatus === 'on_hold' ? $reason : null), // FIX: Add reason to notes
+                'notes' => $newStatus === 'done' ? $howWeFixedIt :
+                    (($newStatus === 'on_hold' ) ? $reason : null), // CHANGED: Include received
             ]);
-
             // Get form ID dynamically from the maintenance request
             $formId = $maintenanceRequest->form_id;
             $entryId = $maintenanceRequest->entry_number;
@@ -373,7 +395,7 @@ class MaintenanceRequestController extends Controller
 
                 $cognitoStatusMap = [
                     'on_hold' => 'On Hold',
-                    'reserved' => 'Reserved',
+                    'received' => 'Received', // CHANGED: reserved → received
                     'in_progress' => 'In Progress',
                     'done' => 'Done',
                     'canceled' => 'Canceled'
@@ -396,8 +418,16 @@ class MaintenanceRequestController extends Controller
             DB::commit();
 
             return back()->with('success', 'Status updated successfully in both local database and Cognito Forms.');
+
         } catch (\Exception $e) {
             DB::rollback();
+            \Log::error('Failed to update maintenance request status', [
+                'maintenance_request_id' => $maintenanceRequest->id,
+                'new_status' => $newStatus ?? 'unknown',
+                'user_id' => $userId,
+                'error' => $e->getMessage()
+            ]);
+
             return back()->withErrors(['error' => 'Failed to update status: ' . $e->getMessage()]);
         }
     }
@@ -427,12 +457,12 @@ class MaintenanceRequestController extends Controller
         $request->validate([
             'request_ids' => 'required|array',
             'request_ids.*' => 'exists:maintenance_requests,id',
-            'status' => 'required|in:on_hold,reserved,in_progress,done,canceled', // ADD reserved HERE
-            'reason' => 'required_if:status,on_hold,reserved|nullable|string|max:1000', // ADD THIS LINE
+            'status' => 'required|in:on_hold,received,in_progress,done,canceled',
+            'reason' => 'required_if:status,on_hold|nullable|string|max:1000',
             'costs' => 'required_if:status,done|nullable|numeric|min:0',
             'how_we_fixed_it' => 'required_if:status,done|nullable|string|max:1000',
             'assigned_to' => 'required_if:status,in_progress|nullable|exists:users,id',
-            'due_date' => 'nullable|date'
+            'due_date' => 'nullable|date|after_or_equal:today' // IMPROVED: Added validation
         ]);
 
         try {
@@ -440,48 +470,156 @@ class MaintenanceRequestController extends Controller
 
             $requestIds = $request->input('request_ids');
             $newStatus = $request->input('status');
-            $reason = $request->input('reason'); // ADD THIS LINE
+            $reason = $request->input('reason');
             $costs = $request->input('costs');
             $howWeFixedIt = $request->input('how_we_fixed_it');
             $assignedTo = $request->input('assigned_to');
             $dueDate = $request->input('due_date');
             $userId = auth()->id() ?? 1;
 
+            // IMPROVED: Add validation checks before processing
+            if (($newStatus === 'on_hold' || $newStatus === 'received') && empty($reason)) {
+                return back()->withErrors([
+                    'reason' => 'Reason is required when marking as on hold or received.'
+                ]);
+            }
+
+            if ($newStatus === 'done' && (empty($costs) || empty($howWeFixedIt))) {
+                return back()->withErrors([
+                    'costs' => 'Costs and how we fixed it are required when marking as done.',
+                    'how_we_fixed_it' => 'How we fixed it is required when marking as done.'
+                ]);
+            }
+
+            if ($newStatus === 'in_progress' && empty($assignedTo)) {
+                return back()->withErrors([
+                    'assigned_to' => 'Assigned to is required when marking as in progress.'
+                ]);
+            }
+
             $requests = MaintenanceRequest::whereIn('id', $requestIds)->get();
+            $updatedCount = 0;
 
             foreach ($requests as $maintenanceRequest) {
+                // Skip if already in the target status
                 if ($maintenanceRequest->status === $newStatus) {
                     continue;
                 }
 
-                $maintenanceRequest->update([
+                $oldStatus = $maintenanceRequest->status;
+
+                // Prepare update data
+                $updateData = [
                     'status' => $newStatus,
-                    'reason' => ($newStatus === 'on_hold' || $newStatus === 'reserved') ? $reason : null, // ADD THIS LINE
+                    'reason' => ($newStatus === 'on_hold') ? $reason : null,
                     'costs' => $newStatus === 'done' ? $costs : null,
                     'how_we_fixed_it' => $newStatus === 'done' ? $howWeFixedIt : null,
-                    'assigned_to' => $newStatus === 'in_progress' ? $assignedTo : null,
-                    'due_date' => $newStatus === 'in_progress' ? $dueDate : null,
-                ]);
+                ];
 
+                // Handle assignment logic
+                if ($newStatus === 'in_progress') {
+                    $updateData['assigned_to'] = $assignedTo;
+                    $updateData['due_date'] = $dueDate;
+                    $updateData['assignment_source'] = 'direct';
 
+                    // IMPROVED: Create task assignment if needed
+                    if ($assignedTo) {
+                        $maintenanceRequest->assignDirectly($assignedTo, $dueDate);
+                    }
+                } elseif ($newStatus === 'done') {
+                    // Keep existing assignment for done status
+                    $updateData['assigned_to'] = $maintenanceRequest->assigned_to ?: $assignedTo;
+                } else {
+                    // Clear assignment for other statuses
+                    $updateData['assigned_to'] = null;
+                    $updateData['due_date'] = null;
+                    $updateData['assignment_source'] = 'direct';
+                    $updateData['current_task_assignment_id'] = null;
+                }
+
+                $maintenanceRequest->update($updateData);
+
+                // Record status change
                 $maintenanceRequest->statusHistories()->create([
-                    'old_status' => $maintenanceRequest->getOriginal('status'),
+                    'old_status' => $oldStatus,
                     'new_status' => $newStatus,
                     'changed_by' => $userId,
                     'changed_at' => now(),
-                    'notes' => $newStatus === 'done' ? $howWeFixedIt : null,
+                    'notes' => $newStatus === 'done' ? $howWeFixedIt :
+                        (($newStatus === 'on_hold' ) ? $reason : null),
                 ]);
+
+                // IMPROVED: Update Cognito if form ID exists
+                $this->updateCognitoStatus($maintenanceRequest, $newStatus, $howWeFixedIt);
+
+                $updatedCount++;
             }
 
             DB::commit();
 
-            $count = count($requestIds);
-            return back()->with('success', "Successfully updated {$count} maintenance requests.");
+            return back()->with('success', "Successfully updated {$updatedCount} maintenance requests.");
+
         } catch (\Exception $e) {
             DB::rollback();
+
+            // IMPROVED: Add logging
+            \Log::error('Failed to bulk update maintenance request statuses', [
+                'request_ids' => $requestIds ?? [],
+                'new_status' => $newStatus ?? 'unknown',
+                'user_id' => $userId,
+                'error' => $e->getMessage()
+            ]);
+
             return back()->withErrors(['error' => 'Failed to update requests: ' . $e->getMessage()]);
         }
     }
+
+    /**
+     * IMPROVED: Extract Cognito update logic to separate method
+     */
+    private function updateCognitoStatus(MaintenanceRequest $maintenanceRequest, string $newStatus, ?string $howWeFixedIt = null): void
+    {
+        $formId = $maintenanceRequest->form_id;
+        $entryId = $maintenanceRequest->entry_number;
+
+        if (!$formId) {
+            return;
+        }
+
+        try {
+            $cognitoService = app(CognitoFormsService::class);
+
+            $cognitoStatusMap = [
+                'on_hold' => 'On Hold',
+                'received' => 'Received', // CHANGED: reserved → received
+                'in_progress' => 'In Progress',
+                'done' => 'Done',
+                'canceled' => 'Canceled'
+            ];
+
+            $cognitoData = [
+                'CorrespondenceInternalUseOnly' => [
+                    'Status' => $cognitoStatusMap[$newStatus] ?? $newStatus,
+                    'NotesFromMaintenanceTeam' => $howWeFixedIt,
+                ],
+                'Entry' => [
+                    'Action' => 'Update',
+                    'Role' => 'Internal',
+                ]
+            ];
+
+            $cognitoService->updateEntry($formId, $entryId, $cognitoData);
+        } catch (\Exception $e) {
+            // Log but don't fail the entire operation
+            \Log::warning('Failed to update Cognito for maintenance request', [
+                'maintenance_request_id' => $maintenanceRequest->id,
+                'form_id' => $formId,
+                'entry_id' => $entryId,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
 
     public function export(Request $request)
     {

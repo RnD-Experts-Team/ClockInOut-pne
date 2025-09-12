@@ -114,6 +114,60 @@
                             </div>
                         </div>
 
+                            <div class="mb-4">
+                                <label class="mb-2 block text-sm font-medium text-black-700">{{ __('messages.fix_question') }}</label>
+                                <div class="flex items-center {{ isRtl() ? 'space-x-reverse' : '' }} space-x-4">
+                                    <div class="flex items-center">
+                                        <input class="h-4 w-4 border-orange-200 text-black-600 focus:ring-orange-500"
+                                               id="didFixYes" name="fixed_something" type="radio" value="1">
+                                        <label class="{{ isRtl() ? 'mr-2' : 'ml-2' }}" for="didFixYes">{{ __('messages.yes') }}</label>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <input class="h-4 w-4 border-orange-200 text-black-600 focus:ring-orange-500"
+                                               id="didFixNo" name="fixed_something" type="radio" value="0" checked>
+                                        <label class="{{ isRtl() ? 'mr-2' : 'ml-2' }}" for="didFixNo">{{ __('messages.no') }}</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Fix Description (hidden by default) -->
+                            <div class="hidden rounded-lg transition-all duration-300 hover:shadow-md"
+                                 id="fix_description_container">
+                                <label class="mb-1 block text-sm font-medium text-black-700" for="fix_description">
+                                    {{ __('messages.fix_description') }}
+                                </label>
+                                <div class="relative rounded-md ring-1 ring-orange-900/5">
+        <textarea
+            class="block w-full rounded-lg border border-orange-200 py-3 {{ isRtl() ? 'pr-10 pl-3' : 'pl-10 pr-3' }} transition-all duration-300 focus:border-orange-500 focus:ring-orange-500"
+            id="fix_description" name="fix_description" rows="3"
+            placeholder="{{ __('messages.fix_description_placeholder') }}"></textarea>
+                                </div>
+                            </div>
+
+                            <!-- Fix Image (hidden by default) -->
+                            <div class="hidden rounded-lg transition-all duration-300 hover:shadow-md"
+                                 id="fix_image_container">
+                                <label class="mb-1 block text-sm font-medium text-black-700" for="fix_image">
+                                    {{ __('messages.fix_image') }}
+                                </label>
+                                <div class="mt-1">
+                                    <div
+                                        class="flex justify-center rounded-lg border-2 border-dashed border-orange-200 px-6 pb-6 pt-5 transition-all duration-300 hover:border-orange-500">
+                                        <div class="text-center">
+                                            <label
+                                                class="relative cursor-pointer rounded-md font-medium text-black-600 transition-colors duration-300 focus-within:outline-none focus-within:ring-2 focus-within:ring-orange-500 focus-within:ring-offset-2 hover:text-black-500"
+                                                for="fix_image">
+                                                <span>{{ __('messages.upload_file') }}</span>
+                                                <input class="sr-only" id="fix_image" name="fix_image" type="file"
+                                                       accept="image/*" capture="environment">
+                                            </label>
+                                            <p class="mt-1 {{ isRtl() ? 'pr-1' : 'pl-1' }}">{{ __('messages.or_drag_drop') }}</p>
+                                            <p class="mt-2 text-xs text-black-500">{{ __('messages.camera_gallery_instruction') }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                         <button
                             class="flex w-full transform items-center justify-center rounded-lg border border-transparent bg-orange-600 px-4 py-3 text-base font-medium text-white transition-all duration-300 hover:scale-105 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
                             type="button" onclick="handleClockOutClicked()">
@@ -288,7 +342,7 @@
             const receiptContainer = document.getElementById('purchase_receipt_container');
             const costInput = document.getElementById('purchase_cost');
             const receiptInput = document.getElementById('purchase_receipt');
-        
+
             // Add null checks to prevent errors
             if (costContainer && receiptContainer && costInput && receiptInput) {
                 if (didBuy) {
@@ -442,10 +496,10 @@
         // On page load, attach event listeners
         // -----------------------------------------
         document.addEventListener('DOMContentLoaded', function() {
+            // Existing clock-in event listeners...
             const usingCarYes = document.getElementById('using_car_yes');
             const usingCarNo = document.getElementById('using_car_no');
 
-            // Clock-in toggles
             if (usingCarYes) {
                 usingCarYes.addEventListener('change', () => toggleCarFields(true));
             }
@@ -460,7 +514,7 @@
                 toggleCarFields(false);
             }
 
-            // Clock-out toggles for "did you buy anything"
+            // Existing purchase event listeners...
             const didBuyYes = document.getElementById('didBuyYes');
             const didBuyNo = document.getElementById('didBuyNo');
 
@@ -471,13 +525,67 @@
                 didBuyNo.addEventListener('change', () => togglePurchaseFields(false));
             }
 
-            // Set initial state for purchase fields
+            // NEW: Fix event listeners
+            const didFixYes = document.getElementById('didFixYes');
+            const didFixNo = document.getElementById('didFixNo');
+
+            if (didFixYes) {
+                didFixYes.addEventListener('change', () => {
+                    console.log('Fix Yes selected');
+                    toggleFixFields(true);
+                });
+            }
+            if (didFixNo) {
+                didFixNo.addEventListener('change', () => {
+                    console.log('Fix No selected');
+                    toggleFixFields(false);
+                });
+            }
+
+            // Set initial states
             if (didBuyYes && didBuyYes.checked) {
                 togglePurchaseFields(true);
             } else {
                 togglePurchaseFields(false);
             }
+
+            // NEW: Set initial state for fix fields
+            if (didFixYes && didFixYes.checked) {
+                toggleFixFields(true);
+            } else {
+                toggleFixFields(false);
+            }
         });
+        // -----------------------------------------
+        // CLOCK OUT: Show/Hide fix fields if user fixed something
+        // -----------------------------------------
+        function toggleFixFields(didFix) {
+            const descriptionContainer = document.getElementById('fix_description_container');
+            const imageContainer = document.getElementById('fix_image_container');
+            const descriptionInput = document.getElementById('fix_description');
+            const imageInput = document.getElementById('fix_image');
+
+            console.log('Toggle fix fields called with:', didFix);
+
+            // Add null checks to prevent errors
+            if (descriptionContainer && imageContainer && descriptionInput && imageInput) {
+                if (didFix) {
+                    descriptionContainer.classList.remove('hidden');
+                    imageContainer.classList.remove('hidden');
+                    // Make fix image required when fixing something
+                    imageInput.setAttribute('required', 'required');
+                } else {
+                    descriptionContainer.classList.add('hidden');
+                    imageContainer.classList.add('hidden');
+                    // Remove required attribute when not fixing
+                    imageInput.removeAttribute('required');
+                    // Clear values when hidden
+                    descriptionInput.value = '';
+                    imageInput.value = '';
+                }
+            }
+        }
+
     </script>
 
     <style>

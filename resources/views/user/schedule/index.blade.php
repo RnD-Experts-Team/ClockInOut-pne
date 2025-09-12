@@ -13,14 +13,14 @@
 
             <!-- Week Navigation -->
             <div class="flex items-center space-x-4 {{ isRtl() ? 'rtl:space-x-reverse' : '' }}">
-                <a href="{{ route('user.schedule.index', ['start_date' => $startDate->copy()->subWeek()->format('Y-m-d')]) }}"
+                <a href="{{ route('user.schedule.index', ['start_date' => $previousWeek->format('Y-m-d')]) }}"
                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
                     {{ __('messages.previous_week') }}
                 </a>
                 <span class="text-sm font-medium text-gray-900">
-                    {{ $startDate->format('M d') }} - {{ $endDate->format('M d, Y') }}
-                </span>
-                <a href="{{ route('user.schedule.index', ['start_date' => $startDate->copy()->addWeek()->format('Y-m-d')]) }}"
+        {{ $currentWeekStart->format('M d') }} - {{ $currentWeekEnd->format('M d, Y') }}
+    </span>
+                <a href="{{ route('user.schedule.index', ['start_date' => $nextWeek->format('Y-m-d')]) }}"
                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
                     {{ __('messages.next_week') }}
                 </a>
@@ -28,7 +28,9 @@
         </div>
 
         <!-- Weekly Stats -->
+        <!-- Weekly Stats - Updated Grid with 6 cards -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <!-- Existing Card 1: Scheduled Weekly Hours -->
             <div class="bg-white rounded-lg shadow p-6">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
@@ -37,17 +39,36 @@
                         </svg>
                     </div>
                     <div class="ml-4 {{ isRtl() ? 'mr-4 ml-0' : '' }}">
-                        <p class="text-sm font-medium text-gray-600">{{ __('messages.weekly_hours') }}</p>
+                        <p class="text-sm font-medium text-gray-600">{{ __('messages.scheduled_hours') }}</p>
                         <p class="text-2xl font-bold text-gray-900">{{ $weeklyHours ?? 0 }}</p>
+                        <p class="text-xs text-gray-500">{{ __('messages.from_schedule') }}</p>
                     </div>
                 </div>
             </div>
 
+            <!-- NEW Card 2: Actual Hours Worked -->
             <div class="bg-white rounded-lg shadow p-6">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
                         <svg class="h-8 w-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-4 {{ isRtl() ? 'mr-4 ml-0' : '' }}">
+                        <p class="text-sm font-medium text-gray-600">{{ __('messages.actual_hours_worked') }}</p>
+                        <p class="text-2xl font-bold text-green-900">{{ $actualHoursWorked ?? '00:00' }}</p>
+                        <p class="text-xs text-gray-500">{{ __('messages.from_clocking') }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Existing Card 3: Tasks This Week -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <svg class="h-8 w-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2H9z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 9l2 2 4-4"></path>
                         </svg>
                     </div>
                     <div class="ml-4 {{ isRtl() ? 'mr-4 ml-0' : '' }}">
@@ -57,20 +78,55 @@
                 </div>
             </div>
 
+            <!-- NEW Card 4: Weekly Earnings -->
             <div class="bg-white rounded-lg shadow p-6">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
-                        <svg class="h-8 w-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        <svg class="h-8 w-8 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
                         </svg>
                     </div>
                     <div class="ml-4 {{ isRtl() ? 'mr-4 ml-0' : '' }}">
-                        <p class="text-sm font-medium text-gray-600">{{ __('messages.shifts') }}</p>
-                        <p class="text-2xl font-bold text-gray-900">{{ $scheduleShifts->count() ?? 0 }}</p>
+                        <p class="text-sm font-medium text-gray-600">{{ __('messages.weekly_earnings') }}</p>
+                        <p class="text-2xl font-bold text-emerald-900">${{ number_format($weeklyEarnings ?? 0, 2) }}</p>
+                        <p class="text-xs text-gray-500">{{ __('messages.based_on_actual_hours') }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NEW Card 5: Days Worked -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <svg class="h-8 w-8 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 002 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-4 {{ isRtl() ? 'mr-4 ml-0' : '' }}">
+                        <p class="text-sm font-medium text-gray-600">{{ __('messages.days_worked') }}</p>
+                        <p class="text-2xl font-bold text-purple-900">{{ $daysWorked ?? 0 }}</p>
+                        <p class="text-xs text-gray-500">{{ __('messages.this_week') }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NEW Card 6: Average Daily Hours -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <svg class="h-8 w-8 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-4 {{ isRtl() ? 'mr-4 ml-0' : '' }}">
+                        <p class="text-sm font-medium text-gray-600">{{ __('messages.average_daily_hours') }}</p>
+                        <p class="text-2xl font-bold text-indigo-900">{{ $averageDailyHours ?? '00:00' }}</p>
+                        <p class="text-xs text-gray-500">{{ __('messages.per_working_day') }}</p>
                     </div>
                 </div>
             </div>
         </div>
+
 
         <!-- Week Calendar -->
         @if(isset($weekDays) && $weekDays->count() > 0)

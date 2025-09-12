@@ -80,8 +80,10 @@ class StoreController extends Controller
             'store_number' => 'required|string|max:255|unique:stores,store_number,' . $store->id,
             'name' => 'nullable|string|max:255',
             'address' => 'nullable|string',
-            'is_active' => 'boolean',
-        ]);
+            'is_active' => 'nullable',
+            ]);
+        $validated['is_active'] = $request->has('is_active') ? true : false;
+
 
         $store->update($validated);
 
