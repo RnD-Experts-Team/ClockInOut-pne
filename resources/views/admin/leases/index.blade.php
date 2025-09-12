@@ -26,7 +26,7 @@
                     Add Lease
                 </a>
                 <a href="{{ route('leases.export', request()->query()) }}"
-                   class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300 hover:shadow-lg">
+                   class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300 hover:shadow-lg">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
@@ -433,7 +433,7 @@
 
         <!-- Modal Containers -->
         <!-- Landlord Contact Modal -->
-        <div id="landlordContactModal" class="hidden fixed inset-0 bg-orange-100 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div id="landlordContactModal" class="hidden fixed inset-0  bg-opacity-50 overflow-y-auto h-full w-full z-50">
             <div class="relative top-4 mx-auto p-5 border w-11/12 max-w-7xl shadow-lg rounded-md bg-orange-50">
                 <div class="mt-3">
                     <div class="flex justify-between items-center mb-4">
@@ -454,7 +454,7 @@
         </div>
 
         <!-- Cost Breakdown Modal -->
-        <div id="costBreakdownModal" class="hidden fixed inset-0 bg-orange-100 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div id="costBreakdownModal" class="hidden fixed inset-0  bg-opacity-50 overflow-y-auto h-full w-full z-50">
             <div class="relative top-4 mx-auto p-5 border w-11/12 max-w-7xl shadow-lg rounded-md bg-orange-50">
                 <div class="mt-3">
                     <div class="flex justify-between items-center mb-4">
@@ -475,7 +475,7 @@
         </div>
 
         <!-- Lease Tracker Modal -->
-        <div id="leaseTrackerModal" class="hidden fixed inset-0 bg-orange-100 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div id="leaseTrackerModal" class="hidden fixed inset-0 bg-opacity-50 overflow-y-auto h-full w-full z-50">
             <div class="relative top-4 mx-auto p-5 border w-11/12 max-w-7xl shadow-lg rounded-md bg-orange-50">
                 <div class="mt-3">
                     <div class="flex justify-between items-center mb-4">
@@ -498,7 +498,7 @@
         <!-- Portfolio Analytics Modal -->
         <div id="portfolioModal" class="fixed inset-0 z-50 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
             <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-                <div class="fixed inset-0 bg-orange-100 bg-opacity-75 transition-opacity" aria-hidden="true" id="modalBackdrop"></div>
+                <div class="fixed inset-0 transition-opacity" aria-hidden="true" id="modalBackdrop"></div>
 
                 <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
@@ -1240,9 +1240,9 @@
                     resolve(window.html2canvas);
                     return;
                 }
-
                 const script = document.createElement('script');
-                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+                // Use the correct html2canvas-pro CDN URL
+                script.src = 'https://cdn.jsdelivr.net/npm/html2canvas-pro@latest/dist/html2canvas-pro.min.js';
                 script.onload = () => resolve(window.html2canvas);
                 script.onerror = reject;
                 document.head.appendChild(script);
