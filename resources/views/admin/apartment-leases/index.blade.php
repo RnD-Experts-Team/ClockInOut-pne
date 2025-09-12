@@ -448,6 +448,7 @@
     </div>
 
     <script>
+
         document.addEventListener('DOMContentLoaded', function() {
             // Filter toggle
             const toggleFilters = document.getElementById('toggleFilters');
@@ -611,7 +612,8 @@
                     return;
                 }
                 const script = document.createElement('script');
-                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+                // Use the correct html2canvas-pro CDN URL
+                script.src = 'https://cdn.jsdelivr.net/npm/html2canvas-pro@latest/dist/html2canvas-pro.min.js';
                 script.onload = () => resolve(window.html2canvas);
                 script.onerror = reject;
                 document.head.appendChild(script);
