@@ -155,15 +155,6 @@
                     </table>
                 </div>
             </div>
-
-            <!-- Close Button -->
-            <div class="mt-6 text-center">
-                <button onclick="closeModal('costBreakdownModal')"
-                        class="inline-flex items-center px-4 py-2 bg-[#ff671b] text-white text-sm font-medium rounded hover:bg-[#e55b17]">
-                    Close
-                </button>
-            </div>
-        </div>
     </div>
 
     <script>
