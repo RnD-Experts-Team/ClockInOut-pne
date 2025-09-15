@@ -269,7 +269,7 @@
     <!-- Confirmation Modal -->
     <div class="animate-fade-in fixed inset-0 z-50 flex hidden items-center justify-center" id="confirmationModal"
          role="dialog" aria-labelledby="modal-title" aria-modal="true">
-        <div class="fixed inset-0 bg-orange-100 bg-opacity-75 transition-opacity"></div>
+        <div class="fixed  bg-orange-100 bg-opacity-75 transition-opacity"></div>
         <div class="m-4 transform rounded-lg bg-orange-50 shadow-xl transition-all sm:w-full sm:max-w-lg">
             <div class="bg-orange-50 px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
                 <div class="sm:flex sm:items-start">

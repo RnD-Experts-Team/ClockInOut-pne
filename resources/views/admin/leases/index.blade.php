@@ -26,7 +26,7 @@
                     Add Lease
                 </a>
                 <a href="{{ route('leases.export', request()->query()) }}"
-                   class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300 hover:shadow-lg">
+                   class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300 hover:shadow-lg">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
@@ -498,7 +498,7 @@
         <!-- Portfolio Analytics Modal -->
         <div id="portfolioModal" class="fixed inset-0 z-50 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
             <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-                <div class="fixed inset-0 transition-opacity" aria-hidden="true" id="modalBackdrop"></div>
+                <div class="fixed  transition-opacity" aria-hidden="true" id="modalBackdrop"></div>
 
                 <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
@@ -592,6 +592,21 @@
             </div>
         </div>
     </div>
+    <style>
+        /* Hide last column ONLY in landlord contact modal for screenshots */
+        #landlordContactModal table.hide-last-column th:last-child,
+        #landlordContactModal table.hide-last-column td:last-child {
+            display: none !important;
+        }
+
+        /* Also hide when printing landlord contact modal */
+        @media print {
+            #landlordContactModal table th:last-child,
+            #landlordContactModal table td:last-child {
+                display: none !important;
+            }
+        }
+    </style>
     <script>
         // SIMPLIFIED AND FIXED Read More/Read Less Implementation + All Original Code
         document.addEventListener('DOMContentLoaded', function() {
@@ -1234,20 +1249,7 @@
         }
 
         // Load html2canvas library dynamically
-        function loadHtml2Canvas() {
-            return new Promise((resolve, reject) => {
-                if (window.html2canvas) {
-                    resolve(window.html2canvas);
-                    return;
-                }
-                const script = document.createElement('script');
-                // Use the correct html2canvas-pro CDN URL
-                script.src = 'https://cdn.jsdelivr.net/npm/html2canvas-pro@latest/dist/html2canvas-pro.min.js';
-                script.onload = () => resolve(window.html2canvas);
-                script.onerror = reject;
-                document.head.appendChild(script);
-            });
-        }
+
 
         // Enhanced screenshot functionality with language selection
         function generateScreenshot(modalId, type) {
@@ -1257,7 +1259,7 @@
         function showLanguageSelection(modalId, type) {
             const languageModal = document.createElement('div');
             languageModal.id = 'languageSelectionModal';
-            languageModal.className = 'fixed inset-0 bg-black bg-opacity-50 z-[110] flex items-center justify-center';
+            languageModal.className = 'fixed inset-0 bg-opacity-50 z-[110] flex items-center justify-center';
             languageModal.innerHTML = `
     <div class="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
         <div class="text-center mb-6">
@@ -1306,77 +1308,125 @@
 
         function proceedWithScreenshot(modalId, type, language) {
             hideLanguageSelection();
-
-            // Apply language-specific styling before screenshot
             applyLanguageStyles(language, modalId);
-
             showScreenshotLoading(modalId);
 
-            // **NEW: Hide Responsibilities column ONLY if this is landlord contact modal**
+            // **NEW: Hide all scrollbars for screenshots**
+            const scrollbarHideSheet = document.createElement('style');
+            scrollbarHideSheet.id = 'screenshot-hide-scrollbars';
+            scrollbarHideSheet.textContent = `
+        /* Hide all scrollbars during screenshot */
+        * {
+            scrollbar-width: none !important; /* Firefox */
+            -ms-overflow-style: none !important; /* IE and Edge */
+        }
+
+        /* Hide webkit scrollbars (Chrome, Safari) */
+        *::-webkit-scrollbar {
+            display: none !important;
+            width: 0 !important;
+            height: 0 !important;
+        }
+
+        /* Ensure content is still scrollable but no visible scrollbars */
+        .modal-content {
+            overflow: visible !important;
+        }
+
+        /* Hide specific scrollable areas */
+        .overflow-x-auto,
+        .overflow-y-auto,
+        .overflow-auto {
+            overflow: visible !important;
+        }
+    `;
+            document.head.appendChild(scrollbarHideSheet);
+
+            // Hide Responsibilities column for landlord contact modal
             if (modalId === 'landlordContactModal') {
                 const modal = document.getElementById(modalId);
                 const contentElement = modal.querySelector('.modal-content');
                 const table = contentElement.querySelector('table');
                 if (table) {
                     table.classList.add('hide-last-column');
+                    table.offsetHeight; // Force reflow
+
+                    setTimeout(() => {
+                        takeActualScreenshot();
+                    }, 150);
+                    return;
                 }
             }
 
-            loadHtml2Canvas().then(html2canvas => {
-                const modal = document.getElementById(modalId);
-                const contentElement = modal.querySelector('.modal-content');
+            takeActualScreenshot();
 
-                if (!contentElement) {
-                    showScreenshotError(modalId, 'Content not found for screenshot');
-                    return;
-                }
+            function takeActualScreenshot() {
+                loadDomToImage().then(domtoimage => {
+                    const modal = document.getElementById(modalId);
+                    const contentElement = modal.querySelector('.modal-content');
 
-                const options = {
-                    backgroundColor: '#ffffff',
-                    scale: 2,
-                    useCORS: true,
-                    allowTaint: true,
-                    scrollX: 0,
-                    scrollY: 0,
-                    width: contentElement.scrollWidth,
-                    height: contentElement.scrollHeight,
-                    logging: false
-                };
+                    if (!contentElement) {
+                        showScreenshotError(modalId, 'Content not found for screenshot');
+                        cleanupScreenshotStyles();
+                        return;
+                    }
 
-                html2canvas(contentElement, options).then(canvas => {
-                    canvas.toBlob(blob => {
-                        if (!blob) {
-                            showScreenshotError(modalId, 'Failed to generate screenshot');
-                            return;
+                    const options = {
+                        bgcolor: '#ffffff',
+                        width: contentElement.scrollWidth,
+                        height: contentElement.scrollHeight,
+                        style: {
+                            transform: 'scale(1)',
+                            transformOrigin: 'top left'
                         }
+                    };
 
-                        const url = URL.createObjectURL(blob);
-                        const now = new Date();
-                        const dateStr = now.toISOString().split('T')[0];
-                        const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-');
-                        const languageSuffix = language === 'ar' ? '-arabic' : '-english';
-                        const filename = `${type}${languageSuffix}-${dateStr}-${timeStr}.png`;
+                    domtoimage.toPng(contentElement, options)
+                        .then(dataUrl => {
+                            return fetch(dataUrl).then(res => res.blob());
+                        })
+                        .then(blob => {
+                            const url = URL.createObjectURL(blob);
+                            const now = new Date();
+                            const dateStr = now.toISOString().split('T')[0];
+                            const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-');
+                            const languageSuffix = language === 'ar' ? '-arabic' : '-english';
+                            const filename = `${type}${languageSuffix}-${dateStr}-${timeStr}.png`;
 
-                        hideScreenshotLoading(modalId);
-                        showScreenshotReady(modalId, url, url, filename);
+                            hideScreenshotLoading(modalId);
+                            showScreenshotReady(modalId, url, url, filename);
+                            resetLanguageStyles(modalId);
+                            cleanupScreenshotStyles();
 
-                        // Reset language styles after screenshot
-                        resetLanguageStyles(modalId);
-
-                        // **NEW: Show column again ONLY if this was landlord contact modal**
-                        if (modalId === 'landlordContactModal') {
-                            const table = contentElement.querySelector('table');
-                            if (table) {
-                                table.classList.remove('hide-last-column');
+                            // Show column again for landlord contact modal
+                            if (modalId === 'landlordContactModal') {
+                                const table = contentElement.querySelector('table');
+                                if (table) {
+                                    table.classList.remove('hide-last-column');
+                                }
                             }
-                        }
-                    }, 'image/png', 0.95);
-                }).catch(error => {
-                    console.error('html2canvas error:', error);
-                    showScreenshotError(modalId, 'Failed to capture screenshot');
-                    resetLanguageStyles(modalId);
+                        })
+                        .catch(error => {
+                            console.error('dom-to-image error:', error);
+                            showScreenshotError(modalId, 'Failed to capture screenshot');
+                            resetLanguageStyles(modalId);
+                            cleanupScreenshotStyles();
 
-                    // **NEW: Show column again even if error occurs**
+                            if (modalId === 'landlordContactModal') {
+                                const modal = document.getElementById(modalId);
+                                const contentElement = modal.querySelector('.modal-content');
+                                const table = contentElement.querySelector('table');
+                                if (table) {
+                                    table.classList.remove('hide-last-column');
+                                }
+                            }
+                        });
+                }).catch(error => {
+                    console.error('Failed to load dom-to-image:', error);
+                    showScreenshotError(modalId, 'Failed to load screenshot library');
+                    resetLanguageStyles(modalId);
+                    cleanupScreenshotStyles();
+
                     if (modalId === 'landlordContactModal') {
                         const modal = document.getElementById(modalId);
                         const contentElement = modal.querySelector('.modal-content');
@@ -1386,24 +1436,63 @@
                         }
                     }
                 });
-            }).catch(error => {
-                console.error('Failed to load html2canvas:', error);
-                showScreenshotError(modalId, 'Failed to load screenshot library');
-                resetLanguageStyles(modalId);
+            }
 
-                // **NEW: Show column again even if error occurs**
-                if (modalId === 'landlordContactModal') {
-                    const modal = document.getElementById(modalId);
-                    const contentElement = modal.querySelector('.modal-content');
-                    const table = contentElement.querySelector('table');
-                    if (table) {
-                        table.classList.remove('hide-last-column');
-                    }
+            // **UPDATED: Cleanup function now removes scrollbar styles too**
+            function cleanupScreenshotStyles() {
+                const scrollbarStyles = document.getElementById('screenshot-hide-scrollbars');
+                if (scrollbarStyles) {
+                    scrollbarStyles.remove();
                 }
+            }
+        }
+
+        // Load dom-to-image library
+        function loadDomToImage() {
+            return new Promise((resolve, reject) => {
+                if (window.domtoimage) {
+                    resolve(window.domtoimage);
+                    return;
+                }
+                const script = document.createElement('script');
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/dom-to-image/2.6.0/dom-to-image.min.js';
+                script.onload = () => resolve(window.domtoimage);
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        }
+
+        // **NEW: Load dom-to-image library instead of html2canvas**
+        function loadDomToImage() {
+            return new Promise((resolve, reject) => {
+                if (window.domtoimage) {
+                    resolve(window.domtoimage);
+                    return;
+                }
+                const script = document.createElement('script');
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/dom-to-image/2.6.0/dom-to-image.min.js';
+                script.onload = () => resolve(window.domtoimage);
+                script.onerror = reject;
+                document.head.appendChild(script);
             });
         }
 
 
+
+        function loadHtml2Canvas() {
+            return new Promise((resolve, reject) => {
+                if (window.html2canvas) {
+                    resolve(window.html2canvas);
+                    return;
+                }
+                const script = document.createElement('script');
+                // Use the correct html2canvas-pro CDN URL
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+                script.onload = () => resolve(window.html2canvas);
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        }
         function applyLanguageStyles(language, modalId) {
             const contentElement = document.querySelector(`#${modalId} .modal-content`);
             if (!contentElement) return;
@@ -1667,20 +1756,6 @@
             });
         };
     </script>
-<style>
-    /* Hide last column ONLY in landlord contact modal for screenshots */
-    #landlordContactModal table.hide-last-column th:last-child,
-    #landlordContactModal table.hide-last-column td:last-child {
-        display: none !important;
-    }
 
-    /* Also hide when printing landlord contact modal */
-    @media print {
-        #landlordContactModal table th:last-child,
-        #landlordContactModal table td:last-child {
-            display: none !important;
-        }
-    }
-</style>
 
 @endsection

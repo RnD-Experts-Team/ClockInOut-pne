@@ -497,7 +497,7 @@
         </div>
 
         <!-- Enhanced Ticket Report Modal -->
-        <div id="ticketReportModal" class="hidden fixed inset-0 bg-black bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div id="ticketReportModal" class="hidden fixed inset-0 bg-opacity-50 overflow-y-auto h-full w-full z-50">
             <div class="relative top-4 mx-auto p-5 border w-11/12 max-w-7xl shadow-2xl rounded-xl bg-white">
                 <div class="mt-3">
                     <div class="flex justify-between items-center mb-6">
@@ -746,17 +746,11 @@
                     resolve(window.html2canvas);
                     return;
                 }
-
                 const script = document.createElement('script');
-                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-                script.onload = () => {
-                    if (window.html2canvas) {
-                        resolve(window.html2canvas);
-                    } else {
-                        reject(new Error('html2canvas failed to load'));
-                    }
-                };
-                script.onerror = () => reject(new Error('Failed to load html2canvas script'));
+                // Use the correct html2canvas-pro CDN URL
+                script.src = 'https://cdn.jsdelivr.net/npm/html2canvas-pro@latest/dist/html2canvas-pro.min.js';
+                script.onload = () => resolve(window.html2canvas);
+                script.onerror = reject;
                 document.head.appendChild(script);
             });
         }
@@ -784,7 +778,7 @@
         function showLanguageSelection(modalId, type) {
             const languageModal = document.createElement('div');
             languageModal.id = 'languageSelectionModal';
-            languageModal.className = 'fixed inset-0 bg-black bg-opacity-50 z-[110] flex items-center justify-center';
+            languageModal.className = 'fixed inset-0 bg-opacity-50 z-[110] flex items-center justify-center';
             languageModal.innerHTML = `
             <div class="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
                 <div class="text-center mb-6">

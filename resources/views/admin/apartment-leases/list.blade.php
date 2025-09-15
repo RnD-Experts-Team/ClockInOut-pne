@@ -3,7 +3,7 @@
 @section('title', 'Apartment Lease List')
 
 @section('content')
-    <div class="min-h-screen bg-gray-50 py-8">
+    <div class="min-h-screen bg-gray-50 py-9">
         <div class="max-w-full mx-auto ">
             <!-- Simple Header -->
             <div class="text-center mb-8">
@@ -180,14 +180,6 @@
                         </tfoot>
                     </table>
                 </div>
-            </div>
-
-            <!-- Close Button -->
-            <div class="mt-6 text-center">
-                <button onclick="closeModal('apartmentLeaseListModal')"
-                        class="inline-flex items-center px-4 py-2 bg-[#ff671b] text-white text-sm font-medium rounded hover:bg-[#e55b17]">
-                    Close
-                </button>
             </div>
         </div>
     </div>

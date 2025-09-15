@@ -38,40 +38,40 @@
     <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#ff671b">
     <link rel="shortcut icon" href="/favicon.ico">
 {{--    @vite(['resources/css/app.css', 'resources/js/app.js']);--}}
-    <script src="https://cdn.tailwindcss.com"></script>
+{{--    <script src="https://cdn.tailwindcss.com"></script>--}}
 
-{{--    <link rel="stylesheet" href="{{asset('/build/assets/app-0igVw8Lk.css')}}">--}}
-{{--    <script src="{{asset('/build/assets/app-BGDHvcUF.js')}}"></script>--}}
+    <link rel="stylesheet" href="{{asset('/build/assets/app-d31N9zwh.css')}}">
+    <script src="{{asset('/build/assets/app-BGDHvcUF.js')}}"></script>
 
-{{--    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">--}}
-{{--    <link rel="stylesheet" href="{{ URL::asset('build/assets/forms.css') }}">--}}
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'Noto Sans', 'sans-serif', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'],
-                        serif: ['Merriweather', 'ui-serif', 'Georgia', 'Cambria', 'Times New Roman', 'Times', 'serif'],
-                        mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'Liberation Mono', 'Courier New', 'monospace'],
-                    },
-                    colors: {
-                        'primary': '#ff671b',
-                        'primary-dark': '#c74f14', // Adjusted to a darker orange shade for hover
-                    },
-                    borderColor: {
-                        'primary': '#ff671b',
-                    },
-                    spacing: {
-                        '128': '32rem',
-                        '144': '36rem',
-                    },
-                    borderRadius: {
-                        '4xl': '2rem',
-                    },
-                },
-            }
-        }
-    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ URL::asset('build/assets/forms.css') }}">
+{{--    <script>--}}
+{{--        tailwind.config = {--}}
+{{--            theme: {--}}
+{{--                extend: {--}}
+{{--                    fontFamily: {--}}
+{{--                        sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'Noto Sans', 'sans-serif', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'],--}}
+{{--                        serif: ['Merriweather', 'ui-serif', 'Georgia', 'Cambria', 'Times New Roman', 'Times', 'serif'],--}}
+{{--                        mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'Liberation Mono', 'Courier New', 'monospace'],--}}
+{{--                    },--}}
+{{--                    colors: {--}}
+{{--                        'primary': '#ff671b',--}}
+{{--                        'primary-dark': '#c74f14', // Adjusted to a darker orange shade for hover--}}
+{{--                    },--}}
+{{--                    borderColor: {--}}
+{{--                        'primary': '#ff671b',--}}
+{{--                    },--}}
+{{--                    spacing: {--}}
+{{--                        '128': '32rem',--}}
+{{--                        '144': '36rem',--}}
+{{--                    },--}}
+{{--                    borderRadius: {--}}
+{{--                        '4xl': '2rem',--}}
+{{--                    },--}}
+{{--                },--}}
+{{--            }--}}
+{{--        }--}}
+{{--    </script>--}}
 </head>
 <body class="bg-orange-50 font-sans">
 <header class="bg-orange-50 shadow-lg border-b border-orange-100">

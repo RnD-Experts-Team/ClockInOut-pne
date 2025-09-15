@@ -304,6 +304,14 @@
                             <div class="mt-4 p-4 bg-orange-100 rounded-lg">
                             </div>
                         @endif
+
+                            @if($maintenanceRequest->progress_description && $maintenanceRequest->status === 'in_progress')
+                                <div class="md:col-span-2">
+                                    <dt class="text-sm font-medium text-black-500">Progress Description</dt>
+                                    <dd class="mt-1 text-sm text-black-900 whitespace-pre-wrap bg-blue-50 p-3 rounded border border-blue-200">{{ $maintenanceRequest->progress_description }}</dd>
+                                </div>
+                            @endif
+
                     </div>
                 </div>
 
@@ -345,6 +353,11 @@
                                     @endforeach
                                 </select>
                             </div>
+                            <div id="progressDescriptionField" style="display: {{ $maintenanceRequest->status === 'in_progress' ? 'block' : 'none' }};">
+                                <label for="progress_description" class="block text-sm font-medium text-black-700 mb-2">Progress Description</label>
+                                <textarea name="progress_description" id="progress_description" rows="3" class="block w-full rounded-lg border-orange-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm" placeholder="Describe what work is being done or the current progress...">{{ $maintenanceRequest->progress_description ?? '' }}</textarea>
+                            </div>
+
 
                             <div id="dueDateField" style="display: {{ in_array($maintenanceRequest->status, ['in_progress', 'done']) ? 'block' : 'none' }};">
                                 <label for="due_date" class="block text-sm font-medium text-black-700 mb-2">Due Date</label>
@@ -491,6 +504,8 @@
             const fixTextarea = document.getElementById('how_we_fixed_it');
             const assignedToSelect = document.getElementById('assigned_to');
             const reasonTextarea = document.getElementById('reason');
+            const progressDescriptionTextarea = document.getElementById('progress_description'); // NEW
+
 
             if (statusSelect) {
                 statusSelect.addEventListener('change', function() {
@@ -502,12 +517,16 @@
                     assignedToField.style.display = 'none';
                     dueDateField.style.display = 'none';
                     reasonField.style.display = 'none';
+                    progressDescriptionField.style.display = 'none'; // NEW
+
 
                     // Reset requirements
                     costsInput.required = false;
                     fixTextarea.required = false;
                     assignedToSelect.required = false;
                     reasonTextarea.required = false;
+                    progressDescriptionTextarea.required = false; // NEW
+
 
                     if (value === 'done') {
                         costsField.style.display = 'block';
@@ -520,6 +539,7 @@
                     } else if (value === 'in_progress') {
                         assignedToField.style.display = 'block';
                         dueDateField.style.display = 'block';
+                        progressDescriptionField.style.display = 'block'; // NEW
                         assignedToSelect.required = true;
                     } else if (value === 'on_hold') {
                         reasonField.style.display = 'block';
