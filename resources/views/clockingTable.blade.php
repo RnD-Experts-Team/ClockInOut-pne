@@ -306,7 +306,7 @@
             </div>
 
             <!-- Delete Confirmation Modal -->
-            <div id="deleteModal" class="fixed inset-0 flex items-center justify-center bg-orange-100 bg-opacity-50 hidden z-50">
+            <div id="deleteModal" class="fixed inset-0 flex items-center justify-center bg-opacity-50 hidden z-50">
                 <div class="bg-orange-50 rounded-lg ring-1 ring-orange-900/5 w-full max-w-md">
                     <div class="px-4 py-3 border-b border-orange-200">
                         <h3 class="text-lg font-medium text-black-900">Confirm Delete</h3>
@@ -330,7 +330,7 @@
             </div>
 
             <!-- Modal Popup for Updating Clocking Record -->
-            <div id="editModal" class="fixed inset-0 flex items-center justify-center bg-orange-100 bg-opacity-50 hidden z-50">
+            <div id="editModal" class="fixed inset-0 flex items-center justify-center bg-opacity-50 hidden z-50">
                 <div class="bg-orange-50 rounded-xl ring-1 ring-orange-900/5 w-full max-w-2xl transform transition-all">
                     <div class="px-6 py-4 border-b border-orange-200 flex justify-between items-center">
                         <h3 class="text-xl font-semibold text-black-900">Update Clocking Record</h3>
