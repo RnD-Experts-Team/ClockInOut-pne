@@ -420,9 +420,11 @@
         </div>
 
         <!-- Modal for Apartment Lease List -->
-        <div id="apartmentLeaseListModal" class="hidden fixed inset-0 bg-orange-100 bg-opacity-50 overflow-y-auto h-full w-full z-50" onclick="closeModal('apartmentLeaseListModal')">
+        <div id="apartmentLeaseListModal" class="hidden fixed inset-0  bg-opacity-50 overflow-y-auto h-full w-full z-50" onclick="closeModal('apartmentLeaseListModal')">
             <div class="flex items-center justify-center min-h-screen">
-                <div class="bg-orange-50 rounded-lg shadow-lg p-6 w-full max-w-4xl max-h-[80vh] overflow-y-auto relative" onclick="event.stopPropagation()">
+                <div class="bg-orange-50 rounded-lg shadow-lg p-6 w-full max-w-4xl max-h-[80vh] overflow-y-auto relative  flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0" onclick="event.stopPropagation()">
+{{--                    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">--}}
+
                     <div class="modal-content">
                         <div id="apartmentLeaseListContent" class="p-4">
                             <p>Loading...</p>
@@ -628,7 +630,7 @@
         function showLanguageSelection(modalId, type) {
             const languageModal = document.createElement('div');
             languageModal.id = 'languageSelectionModal';
-            languageModal.className = 'fixed inset-0 bg-black bg-opacity-50 z-[110] flex items-center justify-center';
+            languageModal.className = 'fixed inset-0  bg-opacity-50 z-[110] flex items-center justify-center';
             languageModal.innerHTML = `
             <div class="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
                 <div class="text-center mb-6">

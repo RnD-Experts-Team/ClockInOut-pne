@@ -330,16 +330,7 @@
                 </div>
             @endif
 
-            <!-- Close Button -->
-            <div class="mt-6 text-center">
-                <button onclick="closeModal('pendingProjectsModal')"
-                        class="inline-flex items-center px-6 py-3 bg-[#ff671b] text-white text-sm font-medium rounded-lg hover:bg-[#e55b17] transition-colors">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                    Close
-                </button>
-            </div>
+
         </div>
     </div>
 

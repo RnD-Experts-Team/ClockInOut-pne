@@ -3,6 +3,9 @@
 @section('title', 'Create New Schedule')
 
 @section('content')
+    <!-- Add CSRF token to head -->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
     <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Header Section -->
         <div class="sm:flex sm:items-center sm:justify-between mb-6">
@@ -53,34 +56,7 @@
                                     </svg>
                                 </button>
                             </div>
-                            <div class="fixed inset-0 z-[60] overflow-y-auto hidden" id="customAlertModal" aria-labelledby="alert-modal-title" role="dialog" aria-modal="true">
-                                <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-                                    <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" id="alert-modal-backdrop"></div>
-                                    <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
-                                    <div class="inline-block align-bottom bg-white rounded-lg px-6 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
-                                        <div class="sm:flex sm:items-start">
-                                            <!-- Icon Container -->
-                                            <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full sm:mx-0 sm:h-10 sm:w-10" id="alert-icon-container">
-                                                <!-- Icon will be inserted here -->
-                                            </div>
-                                            <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                                                <h3 class="text-lg leading-6 font-medium text-gray-900" id="alert-modal-title">
-                                                    <!-- Title will be inserted here -->
-                                                </h3>
-                                                <div class="mt-2">
-                                                    <p class="text-sm text-gray-500" id="alert-modal-message">
-                                                        <!-- Message will be inserted here -->
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse" id="alert-modal-buttons">
-                                            <!-- Buttons will be inserted here -->
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
                             <!-- Action Buttons -->
                             <div class="flex items-center gap-3">
                                 <button type="button" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-all duration-300" id="save-draft">
@@ -89,7 +65,6 @@
                                     </svg>
                                     Save Draft
                                 </button>
-
                                 <button type="button" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300" id="publish-schedule">
                                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
@@ -113,7 +88,7 @@
                                 </div>
                             </div>
 
-                            <!-- ✅ Enhanced Role Filter Dropdown with Admin/User -->
+                            <!-- Role Filter Dropdown -->
                             <div>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -123,10 +98,8 @@
                                     </div>
                                     <select id="role-filter" class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500">
                                         <option value="">All Roles</option>
-                                        <!-- ✅ Explicitly add Admin and User options -->
                                         <option value="admin">Admin</option>
                                         <option value="user">User</option>
-                                        <!-- ✅ Add dynamic roles from database -->
                                         @foreach($userRoles as $role)
                                             @if(!in_array(strtolower($role), ['admin', 'user']))
                                                 <option value="{{ strtolower($role) }}">{{ ucfirst($role) }}</option>
@@ -135,9 +108,6 @@
                                     </select>
                                 </div>
                             </div>
-
-                            <!-- ✅ Add User Type Quick Filter -->
-
                         </div>
 
                         <!-- Filter Results and Clear Button -->
@@ -146,14 +116,11 @@
                                 Showing all employees
                             </div>
                             <div class="flex items-center space-x-2">
-                                <!-- ✅ Role Count Badges -->
-
                                 <button type="button" id="clear-filters" class="text-sm text-orange-600 hover:text-orange-800 font-medium">
                                     Clear Filters
                                 </button>
                             </div>
                         </div>
-
                     </div>
 
                     <!-- Schedule Grid -->
@@ -223,10 +190,9 @@
     </div>
 
     <!-- Enhanced Assignment Modal -->
-    <!-- Enhanced Assignment Modal -->
     <div class="fixed inset-0 z-50 overflow-y-auto hidden" id="assignmentModal" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" id="modal-backdrop"></div>
+            <div class="fixed   bg-opacity-75 transition-opacity" id="modal-backdrop"></div>
             <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
             <div class="inline-block align-bottom bg-white rounded-lg px-6 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full sm:p-6">
@@ -237,7 +203,7 @@
                     <button type="button" class="bg-white rounded-md text-gray-400 hover:text-gray-600" id="close-modal">
                         <span class="sr-only">Close</span>
                         <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                         </svg>
                     </button>
                 </div>
@@ -261,7 +227,7 @@
                             <input type="hidden" id="modal-employee-id">
                             <input type="hidden" id="modal-date">
 
-                            <!-- Task Selection with orange focus -->
+                            <!-- Task Selection -->
                             <div class="mb-6">
                                 <label for="task-select" class="block text-sm font-medium text-gray-700 mb-2">
                                     Assign Task <span class="text-red-500">*</span>
@@ -276,7 +242,7 @@
                                 </select>
                             </div>
 
-                            <!-- Time Inputs with orange focus -->
+                            <!-- Time Inputs -->
                             <div class="grid grid-cols-2 gap-4 mb-6">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">Start Time</label>
@@ -288,7 +254,7 @@
                                 </div>
                             </div>
 
-                            <!-- Shift Type Custom Dropdown with orange focus -->
+                            <!-- Shift Type Custom Dropdown -->
                             <div class="mb-4">
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Shift Type</label>
                                 <div class="custom-select-container relative">
@@ -310,7 +276,7 @@
                                 </div>
                             </div>
 
-                            <!-- Role Custom Dropdown with orange focus -->
+                            <!-- Role Custom Dropdown -->
                             <div class="mb-6">
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Role</label>
                                 <div class="custom-select-container relative">
@@ -331,6 +297,8 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- Assignment Notes -->
                             <div class="mt-6">
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Assignment Notes</label>
                                 <textarea id="assignment-notes"
@@ -344,7 +312,6 @@
                             <div class="border-t border-gray-200 pt-4">
                                 <div class="flex items-center justify-between mb-4">
                                     <h4 class="text-sm font-medium text-gray-700">Additional Shifts</h4>
-                                    <!-- Orange add button -->
                                     <button type="button" class="text-sm text-orange-600 hover:text-orange-800 font-medium" id="add-another-shift">
                                         + Add Another Shift
                                     </button>
@@ -359,13 +326,13 @@
                             <!-- Shift Color -->
                             <div class="mt-6">
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Shift Color</label>
-                                <input type="color" id="color-picker" class="h-10 w-16 rounded border border-gray-300 cursor-pointer" value="#f97316"> <!-- Default orange color -->
+                                <input type="color" id="color-picker" class="h-10 w-16 rounded border border-gray-300 cursor-pointer" value="#3b82f6">
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Footer buttons with orange primary button -->
+                <!-- Footer buttons -->
                 <div class="mt-6 sm:mt-4 sm:flex sm:flex-row-reverse">
                     <button type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-orange-600 text-base font-medium text-white hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 sm:ml-3 sm:w-auto sm:text-sm" id="save-shift">
                         Save Shift
@@ -377,89 +344,129 @@
             </div>
         </div>
     </div>
+
+    <!-- Custom Alert Modal -->
+    <div class="fixed inset-0 z-[60] overflow-y-auto hidden" id="customAlertModal" aria-labelledby="alert-modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" id="alert-modal-backdrop"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+            <div class="inline-block align-bottom bg-white rounded-lg px-6 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+                <div class="sm:flex sm:items-start">
+                    <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full sm:mx-0 sm:h-10 sm:w-10" id="alert-icon-container">
+                        <!-- Icon will be inserted here -->
+                    </div>
+                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900" id="alert-modal-title">
+                            <!-- Title will be inserted here -->
+                        </h3>
+                        <div class="mt-2">
+                            <p class="text-sm text-gray-500" id="alert-modal-message">
+                                <!-- Message will be inserted here -->
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse" id="alert-modal-buttons">
+                    <!-- Buttons will be inserted here -->
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
-@push('styles')
-    <style>
-        .schedule-cell.has-assignment {
-            border: 2px solid #059669;
-            background: linear-gradient(135deg, #10b981, #047857);
-            color: white;
-            font-weight: 500;
-            position: relative;
+<style>
+    .schedule-cell.has-assignment {
+        border: 2px solid #059669;
+        background: linear-gradient(135deg, #10b981, #047857);
+        color: white;
+        font-weight: 500;
+        position: relative;
+    }
+
+    .schedule-cell.has-assignment:hover {
+        border-color: #047857;
+        background: linear-gradient(135deg, #059669, #065f46);
+    }
+
+    .shift-content {
+        text-align: center;
+        width: 100%;
+        padding: 4px;
+    }
+
+    .shift-time {
+        font-weight: 600;
+        margin-bottom: 2px;
+        font-size: 10px;
+    }
+
+    .shift-role {
+        font-size: 8px;
+        opacity: 0.9;
+        margin-bottom: 1px;
+        text-transform: uppercase;
+    }
+
+    .shift-hours {
+        font-size: 8px;
+        opacity: 0.8;
+        font-weight: 500;
+    }
+
+    .task-badge {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        background: rgba(255, 255, 255, 0.3);
+        color: white;
+        font-size: 7px;
+        padding: 1px 3px;
+        border-radius: 2px;
+        font-weight: 600;
+    }
+
+    .shift-content[data-notes]:hover::after {
+        content: attr(data-notes);
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        white-space: nowrap;
+        z-index: 1000;
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Fixed dropdown z-index */
+    .custom-select-dropdown {
+        z-index: 9999 !important;
+    }
+
+    #assignmentModal {
+        z-index: 1050;
+    }
+
+    .custom-select-container {
+        position: relative;
+    }
+
+    @media (max-width: 768px) {
+        .grid-cols-8 {
+            display: block;
         }
 
-        .schedule-cell.has-assignment:hover {
-            border-color: #047857;
-            background: linear-gradient(135deg, #059669, #065f46);
+        .schedule-cell {
+            min-height: 60px;
         }
-
-        .shift-content {
-            text-align: center;
-            width: 100%;
-            padding: 4px;
-        }
-
-        .shift-time {
-            font-weight: 600;
-            margin-bottom: 2px;
-            font-size: 10px;
-        }
-
-        .shift-role {
-            font-size: 8px;
-            opacity: 0.9;
-            margin-bottom: 1px;
-            text-transform: uppercase;
-        }
-
-        .shift-hours {
-            font-size: 8px;
-            opacity: 0.8;
-            font-weight: 500;
-        }
-
-        .task-badge {
-            position: absolute;
-            top: 2px;
-            right: 2px;
-            background: rgba(255, 255, 255, 0.3);
-            color: white;
-            font-size: 7px;
-            padding: 1px 3px;
-            border-radius: 2px;
-            font-weight: 600;
-        }
-        .shift-content[data-notes]:hover::after {
-            content: attr(data-notes);
-            position: absolute;
-            bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 11px;
-            white-space: nowrap;
-            z-index: 1000;
-            max-width: 200px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-
-        @media (max-width: 768px) {
-            .grid-cols-8 {
-                display: block;
-            }
-
-            .schedule-cell {
-                min-height: 60px;
-            }
-        }
-    </style>
-@endpush
+    }
+</style>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
@@ -467,9 +474,10 @@
         deleteShiftType: '{{ route("admin.schedules.delete-shift-type") }}',
         deleteRole: '{{ route("admin.schedules.delete-role") }}'
     };
+
     $(document).ready(function() {
-        // Make scheduleData GLOBAL by attaching to window
-        window.scheduleData = window.scheduleData || {};
+        // Global schedule data
+        window.scheduleData = {};
         let assignedTasks = new Set();
         let additionalShiftCounter = 0;
 
@@ -500,15 +508,15 @@
                 // Show existing options from database with delete icons
                 filteredOptions.forEach(option => {
                     const $option = $(`
-                <div class="px-3 py-2 cursor-pointer hover:bg-blue-50 text-sm flex items-center justify-between group">
-                    <span class="option-text">${option}</span>
-                    <button type="button" class="delete-option hidden group-hover:block text-red-500 hover:text-red-700 ml-2" data-option="${option}" data-type="${inputId.includes('shift') ? 'shift_type' : 'role'}">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                        </svg>
-                    </button>
-                </div>
-            `);
+                        <div class="px-3 py-2 cursor-pointer hover:bg-blue-50 text-sm flex items-center justify-between group">
+                            <span class="option-text">${option}</span>
+                            <button type="button" class="delete-option hidden group-hover:block text-red-500 hover:text-red-700 ml-2" data-option="${option}" data-type="${inputId.includes('shift') ? 'shift_type' : 'role'}">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    `);
 
                     // Handle option selection
                     $option.find('.option-text').on('click', function(e) {
@@ -532,10 +540,10 @@
                 // Allow adding new options
                 if (searchTerm && !options.some(opt => opt.toLowerCase() === searchTerm.toLowerCase())) {
                     const $addNew = $(`
-                <div class="px-3 py-2 text-blue-600 cursor-pointer hover:bg-blue-50 font-medium border-t border-gray-200">
-                    <strong>+ Add:</strong> "${searchTerm}"
-                </div>
-            `);
+                        <div class="px-3 py-2 text-blue-600 cursor-pointer hover:bg-blue-50 font-medium border-t border-gray-200">
+                            <strong>+ Add:</strong> "${searchTerm}"
+                        </div>
+                    `);
                     $addNew.on('click', function() {
                         options.push(searchTerm);
                         $input.val(searchTerm);
@@ -561,10 +569,10 @@
 
                         $.ajax({
                             url: url,
-                            type: 'POST',  // Change to POST
+                            type: 'POST',
                             data: {
                                 ...data,
-                                _method: 'DELETE'  // Laravel method spoofing
+                                _method: 'DELETE'
                             },
                             success: function(response) {
                                 if (response.success) {
@@ -583,7 +591,7 @@
                                 }
                             },
                             error: function(xhr) {
-                                console.log('AJAX Error Response:', xhr.responseJSON); // Debug the actual error
+                                console.log('AJAX Error Response:', xhr.responseJSON);
                                 console.log('Status:', xhr.status);
                                 const errorMessage = xhr.responseJSON?.message || 'Error deleting item';
                                 showAlert('Error', errorMessage, 'error');
@@ -592,7 +600,6 @@
                     }
                 );
             }
-
 
             $input.on('focus', function() {
                 renderOptions($input.val());
@@ -666,31 +673,30 @@
             $('#filter-results').text('Showing all employees');
         });
 
-        // Add additional shift functionality
-// Add additional shift functionality with all fields
+        // Add additional shift functionality with all fields including notes
         $('#add-another-shift').on('click', function() {
             additionalShiftCounter++;
             const shiftHtml = `
-    <div class="additional-shift bg-gray-50 border border-gray-200 rounded-lg p-4" data-shift-index="${additionalShiftCounter}">
-        <div class="flex items-center justify-between mb-3">
-            <span class="text-sm font-semibold text-gray-800">Additional Shift ${additionalShiftCounter}</span>
-            <button type="button" class="text-red-600 hover:text-red-800 remove-additional-shift">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
-            </button>
-        </div>
+                <div class="additional-shift bg-gray-50 border border-gray-200 rounded-lg p-4" data-shift-index="${additionalShiftCounter}">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-sm font-semibold text-gray-800">Additional Shift ${additionalShiftCounter}</span>
+                        <button type="button" class="text-red-600 hover:text-red-800 remove-additional-shift">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
 
-        <!-- Task Selection for Additional Shift -->
-        <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-                Assign Task <span class="text-red-500">*</span>
-            </label>
-            <select class="additional-task block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" required>
-                <option value="">Select Task</option>
-                @foreach($availableTasks as $task)
+                    <!-- Task Selection for Additional Shift -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Assign Task <span class="text-red-500">*</span>
+                        </label>
+                        <select class="additional-task block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" required>
+                            <option value="">Select Task</option>
+                            @foreach($availableTasks as $task)
             <option value="{{ $task->id }}">
-                        {{ $task->store->name }} - {{ Str::limit($task->description_of_issue, 50) }}
+                                    {{ $task->store->name }} - {{ Str::limit($task->description_of_issue, 50) }}
             </option>
 @endforeach
             </select>
@@ -708,46 +714,12 @@
             </div>
         </div>
 
-        <!-- Shift Type for Additional Shift -->
+        <!-- Notes for Additional Shift -->
         <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-2">Shift Type</label>
-            <div class="custom-select-container relative">
-                <input type="hidden" class="additional-shift-type" name="additional_shift_type_${additionalShiftCounter}">
-                <div class="custom-select-input relative">
-                    <input type="text" class="additional-custom-shift-type block w-full pr-10 border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                           placeholder="Select or type shift type..."
-                           autocomplete="off">
-                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                        </svg>
-                    </div>
-                </div>
-                <div class="custom-select-dropdown absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto hidden">
-                    <div class="py-1 additional-shift-type-options"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Role for Additional Shift -->
-        <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-2">Role</label>
-            <div class="custom-select-container relative">
-                <input type="hidden" class="additional-role" name="additional_role_${additionalShiftCounter}">
-                <div class="custom-select-input relative">
-                    <input type="text" class="additional-custom-role block w-full pr-10 border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                           placeholder="Select or type role..."
-                           autocomplete="off">
-                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                        </svg>
-                    </div>
-                </div>
-                <div class="custom-select-dropdown absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto hidden">
-                    <div class="py-1 additional-role-options"></div>
-                </div>
-            </div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Assignment Notes</label>
+            <textarea class="additional-notes block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                      rows="2" placeholder="Add any special instructions or notes for this shift..."></textarea>
+            <p class="mt-1 text-xs text-gray-500">Optional: Add any special instructions for this additional shift.</p>
         </div>
 
         <!-- Shift Color for Additional Shift -->
@@ -756,17 +728,13 @@
             <input type="color" class="additional-color h-8 w-12 rounded border border-gray-300 cursor-pointer" value="#3b82f6">
         </div>
     </div>
-    `;
+`;
 
             const $newShift = $(shiftHtml);
             $('#additional-shifts-container').append($newShift);
 
-            // Setup custom dropdowns for the new additional shift
-            const $shiftContainer = $newShift;
-            setupAdditionalShiftDropdowns($shiftContainer);
-
             // Update task filter for new additional shift
-            filterAdditionalShiftTasks($shiftContainer);
+            filterAdditionalShiftTasks($newShift);
         });
 
         // Remove additional shift
@@ -833,22 +801,20 @@
                     $(this).prop('disabled', true).text($(this).text().replace(' (Assigned)', '') + ' (Assigned)');
                 } else {
                     $(this).prop('disabled', false);
-                    // Remove (Assigned) text if it was previously added
                     $(this).text($(this).text().replace(' (Assigned)', ''));
                 }
             });
-
         }
 
-         // Save shift - Updated to handle additional shifts with all fields
+        // Save shift - Updated to handle additional shifts with all fields including notes
         $('#save-shift').on('click', function() {
             const employeeId = $('#modal-employee-id').val();
             const date = $('#modal-date').val();
             const taskId = $('#task-select').val();
             const color = $('#color-picker').val();
-            const assignmentNotes = $('#assignment-notes').val(); // Get the notes
+            const assignmentNotes = $('#assignment-notes').val();
 
-            // Validation for main shift (keep existing validation)
+            // Validation for main shift
             if (!taskId) {
                 showAlert('Task Required', 'Please select a task before proceeding.', 'error');
                 return;
@@ -867,13 +833,13 @@
                 return;
             }
 
-            // Update shift object creation to include notes
+            // Create shifts array with main shift
             const shifts = [{
                 start: mainStartTime,
                 end: mainEndTime,
                 color: color,
                 task_id: taskId,
-                assignment_notes: assignmentNotes // Add notes to shift object
+                assignment_notes: assignmentNotes
             }];
 
             // Collect and validate additional shifts
@@ -884,7 +850,7 @@
                 const additionalStart = $this.find('.additional-start').val();
                 const additionalEnd = $this.find('.additional-end').val();
                 const additionalColor = $this.find('.additional-color').val();
-                const additionalNotes = $this.find('.additional-notes').val(); // Get additional shift notes
+                const additionalNotes = $this.find('.additional-notes').val() || '';
 
                 if (additionalStart && additionalEnd) {
                     // Validate required fields for additional shift
@@ -905,7 +871,7 @@
                         end: additionalEnd,
                         color: additionalColor,
                         task_id: additionalTask,
-                        assignment_notes: additionalNotes // Add notes to additional shift
+                        assignment_notes: additionalNotes
                     });
                 }
             });
@@ -955,18 +921,17 @@
                     .addClass('has-assignment')
                     .css('background-color', mainShift.color)
                     .html(`
-                <div class="shift-content p-2 relative text-center">
-                    <div class="shift-time text-xs font-semibold">${mainShift.start} - ${mainShift.end}</div>
-                    <div class="shift-hours text-xs opacity-80">${totalHours.toFixed(1)}h</div>
-                    <div class="task-badge absolute top-1 right-1 bg-white bg-opacity-30 text-xs px-1 rounded">T</div>
-                    ${splitIndicator}
-                    ${notesIndicator}
-                </div>
-            `)
+                        <div class="shift-content p-2 relative text-center">
+                            <div class="shift-time text-xs font-semibold">${mainShift.start} - ${mainShift.end}</div>
+                            <div class="shift-hours text-xs opacity-80">${totalHours.toFixed(1)}h</div>
+                            <div class="task-badge absolute top-1 right-1 bg-white bg-opacity-30 text-xs px-1 rounded">T</div>
+                            ${splitIndicator}
+                            ${notesIndicator}
+                        </div>
+                    `)
                     .css('color', getContrastColor(mainShift.color));
             }
         }
-
 
         function getContrastColor(hexcolor) {
             hexcolor = hexcolor.replace('#', '');
@@ -980,15 +945,15 @@
         // Success message function
         function showSuccessMessage(message) {
             const $notification = $(`
-            <div class="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transform translate-x-full transition-transform duration-300">
-                <div class="flex items-center">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                    </svg>
-                    ${message}
+                <div class="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transform translate-x-full transition-transform duration-300">
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        ${message}
+                    </div>
                 </div>
-            </div>
-        `);
+            `);
 
             $('body').append($notification);
 
@@ -1034,7 +999,7 @@
             window.location.href = `{{ route('admin.schedules.create') }}?start_date=${startDateString}&end_date=${endDateString}`;
         });
 
-        // Save Draft Button
+        // Fixed Save Draft Button
         $('#save-draft').on('click', function(e) {
             e.preventDefault();
 
@@ -1042,7 +1007,6 @@
                 showAlert('No Shifts Added', 'Please add some shifts before saving the schedule.', 'warning');
                 return;
             }
-
 
             const scheduleArray = Object.entries(window.scheduleData).map(([key, shifts]) => {
                 const [employeeId, date] = key.split('_');
@@ -1056,12 +1020,12 @@
             $('#schedule-form').submit();
         });
 
-        // Publish Schedule Button
+        // Fixed Publish Schedule Button
         $('#publish-schedule').on('click', function(e) {
             e.preventDefault();
 
             if (Object.keys(window.scheduleData).length === 0) {
-                alert('Please add some shifts before publishing the schedule.');
+                showAlert('No Shifts Added', 'Please add some shifts before publishing the schedule.', 'warning');
                 return;
             }
 
@@ -1069,7 +1033,7 @@
                 'Publish Schedule',
                 'Are you sure you want to publish this schedule? Employees will be notified and the schedule will become active.',
                 function() {
-                    // ... rest of the publish code goes here
+                    // Confirmed - proceed with publish
                     const scheduleArray = Object.entries(window.scheduleData).map(([key, shifts]) => {
                         const [employeeId, date] = key.split('_');
                         return { employee_id: employeeId, start_date: date, shifts: shifts };
@@ -1089,26 +1053,6 @@
                     $('#schedule-form').submit();
                 }
             );
-
-            if (userConfirmed) {
-                const scheduleArray = Object.entries(window.scheduleData).map(([key, shifts]) => {
-                    const [employeeId, date] = key.split('_');
-                    return { employee_id: employeeId, start_date: date, shifts: shifts };
-                });
-
-                $('#schedule_data').val(JSON.stringify(scheduleArray));
-                const scheduleName = `Schedule for Week ${$('#week-display').text().replace('Week: ', '')}`;
-                $('#schedule_name').val(scheduleName);
-
-                // Add publish flag
-                $('<input>').attr({
-                    type: 'hidden',
-                    name: 'publish',
-                    value: 'true'
-                }).appendTo('#schedule-form');
-
-                $('#schedule-form').submit();
-            }
         });
 
         // Modal close handlers
@@ -1138,29 +1082,29 @@
                     iconBgClass = 'bg-red-100';
                     buttonClass = 'bg-red-600 hover:bg-red-700 focus:ring-red-500';
                     iconHtml = `<svg class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 6.5c-.77.833.192 2.5 1.732 2.5z" />
-            </svg>`;
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 6.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                    </svg>`;
                     break;
                 case 'success':
                     iconBgClass = 'bg-green-100';
                     buttonClass = 'bg-green-600 hover:bg-green-700 focus:ring-green-500';
                     iconHtml = `<svg class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>`;
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>`;
                     break;
                 case 'warning':
                     iconBgClass = 'bg-yellow-100';
                     buttonClass = 'bg-yellow-600 hover:bg-yellow-700 focus:ring-yellow-500';
                     iconHtml = `<svg class="h-6 w-6 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 6.5c-.77.833.192 2.5 1.732 2.5z" />
-            </svg>`;
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 6.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                    </svg>`;
                     break;
                 default: // info
                     iconBgClass = 'bg-blue-100';
                     buttonClass = 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500';
                     iconHtml = `<svg class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>`;
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>`;
             }
 
             // Set icon
@@ -1169,10 +1113,10 @@
 
             // Set buttons
             buttonsContainer.html(`
-        <button type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 text-base font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 sm:ml-3 sm:w-auto sm:text-sm ${buttonClass}" id="alert-ok-btn">
-            OK
-        </button>
-    `);
+                <button type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 text-base font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 sm:ml-3 sm:w-auto sm:text-sm ${buttonClass}" id="alert-ok-btn">
+                    OK
+                </button>
+            `);
 
             // Show modal
             modal.removeClass('hidden');
@@ -1205,20 +1149,20 @@
             // Set question icon
             iconContainer.removeClass().addClass('mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10');
             iconContainer.html(`
-        <svg class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-    `);
+                <svg class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            `);
 
             // Set confirm/cancel buttons
             buttonsContainer.html(`
-        <button type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:ml-3 sm:w-auto sm:text-sm" id="confirm-yes-btn">
-            Yes
-        </button>
-        <button type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm" id="confirm-no-btn">
-            Cancel
-        </button>
-    `);
+                <button type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:ml-3 sm:w-auto sm:text-sm" id="confirm-yes-btn">
+                    Yes
+                </button>
+                <button type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm" id="confirm-no-btn">
+                    Cancel
+                </button>
+            `);
 
             // Show modal
             modal.removeClass('hidden');
@@ -1248,89 +1192,7 @@
             });
         }
 
-// Setup dropdowns for additional shifts
-        function setupAdditionalShiftDropdowns($container) {
-            const $shiftTypeInput = $container.find('.additional-custom-shift-type');
-            const $shiftTypeHidden = $container.find('.additional-shift-type');
-            const $shiftTypeDropdown = $container.find('.custom-select-dropdown').first();
-            const $shiftTypeOptions = $container.find('.additional-shift-type-options');
-
-            const $roleInput = $container.find('.additional-custom-role');
-            const $roleHidden = $container.find('.additional-role');
-            const $roleDropdown = $container.find('.custom-select-dropdown').last();
-            const $roleOptions = $container.find('.additional-role-options');
-
-            // Setup shift type dropdown
-            setupAdditionalDropdown($shiftTypeInput, $shiftTypeHidden, $shiftTypeDropdown, $shiftTypeOptions, shiftTypes);
-
-            // Setup role dropdown
-            setupAdditionalDropdown($roleInput, $roleHidden, $roleDropdown, $roleOptions, scheduleRoles);
-        }
-
-        function setupAdditionalDropdown($input, $hidden, $dropdown, $optionsContainer, options) {
-            function renderOptions(searchTerm = '') {
-                const filteredOptions = options.filter(option =>
-                    option.toLowerCase().includes(searchTerm.toLowerCase())
-                );
-
-                $optionsContainer.empty();
-
-                // Show existing options with delete icons
-                filteredOptions.forEach(option => {
-                    const $option = $(`
-                <div class="px-3 py-2 cursor-pointer hover:bg-blue-50 text-sm flex items-center justify-between group">
-                    <span class="option-text">${option}</span>
-                    <button type="button" class="delete-option hidden group-hover:block text-red-500 hover:text-red-700 ml-2" data-option="${option}">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                        </svg>
-                    </button>
-                </div>
-            `);
-
-                    $option.find('.option-text').on('click', function(e) {
-                        e.stopPropagation();
-                        $input.val(option);
-                        $hidden.val(option);
-                        $dropdown.addClass('hidden');
-                    });
-
-                    // Handle delete (same logic as main dropdown)
-                    $option.find('.delete-option').on('click', function(e) {
-                        e.stopPropagation();
-                        const optionToDelete = $(this).data('option');
-                        // Determine type based on input class
-                        const type = $input.hasClass('additional-custom-shift-type') ? 'shift_type' : 'role';
-                        deleteOption(optionToDelete, type);
-                    });
-
-                    $optionsContainer.append($option);
-                });
-
-                // Allow adding new options
-                if (searchTerm && !options.some(opt => opt.toLowerCase() === searchTerm.toLowerCase())) {
-                    const $addNew = $(`
-                <div class="px-3 py-2 text-blue-600 cursor-pointer hover:bg-blue-50 font-medium border-t border-gray-200">
-                    <strong>+ Add:</strong> "${searchTerm}"
-                </div>
-            `);
-                    $addNew.on('click', function() {
-                        options.push(searchTerm);
-                        $input.val(searchTerm);
-                        $hidden.val(searchTerm);
-                        $dropdown.addClass('hidden');
-                    });
-                    $optionsContainer.append($addNew);
-                }
-            }
-
-            // Include the same deleteOption function here...
-            // (Copy the deleteOption function from above)
-
-            // Rest of the function remains the same...
-        }
-
-// Filter tasks for additional shifts
+        // Filter tasks for additional shifts
         function filterAdditionalShiftTasks($container) {
             const $taskSelect = $container.find('.additional-task');
 
@@ -1359,4 +1221,3 @@
 
     });
 </script>
-

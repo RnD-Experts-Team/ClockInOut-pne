@@ -480,7 +480,7 @@
         <!-- Portfolio Analytics Modal -->
         <div id="portfolioModal" class="fixed inset-0 z-50 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
             <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-                <div class="fixed inset-0 bg-orange-100 bg-opacity-75 transition-opacity" aria-hidden="true" id="modalBackdrop"></div>
+                <div class="fixed  bg-opacity-75 transition-opacity" aria-hidden="true" id="modalBackdrop"></div>
 
                 <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
@@ -497,7 +497,7 @@
                         </div>
 
                         <!-- Store Selection -->
-                        <div class="mb-6 bg-orange-100 rounded-lg p-4">
+                        <div class="mb-6 rounded-lg p-4">
                             <h4 class="text-lg font-semibold text-black-900 mb-4">Select Stores for Analysis</h4>
                             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                 <div>
@@ -575,7 +575,7 @@
 
         <!-- Payment Report Modals -->
         <!-- Cost By Company Modal -->
-        <div id="costByCompanyModal" class="hidden fixed inset-0 bg-orange-100 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div id="costByCompanyModal" class="hidden fixed inset-0  bg-opacity-50 overflow-y-auto h-full w-full z-50">
             <div class="relative top-4 mx-auto p-5 border w-11/12 max-w-7xl shadow-lg rounded-md bg-orange-50">
                 <div class="mt-3">
                     <div class="flex justify-between items-center mb-4">
@@ -596,7 +596,7 @@
         </div>
 
         <!-- Monthly Report Modal -->
-        <div id="monthlyReportModal" class="hidden fixed inset-0 bg-orange-100 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div id="monthlyReportModal" class="hidden fixed inset-0  bg-opacity-50 overflow-y-auto h-full w-full z-50">
             <div class="relative top-4 mx-auto p-5 border w-11/12 max-w-7xl shadow-lg rounded-md bg-orange-50">
                 <div class="mt-3">
                     <div class="flex justify-between items-center mb-4">
@@ -617,7 +617,7 @@
         </div>
 
         <!-- Weekly Maintenance Modal -->
-        <div id="weeklyMaintenanceModal" class="hidden fixed inset-0 bg-orange-100 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div id="weeklyMaintenanceModal" class="hidden fixed inset-0  bg-opacity-50 overflow-y-auto h-full w-full z-50">
             <div class="relative top-4 mx-auto p-5 border w-11/12 max-w-7xl shadow-lg rounded-md bg-orange-50">
                 <div class="mt-3">
                     <div class="flex justify-between items-center mb-4">
@@ -638,7 +638,7 @@
         </div>
 
         <!-- Cost Per Store Yearly Modal -->
-        <div id="costPerStoreYearlyModal" class="hidden fixed inset-0 bg-orange-100 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div id="costPerStoreYearlyModal" class="hidden fixed inset-0  bg-opacity-50 overflow-y-auto h-full w-full z-50">
             <div class="relative top-4 mx-auto p-5 border w-11/12 max-w-7xl shadow-lg rounded-md bg-orange-50">
                 <div class="mt-3">
                     <div class="flex justify-between items-center mb-4">
@@ -659,7 +659,7 @@
         </div>
 
         <!-- Pending Projects Modal -->
-        <div id="pendingProjectsModal" class="hidden fixed inset-0 bg-orange-100 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div id="pendingProjectsModal" class="hidden fixed inset-0  bg-opacity-50 overflow-y-auto h-full w-full z-50">
             <div class="relative top-4 mx-auto p-5 border w-11/12 max-w-7xl shadow-lg rounded-md bg-orange-50">
                 <div class="mt-3">
                     <div class="flex justify-between items-center mb-4">
@@ -680,7 +680,7 @@
         </div>
 
         <!-- Store Image Modal -->
-        <div id="storeImageModal" class="hidden fixed inset-0 bg-orange-100 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div id="storeImageModal" class="hidden fixed inset-0 bg-opacity-50 overflow-y-auto h-full w-full z-50">
             <div class="relative top-4 mx-auto p-5 border w-11/12 max-w-lg shadow-lg rounded-md bg-orange-50">
                 <div class="mt-3">
                     <div class="flex justify-between items-center mb-4">
@@ -1186,9 +1186,9 @@
                     resolve(window.html2canvas);
                     return;
                 }
-
                 const script = document.createElement('script');
-                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+                // Use the correct html2canvas-pro CDN URL
+                script.src = 'https://cdn.jsdelivr.net/npm/html2canvas-pro@latest/dist/html2canvas-pro.min.js';
                 script.onload = () => resolve(window.html2canvas);
                 script.onerror = reject;
                 document.head.appendChild(script);
@@ -1203,7 +1203,7 @@
         function showLanguageSelection(modalId, type) {
             const languageModal = document.createElement('div');
             languageModal.id = 'languageSelectionModal';
-            languageModal.className = 'fixed inset-0 bg-black bg-opacity-50 z-[110] flex items-center justify-center';
+            languageModal.className = 'fixed inset-0  bg-opacity-50 z-[110] flex items-center justify-center';
             languageModal.innerHTML = `
             <div class="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
                 <div class="text-center mb-6">

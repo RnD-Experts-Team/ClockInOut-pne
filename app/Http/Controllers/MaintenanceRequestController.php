@@ -323,7 +323,9 @@ class MaintenanceRequestController extends Controller
             'costs' => 'required_if:status,done|nullable|numeric|min:0',
             'how_we_fixed_it' => 'required_if:status,done|nullable|string|max:1000',
             'assigned_to' => 'required_if:status,in_progress,done|nullable|exists:users,id',
-            'due_date' => 'nullable|date|after_or_equal:today'
+            'due_date' => 'nullable|date|after_or_equal:today',
+            'progress_description' => 'nullable|string|max:1000' // NEW
+
         ]);
         try {
             DB::beginTransaction();
@@ -334,6 +336,7 @@ class MaintenanceRequestController extends Controller
             $howWeFixedIt = $request->input('how_we_fixed_it');
             $assignedTo = $request->input('assigned_to');
             $dueDate = $request->input('due_date');
+            $progressDescription = $request->input('progress_description'); // NEW
             $userId = auth()->id() ?? 1;
 
             // Validation checks
@@ -361,6 +364,8 @@ class MaintenanceRequestController extends Controller
                 'reason' => $reason,
                 'costs' => $costs,
                 'how_we_fixed_it' => $howWeFixedIt,
+                'progress_description' => $progressDescription, // NEW
+
             ];
 
             // Handle assignment for in_progress and done statuses
@@ -383,7 +388,8 @@ class MaintenanceRequestController extends Controller
                 'changed_by' => $userId,
                 'changed_at' => now(),
                 'notes' => $newStatus === 'done' ? $howWeFixedIt :
-                    (($newStatus === 'on_hold' ) ? $reason : null), // CHANGED: Include received
+                    (($newStatus === 'on_hold' ) ? $reason :
+                        ($newStatus === 'in_progress' ? $progressDescription : null)), // NEW
             ]);
             // Get form ID dynamically from the maintenance request
             $formId = $maintenanceRequest->form_id;
@@ -462,7 +468,9 @@ class MaintenanceRequestController extends Controller
             'costs' => 'required_if:status,done|nullable|numeric|min:0',
             'how_we_fixed_it' => 'required_if:status,done|nullable|string|max:1000',
             'assigned_to' => 'required_if:status,in_progress|nullable|exists:users,id',
-            'due_date' => 'nullable|date|after_or_equal:today' // IMPROVED: Added validation
+            'due_date' => 'nullable|date|after_or_equal:today', // IMPROVED: Added validation
+            'progress_description' => 'nullable|string|max:1000' // NEW
+
         ]);
 
         try {
@@ -476,6 +484,8 @@ class MaintenanceRequestController extends Controller
             $assignedTo = $request->input('assigned_to');
             $dueDate = $request->input('due_date');
             $userId = auth()->id() ?? 1;
+            $progressDescription = $request->input('progress_description'); // NEW
+
 
             // IMPROVED: Add validation checks before processing
             if (($newStatus === 'on_hold' || $newStatus === 'received') && empty($reason)) {
@@ -514,6 +524,8 @@ class MaintenanceRequestController extends Controller
                     'reason' => ($newStatus === 'on_hold') ? $reason : null,
                     'costs' => $newStatus === 'done' ? $costs : null,
                     'how_we_fixed_it' => $newStatus === 'done' ? $howWeFixedIt : null,
+                    'progress_description' => $newStatus === 'in_progress' ? $progressDescription : null, // NEW
+
                 ];
 
                 // Handle assignment logic
@@ -546,7 +558,8 @@ class MaintenanceRequestController extends Controller
                     'changed_by' => $userId,
                     'changed_at' => now(),
                     'notes' => $newStatus === 'done' ? $howWeFixedIt :
-                        (($newStatus === 'on_hold' ) ? $reason : null),
+                        (($newStatus === 'on_hold' ) ? $reason :
+                            ($newStatus === 'in_progress' ? $progressDescription : null)), // NEW
                 ]);
 
                 // IMPROVED: Update Cognito if form ID exists

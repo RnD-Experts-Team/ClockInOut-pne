@@ -155,7 +155,7 @@
         </div>
 
         <!-- Modal for Scorecard Export -->
-        <div id="scorecardModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50" onclick="closeModal('scorecardModal')">
+        <div id="scorecardModal" class="fixed inset-0 bg-opacity-50 hidden z-50" onclick="closeModal('scorecardModal')">
             <div class="flex items-center justify-center min-h-screen">
                 <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-6xl max-h-[80vh] overflow-y-auto relative" onclick="event.stopPropagation()">
                     <div class="modal-content">
@@ -245,7 +245,7 @@
         function showLanguageSelection(modalId, type) {
             const languageModal = document.createElement('div');
             languageModal.id = 'languageSelectionModal';
-            languageModal.className = 'fixed inset-0 bg-black bg-opacity-50 z-[110] flex items-center justify-center';
+            languageModal.className = 'fixed inset-0 bg-opacity-50 z-[110] flex items-center justify-center';
             languageModal.innerHTML = `
             <div class="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
                 <div class="text-center mb-6">
@@ -500,7 +500,8 @@
                     return;
                 }
                 const script = document.createElement('script');
-                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+                // Use the correct html2canvas-pro CDN URL
+                script.src = 'https://cdn.jsdelivr.net/npm/html2canvas-pro@latest/dist/html2canvas-pro.min.js';
                 script.onload = () => resolve(window.html2canvas);
                 script.onerror = reject;
                 document.head.appendChild(script);

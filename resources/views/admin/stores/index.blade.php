@@ -14,7 +14,7 @@
             </div>
             <div class="mt-4 sm:mt-0">
                 <a href="{{ route('stores.create') }}"
-                   class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all duration-300 hover:shadow-lg">
+                   class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-primary  focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all duration-300 hover:shadow-lg">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                     </svg>
@@ -210,7 +210,7 @@
                                 <td class="px-6 py-4">
                                     <div class="flex space-x-2">
                                         <a href="{{ route('stores.show', $store) }}"
-                                           class="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-blue-600 hover:text-blue-900 transition-colors duration-150"
+                                           class="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded  transition-colors duration-150"
                                            title="View Store">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -219,7 +219,7 @@
                                         </a>
 
                                         <a href="{{ route('stores.edit', $store) }}"
-                                           class="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-primary hover:text-primary-dark transition-colors duration-150"
+                                           class="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-primary  transition-colors duration-150"
                                            title="Edit Store">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -294,8 +294,8 @@
                                     <span class="bg-purple-100 text-purple-800 px-2 py-1 rounded">P: {{ $store->payments_count ?? 0 }}</span>
                                 </div>
                                 <div class="flex space-x-2">
-                                    <a href="{{ route('stores.show', $store) }}" class="text-blue-600 hover:text-blue-900 text-sm font-medium">View</a>
-                                    <a href="{{ route('stores.edit', $store) }}" class="text-primary hover:text-primary-dark text-sm font-medium">Edit</a>
+                                    <a href="{{ route('stores.show', $store) }}" class="text-blue-600  text-sm font-medium">View</a>
+                                    <a href="{{ route('stores.edit', $store) }}" class="text-primary h text-sm font-medium">Edit</a>
                                 </div>
                             </div>
                         </div>
@@ -325,7 +325,7 @@
                     <p class="mt-1 text-sm text-gray-500">Get started by creating your first store.</p>
                     <div class="mt-6">
                         <a href="{{ route('stores.create') }}"
-                           class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-primary hover:bg-primary-dark">
+                           class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-primary ">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                             </svg>
