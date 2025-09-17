@@ -8,6 +8,7 @@ use App\Http\Controllers\ExportController;
 use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\LeaseController;
 use App\Http\Controllers\MaintenanceRequestController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ScheduleController;
@@ -17,11 +18,13 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserScheduleController;
 use App\Http\Controllers\UserTaskController;
 use App\Http\Middleware\RoleMiddleware;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('auth.login');
 });
+// routes/web.php
 
 Route::get('/maintenance-requests/ticket-report', [MaintenanceRequestController::class, 'ticketReport'])
     ->name('maintenance-requests.ticket-report');
@@ -79,9 +82,16 @@ Route::middleware(['auth', RoleMiddleware::class . ':admin'])->group(function ()
 Route::post('/admin/clocking/update', [ClockingController::class, 'updateClocking'])
     ->name('admin.clocking.update');
 
+
+Route::middleware(['auth', RoleMiddleware::class . ':admin'])->prefix('notifications')->group(function () {
+    Route::get('/', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::get('/unread', [NotificationController::class, 'unread'])->name('notifications.unread');
+    Route::patch('/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
+    Route::patch('/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
+    Route::delete('/notifications/clear', [NotificationController::class, 'clear'])->name('notifications.clear');
+});
 // FIXED: Apartment Lease Routes - Properly organized
 Route::prefix('admin')->name('admin.')->middleware(['auth', RoleMiddleware::class . ':admin'])->group(function () {
-
 
 
     Route::get('scorecards', [\App\Http\Controllers\Admin\ScorecardController::class, 'index'])->name('scorecards.index');

@@ -1,4 +1,10 @@
 // pusher-notifications.js
+window.loadMoreNotifications = loadMoreNotifications;
+window.handleDatabaseNotificationClick = handleDatabaseNotificationClick;
+window.markNotificationAsRead = markNotificationAsRead;
+window.viewMaintenanceRequest = viewMaintenanceRequest;
+window.markAllAsRead = markAllAsRead;
+window.closeToast = closeToast;
 
 const BUTTON_STATES = {
     NORMAL: 'normal',
@@ -20,7 +26,23 @@ function createLoadMoreButton() {
         </button>
     </div>`;
 }
+// resources/js/notifications.js
+document.addEventListener('DOMContentLoaded', () => {
+    const desktopButton = document.getElementById('notifications-button');
+    const mobileButton = document.getElementById('mobile-notifications-button');
 
+    if (desktopButton) {
+        desktopButton.addEventListener('click', toggleNotifications);
+    } else {
+        console.error('❌ Desktop notifications button not found!');
+    }
+
+    if (mobileButton) {
+        mobileButton.addEventListener('click', toggleNotifications);
+    } else {
+        console.error('❌ Mobile notifications button not found!');
+    }
+});
 function updateLoadMoreButtonState(state, customText = null) {
     const button = document.getElementById('load-more-btn');
     const icon = document.getElementById('load-more-icon');
@@ -64,7 +86,6 @@ function updateLoadMoreButtonState(state, customText = null) {
 
 function manageLoadMoreButtonVisibility(hasMore, isAppending = false) {
     const existingButton = document.getElementById('load-more-btn');
-
     if (hasMore) {
         if (!existingButton) {
             const container = document.getElementById('notifications-list');
@@ -95,10 +116,13 @@ let notificationPage = 1;
 let hasMoreNotifications = true;
 
 // Initialize Pusher for real-time notifications
-const pusher = new Pusher(window.pusherConfig.key, {
-    cluster: window.pusherConfig.cluster,
-    forceTLS: true
-});
+const pusher = new Pusher(
+    document.querySelector('meta[name="pusher-key"]').getAttribute('content'),
+    {
+        cluster: document.querySelector('meta[name="pusher-cluster"]').getAttribute('content'),
+        forceTLS: true
+    }
+);
 
 if (window.pusherConfig.isAdmin) {
     const channel = pusher.subscribe('maintenance-notifications');
@@ -313,16 +337,12 @@ function toggleNotifications() {
 }
 
 function handleDatabaseNotificationClick(notificationId, maintenanceRequestId, element) {
-    console.log(`🖱️ Notification clicked: ${notificationId}`);
-
-    if (!element.classList.contains('opacity-60')) {
+    console.log(`🖱️ Notification clicked: ${notificationId}, maintenanceRequestId: ${maintenanceRequestId}, element:`, element);
+    if (element && !element.classList.contains('opacity-60')) {
         markNotificationAsRead(notificationId, element);
     }
-
     viewMaintenanceRequest(maintenanceRequestId);
-}
-
-async function markNotificationAsRead(notificationId, element) {
+}async function markNotificationAsRead(notificationId, element) {
     try {
         const response = await fetch(`/notifications/${notificationId}/read`, {
             method: 'PATCH',
@@ -376,16 +396,24 @@ async function markAllAsRead() {
 
 function loadMoreNotifications() {
     notificationPage++;
-    loadNotifications(notificationPage, true);
-
     const loadMoreBtn = document.getElementById('load-more-btn');
     if (loadMoreBtn) {
-        loadMoreBtn.textContent = 'Loading...';
-        loadMoreBtn.disabled = true;
-        loadMoreBtn.classList.add('opacity-50');
+        updateLoadMoreButtonState(BUTTON_STATES.LOADING, 'Loading more...');
     }
-}
 
+    loadNotifications(notificationPage, true).then(() => {
+        // Success case: revert to normal state
+        if (loadMoreBtn) {
+            updateLoadMoreButtonState(BUTTON_STATES.NORMAL);
+        }
+    }).catch((error) => {
+        // Error case: show error state
+        console.error('❌ Error loading more notifications:', error);
+        if (loadMoreBtn) {
+            updateLoadMoreButtonState(BUTTON_STATES.ERROR, 'Error loading - Click to retry');
+        }
+    });
+}
 // REAL-TIME NOTIFICATION FUNCTIONS
 function addNotification(data) {
     console.log('📝 Adding real-time notification:', data);
@@ -424,7 +452,8 @@ function addNotification(data) {
 }
 
 // TOAST NOTIFICATION FUNCTIONS
-function showToast(data) {
+function showToast(notification) {
+    console.log('📋 Toast notification received:', notification);
     const toastContainer = document.getElementById('toast-container');
     if (!toastContainer) {
         console.error('❌ Toast container not found!');
@@ -432,61 +461,68 @@ function showToast(data) {
     }
 
     const toastId = `toast-${Date.now()}`;
+    const isUrgent = notification.is_urgent;
+    const urgencyIcon = isUrgent ? '🚨' : '🔧';
+    const maintenanceRequestId = notification.maintenance_request_id || notification.id || null; // Fallback to id if maintenance_request_id is missing
+
+    if (!maintenanceRequestId) {
+        console.warn('⚠️ No maintenance_request_id found in toast data, using fallback or null');
+    }
 
     const toastHTML = `
-    <div id="${toastId}" class="relative max-w-md w-full bg-gradient-to-r ${data.is_urgent ? 'from-red-500 to-red-600' : 'from-orange-500 to-orange-600'} shadow-2xl rounded-xl pointer-events-auto transform transition-all duration-500 translate-x-full hover:scale-105">
-        <div class="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent rounded-xl"></div>
-        <div class="relative p-4 text-white">
-            <div class="flex items-start space-x-3">
-                <div class="flex-shrink-0 relative">
-                    <div class="w-10 h-10 ${data.is_urgent ? 'bg-red-400' : 'bg-orange-400'} rounded-full flex items-center justify-center animate-pulse">
-                        <span class="text-xl">${data.is_urgent ? '' : ''}</span>
-                    </div>
-                    <div class="absolute inset-0 ${data.is_urgent ? 'bg-red-400' : 'bg-orange-400'} rounded-full animate-ping opacity-20"></div>
-                </div>
-                <div class="flex-1 min-w-0">
-                    <div class="flex items-center justify-between mb-2">
-                        <h4 class="font-bold text-sm ${data.is_urgent ? 'text-red-100' : 'text-orange-100'}">
-                            ${data.is_urgent ? 'URGENT' : 'NEW REQUEST'}
-                        </h4>
-                        <button onclick="event.stopPropagation(); closeToast('${toastId}')"
-                                class="text-white/70 hover:text-white transition-colors duration-200">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                            </svg>
-                        </button>
-                    </div>
-                    <p class="text-white font-medium text-sm mb-2 leading-tight">
-                        ${data.message}
-                    </p>
-                    <div class="space-y-1">
-                        <div class="flex items-center text-xs text-white/90">
-                            <svg class="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-2m-14 0h2m0 0V9a2 2 0 012-2h2a2 2 0 012 2v10"></path>
-                            </svg>
-                            <span class="font-medium">${data.store_name}</span>
+        <div id="${toastId}" class="relative max-w-md w-full bg-gradient-to-r ${isUrgent ? 'from-red-500 to-red-600' : 'from-orange-500 to-orange-600'} shadow-2xl rounded-xl pointer-events-auto transform transition-all duration-500 translate-x-full hover:scale-105">
+            <div class="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent rounded-xl"></div>
+            <div class="relative p-4 text-white">
+                <div class="flex items-start space-x-3">
+                    <div class="flex-shrink-0 relative">
+                        <div class="w-10 h-10 ${isUrgent ? 'bg-red-400' : 'bg-orange-400'} rounded-full flex items-center justify-center animate-pulse">
+                            <span class="text-xl">${urgencyIcon}</span>
                         </div>
-                        <div class="flex items-center text-xs text-white/90">
-                            <svg class="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996-.608 2.296-.07 2.572 1.065z"></path>
-                            </svg>
-                            <span>${data.equipment}</span>
-                        </div>
+                        <div class="absolute inset-0 ${isUrgent ? 'bg-red-400' : 'bg-orange-400'} rounded-full animate-ping opacity-20"></div>
                     </div>
-                    <div class="mt-3 pt-2 border-t border-white/20">
-                        <button onclick="handleDatabaseNotificationClick(${data.id}, ${data.maintenance_request_id}, null); closeToast('${toastId}')"
-                                class="w-full bg-white/20 hover:bg-white/30 text-white text-xs font-medium py-2 px-3 rounded-lg transition-all duration-200 backdrop-blur-sm">
-                            👁️ View Details
-                        </button>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center justify-between mb-2">
+                            <h4 class="font-bold text-sm ${isUrgent ? 'text-red-100' : 'text-orange-100'}">
+                                ${isUrgent ? 'URGENT' : 'NEW REQUEST'}
+                            </h4>
+                            <button onclick="event.stopPropagation(); closeToast('${toastId}')"
+                                    class="text-white/70 hover:text-white transition-colors duration-200">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <p class="text-white font-medium text-sm mb-2 leading-tight">
+                            ${notification.message}
+                        </p>
+                        <div class="space-y-1">
+                            <div class="flex items-center text-xs text-white/90">
+                                <svg class="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-2m-14 0h2m0 0V9a2 2 0 012-2h2a2 2 0 012 2v10"></path>
+                                </svg>
+                                <span class="font-medium">${notification.store_name}</span>
+                            </div>
+                            <div class="flex items-center text-xs text-white/90">
+                                <svg class="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996-.608 2.296-.07 2.572 1.065z"></path>
+                                </svg>
+                                <span>${notification.equipment}</span>
+                            </div>
+                        </div>
+                        <div class="mt-3 pt-2 border-t border-white/20">
+                            <button onclick="handleDatabaseNotificationClick(${notification.id}, ${maintenanceRequestId}, null); closeToast('${toastId}')"
+                                    class="w-full bg-white/20 hover:bg-white/30 text-white text-xs font-medium py-2 px-3 rounded-lg transition-all duration-200 backdrop-blur-sm">
+                                👁️ View Details
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
+            <div class="absolute bottom-0 left-0 h-1 bg-white/30 rounded-b-xl">
+                <div class="h-full bg-white rounded-b-xl animate-toast-progress"></div>
+            </div>
         </div>
-        <div class="absolute bottom-0 left-0 h-1 bg-white/30 rounded-b-xl">
-            <div class="h-full bg-white rounded-b-xl animate-toast-progress"></div>
-        </div>
-    </div>
-`;
+    `;
 
     toastContainer.insertAdjacentHTML('beforeend', toastHTML);
 
@@ -495,7 +531,7 @@ function showToast(data) {
         if (toast) {
             toast.classList.remove('translate-x-full');
             toast.onclick = () => {
-                handleDatabaseNotificationClick(data.id, data.maintenance_request_id, null);
+                handleDatabaseNotificationClick(notification.id, maintenanceRequestId, null);
                 closeToast(toastId);
             };
         }
@@ -505,7 +541,6 @@ function showToast(data) {
         closeToast(toastId);
     }, 8000);
 }
-
 function closeToast(toastId) {
     const toast = document.getElementById(toastId);
     if (toast) {

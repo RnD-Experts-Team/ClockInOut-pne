@@ -40,38 +40,11 @@
 {{--    @vite(['resources/css/app.css', 'resources/js/app.js']);--}}
 {{--    <script src="https://cdn.tailwindcss.com"></script>--}}
 
-    <link rel="stylesheet" href="{{asset('/build/assets/app-d31N9zwh.css')}}">
-    <script src="{{asset('/build/assets/app-BGDHvcUF.js')}}"></script>
+    <link rel="stylesheet" href="{{asset('/build/assets/app-DCzEhwDS.css')}}">
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ URL::asset('build/assets/forms.css') }}">
-{{--    <script>--}}
-{{--        tailwind.config = {--}}
-{{--            theme: {--}}
-{{--                extend: {--}}
-{{--                    fontFamily: {--}}
-{{--                        sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'Noto Sans', 'sans-serif', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'],--}}
-{{--                        serif: ['Merriweather', 'ui-serif', 'Georgia', 'Cambria', 'Times New Roman', 'Times', 'serif'],--}}
-{{--                        mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'Liberation Mono', 'Courier New', 'monospace'],--}}
-{{--                    },--}}
-{{--                    colors: {--}}
-{{--                        'primary': '#ff671b',--}}
-{{--                        'primary-dark': '#c74f14', // Adjusted to a darker orange shade for hover--}}
-{{--                    },--}}
-{{--                    borderColor: {--}}
-{{--                        'primary': '#ff671b',--}}
-{{--                    },--}}
-{{--                    spacing: {--}}
-{{--                        '128': '32rem',--}}
-{{--                        '144': '36rem',--}}
-{{--                    },--}}
-{{--                    borderRadius: {--}}
-{{--                        '4xl': '2rem',--}}
-{{--                    },--}}
-{{--                },--}}
-{{--            }--}}
-{{--        }--}}
-{{--    </script>--}}
+
 </head>
 <body class="bg-orange-50 font-sans">
 <header class="bg-orange-50 shadow-lg border-b border-orange-100">
@@ -103,6 +76,59 @@
                 <!-- Desktop Menu -->
                 <div class="hidden md:flex items-center space-x-4 rtl:space-x-reverse">
                     @if(Auth::user()->role === 'admin')
+                        <!-- Notification Bell - NEW -->
+                        <div class="relative">
+                            <button id="notifications-button"
+                                    class="relative inline-flex items-center p-3 rounded-full text-orange-600 bg-orange-100 hover:bg-orange-200 focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all duration-300 hover:shadow-lg hover:scale-105">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-5 5-5-5h5V3h5v14z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.73 21a2 2 0 01-3.46 0"></path>
+                                </svg>
+                                <!-- Notification Badge -->
+                                <span id="notification-badge"
+                                      class="absolute -top-1 -right-1 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-500 rounded-full hidden">
+                                    0
+                                </span>
+                                <!-- Pulse animation for new notifications -->
+                                <span id="notification-pulse"
+                                      class="absolute -top-1 -right-1 inline-flex h-3 w-3 rounded-full bg-red-400 opacity-75 animate-ping hidden"></span>
+                            </button>
+
+                            <!-- Notification Dropdown -->
+                            <div id="notifications-dropdown"
+                                 class="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-xl border border-orange-200 z-50 hidden transform opacity-0 scale-95 transition-all duration-200">
+
+                                <!-- Header -->
+                                <div class="px-4 py-3 border-b border-orange-100 bg-gradient-to-r from-orange-50 to-orange-100">
+                                    <div class="flex items-center justify-between">
+                                        <h3 class="text-lg font-semibold text-orange-800">
+                                            🔔 Notifications
+                                        </h3>
+                                        <div class="flex items-center space-x-2">
+                                            <span id="notification-count" class="text-sm text-orange-600 font-medium">0 new</span>
+                                            <button onclick="markAllAsRead()"
+                                                    class="text-xs text-orange-600 hover:text-orange-800 font-medium">
+                                                Mark all read
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Notifications List -->
+                                <div id="notifications-list" class="max-h-96 overflow-y-auto">
+                                    <div id="no-notifications" class="px-4 py-8 text-center text-gray-500">
+                                        <svg class="w-12 h-12 mx-auto mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-5 5-5-5h5V3h5v14z"></path>
+                                        </svg>
+                                        <p class="text-sm">No new notifications</p>
+                                        <p class="text-xs text-gray-400 mt-1">You're all caught up!</p>
+                                    </div>
+                                </div>
+
+                                <!-- Footer -->
+
+                            </div>
+                        </div>
                         <!-- Schedule Management Dropdown -->
                         <div class="relative inline-block text-left">
                             <div>
@@ -339,6 +365,10 @@
             @endauth
         </div>
     </nav>
+    <div id="toast-container" class="fixed top-20 right-4 z-50 space-y-3 max-w-sm w-full pointer-events-none">
+        <!-- Backdrop blur effect -->
+        <div class="absolute inset-0 backdrop-blur-sm bg-black/5 rounded-2xl opacity-0 transition-opacity duration-300"></div>
+    </div>
 
     <!-- Mobile Menu -->
     <div id="mobileMenu" class="lg:hidden hidden bg-white border-t border-orange-200 shadow-lg">
@@ -346,6 +376,15 @@
             @auth
                 @if(auth()->user()->role === 'admin')
                     <!-- Admin mobile menu items -->
+                    <button id="notifications-button"
+                            class="w-full flex items-center justify-center px-4 py-2 bg-orange-100 hover:bg-orange-200 rounded-lg transition-all duration-200">
+                        <svg class="w-5 h-5 mr-2 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-5 5-5-5h5V3h5v14z"></path>
+                        </svg>
+                        <span class="text-orange-600 font-medium">Notifications</span>
+                        <span id="mobile-notification-badge" class="ml-2 px-2 py-1 text-xs bg-red-500 text-white rounded-full hidden">0</span>
+                    </button>
+
                     <a href="{{ route('admin.clocking') }}" class="flex items-center px-3 py-3 text-base font-medium text-gray-700 hover:text-orange-900 hover:bg-orange-50 rounded-lg transition-all duration-200">
                         <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
@@ -456,6 +495,9 @@
             @endauth
         </div>
     </div>
+    <meta name="pusher-key" content="{{ config('broadcasting.connections.pusher.key') }}">
+    <meta name="pusher-cluster" content="{{ config('broadcasting.connections.pusher.options.cluster') }}">
+
 </header>
 
 <!-- Fix the main content structure (around lines 445-465) -->
@@ -478,6 +520,56 @@
 </footer>
 
 <!-- PWA Service Worker Registration -->
+<script>
+    window.pusherConfig = {
+        key: '{{ config('broadcasting.connections.pusher.key') }}',
+        cluster: '{{ config('broadcasting.connections.pusher.options.cluster') }}',
+        isAdmin: @json(Auth::check() && Auth::user()->role == 'admin')
+    };
+</script>
+<script src="https://js.pusher.com/7.0/pusher.min.js"></script>
+{{--<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>--}}
+
+<script src="{{asset('/build/assets/notifications-DuKsdfkZ.js')}}"></script>
+<script src="{{asset('/build/assets/app-BGDHvcUF.js')}}"></script>
+
+{{--@vite(['resources/js/notifications.js']);--}}
+
+
+<!-- Add the required CSS for animations -->
+<style>
+    @keyframes toast-progress {
+        from { width: 100%; }
+        to { width: 0%; }
+    }
+
+    .animate-toast-progress {
+        animation: toast-progress 8s linear forwards;
+    }
+
+    /* Scrollbar styling for notifications dropdown */
+    .scrollbar-thin {
+        scrollbar-width: thin;
+    }
+
+    .scrollbar-thumb-orange-300::-webkit-scrollbar-thumb {
+        background-color: #fdba74;
+    }
+
+    .scrollbar-track-orange-100::-webkit-scrollbar-track {
+        background-color: #fed7aa;
+    }
+
+    /* Loading animation */
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    .animate-spin {
+        animation: spin 1s linear infinite;
+    }
+</style>
+
 <script>
     // Register service worker
     if ('serviceWorker' in navigator) {
@@ -725,7 +817,39 @@
             });
         }
     });
-</script>
 
+
+</script>
+<style>
+    @keyframes toast-progress {
+        from { width: 100%; }
+        to { width: 0%; }
+    }
+
+    .animate-toast-progress {
+        animation: toast-progress 8s linear forwards;
+    }
+
+    /* Enhanced notification bell animation */
+    .notification-bell:hover {
+        animation: bell-ring 0.5s ease-in-out;
+    }
+
+    @keyframes bell-ring {
+        0%, 100% { transform: rotate(0deg); }
+        15% { transform: rotate(15deg); }
+        30% { transform: rotate(-10deg); }
+        45% { transform: rotate(5deg); }
+        60% { transform: rotate(-5deg); }
+        75% { transform: rotate(2deg); }
+    }
+
+    /* Dropdown animation improvements */
+    .notification-dropdown {
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 107, 27, 0.2);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 107, 27, 0.05);
+    }
+</style>
 </body>
 </html>

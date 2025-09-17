@@ -3,6 +3,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\MaintenanceRequestReceived;
 use App\Models\MaintenanceRequest;
 use App\Models\Requester;
 use App\Models\Manager;
@@ -10,6 +11,7 @@ use App\Models\UrgencyLevel;
 use App\Models\MaintenanceAttachment;
 use App\Models\MaintenanceLink;
 use App\Models\Store;
+use App\Models\WebhookNotification;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -74,6 +76,8 @@ class MaintenanceWebhookController extends Controller
             $this->createLinks($maintenanceRequest->id, $payload['Entry']);
 
             DB::commit();
+
+            $this->sendNotifications($maintenanceRequest);
 
             Log::info('Maintenance request created successfully', [
                 'request_id' => $maintenanceRequest->id,
@@ -214,5 +218,57 @@ class MaintenanceWebhookController extends Controller
                 ]);
             }
         }
+    }
+
+    private function sendNotifications($maintenanceRequest): void
+    {
+        try {
+            // Add debugging
+            Log::info('🔔 Starting to send notifications', [
+                'request_id' => $maintenanceRequest->id,
+                'store_name' => $maintenanceRequest->store->name ?? 'No store',
+                'urgency' => $maintenanceRequest->urgencyLevel->name ?? 'No urgency'
+            ]);
+
+            $notificationType = $maintenanceRequest->urgencyLevel->name === 'Urgent'
+                ? 'urgent_request'
+                : 'new_request';
+
+            // 1. Fire broadcast event
+            Log::info('🚀 Firing broadcast event');
+            event(new MaintenanceRequestReceived($maintenanceRequest, $notificationType));
+
+            // 2. Store in database
+            WebhookNotification::create([
+                'maintenance_request_id' => $maintenanceRequest->id,
+                'type' => $notificationType,
+                'message' => $this->generateNotificationMessage($maintenanceRequest, $notificationType),
+                'is_broadcast' => true
+            ]);
+
+            Log::info('✅ Notifications sent successfully', [
+                'request_id' => $maintenanceRequest->id,
+                'type' => $notificationType
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('❌ Failed to send notifications', [
+                'request_id' => $maintenanceRequest->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
+    }
+
+    private function generateNotificationMessage($maintenanceRequest, $notificationType): string
+    {
+        $storeName = $maintenanceRequest->store->name ?? 'Store';
+        $urgency = $maintenanceRequest->urgencyLevel->name;
+
+        if ($urgency === 'Urgent') {
+            return "🚨 URGENT: New maintenance request from {$storeName} - {$maintenanceRequest->equipment_with_issue}";
+        }
+
+        return "🔧 New maintenance request from {$storeName} - {$maintenanceRequest->equipment_with_issue}";
     }
 }

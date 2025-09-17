@@ -4,15 +4,40 @@
     <div class="min-h-screen bg-orange-50 py-12">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <!-- Header -->
-            <div class="sm:flex sm:items-center">
-                <div class="sm:flex-auto">
-                    <h1 class="text-2xl font-semibold text-black-900">Users List</h1>
-                    <p class="mt-2 text-sm text-black-700">
-                        A list of all users in your account including their name, email, hourly pay, and role.
-                    </p>
+            <div class="sm:flex sm:items-center sm:justify-between mb-6">
+                <div>
+                    <h1 class="text-3xl font-bold text-black-900">Users List</h1>
+                    <p class="mt-2 text-sm text-black-700">A list of all users in your account including their name, email, hourly pay, and role.</p>
                 </div>
-                <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
-                    <a href="{{ route('users.create') }}" class="px-6 py-3 bg-orange-600 text-white text-sm font-semibold rounded-lg ring-1 ring-orange-900/5 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 transition-colors">
+                <div class="relative inline-block text-left">
+                    <button type="button" id="clear-notifications-menu" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-all duration-300 hover:shadow-lg transform hover:scale-105" aria-expanded="false" aria-haspopup="true">
+                        Clear Notifications
+                        <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    <div id="clear-notifications-dropdown" class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-orange-900/5 focus:outline-none hidden" role="menu" aria-orientation="vertical" aria-labelledby="clear-notifications-menu">
+                        <form action="{{ route('notifications.clear') }}" method="POST" class="space-y-1">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" name="action" value="clear_30" class="w-full text-left px-4 py-2 text-sm text-black-700 hover:bg-orange-50 hover:text-black-900 focus:outline-none focus:bg-orange-50" role="menuitem">
+                                Clear Last 30 Days
+                            </button>
+                            <button type="submit" name="action" value="clear_15" class="w-full text-left px-4 py-2 text-sm text-black-700 hover:bg-orange-50 hover:text-black-900 focus:outline-none focus:bg-orange-50" role="menuitem">
+                                Clear Last 15 Days
+                            </button>
+                            <button type="submit" name="action" value="clear_week" class="w-full text-left px-4 py-2 text-sm text-black-700 hover:bg-orange-50 hover:text-black-900 focus:outline-none focus:bg-orange-50" role="menuitem">
+                                Clear This Week
+                            </button>
+                            <button type="submit" name="action" value="mark_not_delete" class="w-full text-left px-4 py-2 text-sm text-black-700 hover:bg-orange-50 hover:text-black-900 focus:outline-none focus:bg-orange-50" role="menuitem">
+                                Mark as Not Delete
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="mt-4 sm:mt-0 flex space-x-3">
+                    <a href="{{ route('users.create') }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-all duration-300 hover:shadow-lg transform hover:scale-105">
                         Add New User
                     </a>
                 </div>
@@ -126,6 +151,30 @@
                     successAlert.style.display = 'none';
                 });
             }
+        });
+
+        // Toggle dropdown for clear notifications
+        document.addEventListener('DOMContentLoaded', function() {
+            const clearButton = document.getElementById('clear-notifications-menu');
+            const dropdown = document.getElementById('clear-notifications-dropdown');
+
+            if (clearButton && dropdown) {
+                clearButton.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const isHidden = dropdown.classList.contains('hidden');
+                    dropdown.classList.toggle('hidden');
+                    clearButton.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+                });
+            }
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                const isClickInside = clearButton?.contains(e.target) || dropdown?.contains(e.target);
+                if (!isClickInside && !dropdown.classList.contains('hidden')) {
+                    dropdown.classList.add('hidden');
+                    clearButton?.setAttribute('aria-expanded', 'false');
+                }
+            });
         });
     </script>
 @endsection
