@@ -468,14 +468,13 @@
     }
 </style>
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
     window.routeUrls = {
         deleteShiftType: '{{ route("admin.schedules.delete-shift-type") }}',
         deleteRole: '{{ route("admin.schedules.delete-role") }}'
     };
 
-    $(document).ready(function() {
+    document.addEventListener('DOMContentLoaded', function() {
         // Global schedule data
         window.scheduleData = {};
         let assignedTasks = new Set();
@@ -493,64 +492,63 @@
         setupCustomDropdown('custom_role', 'role', 'role-options', scheduleRoles);
 
         function setupCustomDropdown(inputId, hiddenId, optionsContainerId, options) {
-            const $input = $(`#${inputId}`);
-            const $hidden = $(`#${hiddenId}`);
-            const $dropdown = $input.closest('.custom-select-container').find('.custom-select-dropdown');
-            const $optionsContainer = $(`#${optionsContainerId}`);
+            const input = document.getElementById(inputId);
+            const hidden = document.getElementById(hiddenId);
+            const dropdown = input.closest('.custom-select-container').querySelector('.custom-select-dropdown');
+            const optionsContainer = document.getElementById(optionsContainerId);
 
             function renderOptions(searchTerm = '') {
                 const filteredOptions = options.filter(option =>
                     option.toLowerCase().includes(searchTerm.toLowerCase())
                 );
 
-                $optionsContainer.empty();
+                optionsContainer.innerHTML = '';
 
                 // Show existing options from database with delete icons
                 filteredOptions.forEach(option => {
-                    const $option = $(`
-                        <div class="px-3 py-2 cursor-pointer hover:bg-blue-50 text-sm flex items-center justify-between group">
-                            <span class="option-text">${option}</span>
-                            <button type="button" class="delete-option hidden group-hover:block text-red-500 hover:text-red-700 ml-2" data-option="${option}" data-type="${inputId.includes('shift') ? 'shift_type' : 'role'}">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                </svg>
-                            </button>
-                        </div>
-                    `);
+                    const optionDiv = document.createElement('div');
+                    optionDiv.className = 'px-3 py-2 cursor-pointer hover:bg-blue-50 text-sm flex items-center justify-between group';
+                    optionDiv.innerHTML = `
+                        <span class="option-text">${option}</span>
+                        <button type="button" class="delete-option hidden group-hover:block text-red-500 hover:text-red-700 ml-2" data-option="${option}" data-type="${inputId.includes('shift') ? 'shift_type' : 'role'}">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                        </button>
+                    `;
 
                     // Handle option selection
-                    $option.find('.option-text').on('click', function(e) {
+                    optionDiv.querySelector('.option-text').addEventListener('click', function(e) {
                         e.stopPropagation();
-                        $input.val(option);
-                        $hidden.val(option);
-                        $dropdown.addClass('hidden');
+                        input.value = option;
+                        hidden.value = option;
+                        dropdown.classList.add('hidden');
                     });
 
                     // Handle delete button
-                    $option.find('.delete-option').on('click', function(e) {
+                    optionDiv.querySelector('.delete-option').addEventListener('click', function(e) {
                         e.stopPropagation();
-                        const optionToDelete = $(this).data('option');
-                        const type = $(this).data('type');
+                        const optionToDelete = this.dataset.option;
+                        const type = this.dataset.type;
                         deleteOption(optionToDelete, type);
                     });
 
-                    $optionsContainer.append($option);
+                    optionsContainer.appendChild(optionDiv);
                 });
 
                 // Allow adding new options
                 if (searchTerm && !options.some(opt => opt.toLowerCase() === searchTerm.toLowerCase())) {
-                    const $addNew = $(`
-                        <div class="px-3 py-2 text-blue-600 cursor-pointer hover:bg-blue-50 font-medium border-t border-gray-200">
-                            <strong>+ Add:</strong> "${searchTerm}"
-                        </div>
-                    `);
-                    $addNew.on('click', function() {
+                    const addNewDiv = document.createElement('div');
+                    addNewDiv.className = 'px-3 py-2 text-blue-600 cursor-pointer hover:bg-blue-50 font-medium border-t border-gray-200';
+                    addNewDiv.innerHTML = `<strong>+ Add:</strong> "${searchTerm}"`;
+
+                    addNewDiv.addEventListener('click', function() {
                         options.push(searchTerm);
-                        $input.val(searchTerm);
-                        $hidden.val(searchTerm);
-                        $dropdown.addClass('hidden');
+                        input.value = searchTerm;
+                        hidden.value = searchTerm;
+                        dropdown.classList.add('hidden');
                     });
-                    $optionsContainer.append($addNew);
+                    optionsContainer.appendChild(addNewDiv);
                 }
             }
 
@@ -563,75 +561,76 @@
                             ? window.routeUrls.deleteShiftType
                             : window.routeUrls.deleteRole;
 
-                        const data = type === 'shift_type'
-                            ? { shift_type: optionValue, _token: $('meta[name="csrf-token"]').attr('content') }
-                            : { role: optionValue, _token: $('meta[name="csrf-token"]').attr('content') };
+                        const data = new FormData();
+                        if (type === 'shift_type') {
+                            data.append('shift_type', optionValue);
+                        } else {
+                            data.append('role', optionValue);
+                        }
+                        data.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+                        data.append('_method', 'DELETE');
 
-                        $.ajax({
-                            url: url,
-                            type: 'POST',
-                            data: {
-                                ...data,
-                                _method: 'DELETE'
-                            },
-                            success: function(response) {
-                                if (response.success) {
+                        fetch(url, {
+                            method: 'POST',
+                            body: data
+                        })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
                                     const index = options.indexOf(optionValue);
                                     if (index > -1) {
                                         options.splice(index, 1);
                                     }
 
-                                    if ($input.val() === optionValue) {
-                                        $input.val('');
-                                        $hidden.val('');
+                                    if (input.value === optionValue) {
+                                        input.value = '';
+                                        hidden.value = '';
                                     }
 
-                                    renderOptions($input.val());
-                                    showSuccessMessage(response.message);
+                                    renderOptions(input.value);
+                                    showSuccessMessage(data.message);
                                 }
-                            },
-                            error: function(xhr) {
-                                console.log('AJAX Error Response:', xhr.responseJSON);
-                                console.log('Status:', xhr.status);
-                                const errorMessage = xhr.responseJSON?.message || 'Error deleting item';
-                                showAlert('Error', errorMessage, 'error');
-                            }
-                        });
+                            })
+                            .catch(error => {
+                                console.error('AJAX Error:', error);
+                                showAlert('Error', 'Error deleting item', 'error');
+                            });
                     }
                 );
             }
 
-            $input.on('focus', function() {
-                renderOptions($input.val());
-                $dropdown.removeClass('hidden');
+            input.addEventListener('focus', function() {
+                renderOptions(input.value);
+                dropdown.classList.remove('hidden');
             });
 
-            $input.on('input', function() {
-                renderOptions($input.val());
-                $dropdown.removeClass('hidden');
+            input.addEventListener('input', function() {
+                renderOptions(input.value);
+                dropdown.classList.remove('hidden');
             });
 
             // Close on outside click
-            $(document).on('click', function(e) {
-                if (!$input.closest('.custom-select-container').is(e.target) &&
-                    !$input.closest('.custom-select-container').has(e.target).length) {
-                    $dropdown.addClass('hidden');
+            document.addEventListener('click', function(e) {
+                if (!input.closest('.custom-select-container').contains(e.target)) {
+                    dropdown.classList.add('hidden');
                 }
             });
         }
 
         // Enhanced Employee Search and Role Filter
-        $('#employee-search, #role-filter').on('input change', function() {
-            filterEmployees();
-        });
+        const employeeSearch = document.getElementById('employee-search');
+        const roleFilter = document.getElementById('role-filter');
+
+        employeeSearch.addEventListener('input', filterEmployees);
+        roleFilter.addEventListener('change', filterEmployees);
 
         function filterEmployees() {
-            const searchTerm = $('#employee-search').val().toLowerCase();
-            const selectedRole = $('#role-filter').val().toLowerCase();
+            const searchTerm = employeeSearch.value.toLowerCase();
+            const selectedRole = roleFilter.value.toLowerCase();
 
-            $('.employee-row').each(function() {
-                const employeeName = $(this).data('employee-name');
-                const employeeRole = $(this).data('employee-role');
+            document.querySelectorAll('.employee-row').forEach(function(row) {
+                const employeeName = row.dataset.employeeName;
+                const employeeRole = row.dataset.employeeRole;
 
                 let showRow = true;
 
@@ -647,34 +646,36 @@
 
                 // Show/hide row
                 if (showRow) {
-                    $(this).show();
+                    row.style.display = '';
                 } else {
-                    $(this).hide();
+                    row.style.display = 'none';
                 }
             });
 
             // Update results counter
-            const visibleEmployees = $('.employee-row:visible').length;
-            const totalEmployees = $('.employee-row').length;
+            const visibleEmployees = document.querySelectorAll('.employee-row:not([style*="display: none"])').length;
+            const totalEmployees = document.querySelectorAll('.employee-row').length;
 
             let resultText = `Showing ${visibleEmployees} of ${totalEmployees} employees`;
             if (searchTerm || selectedRole) {
                 resultText += ' (filtered)';
             }
 
-            $('#filter-results').text(resultText);
+            document.getElementById('filter-results').textContent = resultText;
         }
 
         // Clear filters function
-        $('#clear-filters').on('click', function() {
-            $('#employee-search').val('');
-            $('#role-filter').val('');
-            $('.employee-row').show();
-            $('#filter-results').text('Showing all employees');
+        document.getElementById('clear-filters').addEventListener('click', function() {
+            employeeSearch.value = '';
+            roleFilter.value = '';
+            document.querySelectorAll('.employee-row').forEach(row => {
+                row.style.display = '';
+            });
+            document.getElementById('filter-results').textContent = 'Showing all employees';
         });
 
-        // Add additional shift functionality with all fields including notes
-        $('#add-another-shift').on('click', function() {
+        // Add additional shift functionality
+        document.getElementById('add-another-shift').addEventListener('click', function() {
             additionalShiftCounter++;
             const shiftHtml = `
                 <div class="additional-shift bg-gray-50 border border-gray-200 rounded-lg p-4" data-shift-index="${additionalShiftCounter}">
@@ -730,47 +731,67 @@
     </div>
 `;
 
-            const $newShift = $(shiftHtml);
-            $('#additional-shifts-container').append($newShift);
+            const newShiftDiv = document.createElement('div');
+            newShiftDiv.innerHTML = shiftHtml;
+            const newShift = newShiftDiv.firstElementChild;
+            document.getElementById('additional-shifts-container').appendChild(newShift);
 
             // Update task filter for new additional shift
-            filterAdditionalShiftTasks($newShift);
+            filterAdditionalShiftTasks(newShift);
         });
 
         // Remove additional shift
-        $(document).on('click', '.remove-additional-shift', function() {
-            $(this).closest('.additional-shift').remove();
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.remove-additional-shift')) {
+                e.target.closest('.additional-shift').remove();
+            }
         });
 
         // Open modal
-        $(document).on('click', '.schedule-cell', function(e) {
-            e.preventDefault();
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.schedule-cell')) {
+                e.preventDefault();
+                const cell = e.target.closest('.schedule-cell');
 
-            const employeeId = $(this).data('employee');
-            const employeeName = $(this).data('employee-name');
-            const date = $(this).data('date');
+                try {
+                    console.log('=== Click to Assign Started ===');
+                    console.log('Clicked Element:', cell);
 
-            $('#modal-employee-id').val(employeeId);
-            $('#modal-date').val(date);
-            $('#modal-subtitle').text(`${employeeName} - ${date}`);
+                    const employeeId = cell.dataset.employee;
+                    const employeeName = cell.dataset.employeeName;
+                    const date = cell.dataset.date;
 
-            // Reset form
-            $('#task-select').val('');
-            $('#start-time').val('08:00');
-            $('#end-time').val('17:00');
-            $('#custom_shift_type').val('');
-            $('#shift-type').val('');
-            $('#custom_role').val('');
-            $('#assignment-notes').val('');
-            $('#role').val('');
-            $('#color-picker').val('#3b82f6');
+                    console.log('Data Attributes:', { employeeId, employeeName, date });
 
-            // Clear additional shifts
-            $('#additional-shifts-container').empty();
-            additionalShiftCounter = 0;
+                    if (!employeeId || !date) {
+                        console.error('Missing required data attributes (employeeId or date):', cell.dataset);
+                        return;
+                    }
 
-            filterAvailableTasks();
-            $('#assignmentModal').removeClass('hidden');
+                    document.getElementById('modal-employee-id').value = employeeId;
+                    document.getElementById('modal-date').value = date;
+                    document.getElementById('modal-subtitle').textContent = `${employeeName} - ${date}`;
+
+                    // Reset form fields
+                    document.getElementById('task-select').value = '';
+                    document.getElementById('start-time').value = '08:00';
+                    document.getElementById('end-time').value = '17:00';
+                    document.getElementById('custom_shift_type').value = '';
+                    document.getElementById('shift-type').value = '';
+                    document.getElementById('custom_role').value = '';
+                    document.getElementById('role').value = '';
+                    document.getElementById('assignment-notes').value = '';
+                    document.getElementById('color-picker').value = '#3b82f6';
+
+                    document.getElementById('additional-shifts-container').innerHTML = '';
+                    additionalShiftCounter = 0;
+
+                    filterAvailableTasks();
+                    document.getElementById('assignmentModal').classList.remove('hidden');
+                } catch (error) {
+                    console.error('Error in Click to Assign:', error);
+                }
+            }
         });
 
         function filterAvailableTasks() {
@@ -783,8 +804,8 @@
                 });
             });
 
-            $('#task-select option').each(function() {
-                const taskId = $(this).val();
+            document.querySelectorAll('#task-select option').forEach(function(option) {
+                const taskId = option.value;
 
                 // Count how many times this task has been assigned across all employees
                 let taskAssignmentCount = 0;
@@ -798,21 +819,22 @@
 
                 // Disable if task is already assigned once
                 if (taskId && taskAssignmentCount > 0) {
-                    $(this).prop('disabled', true).text($(this).text().replace(' (Assigned)', '') + ' (Assigned)');
+                    option.disabled = true;
+                    option.textContent = option.textContent.replace(' (Assigned)', '') + ' (Assigned)';
                 } else {
-                    $(this).prop('disabled', false);
-                    $(this).text($(this).text().replace(' (Assigned)', ''));
+                    option.disabled = false;
+                    option.textContent = option.textContent.replace(' (Assigned)', '');
                 }
             });
         }
 
-        // Save shift - Updated to handle additional shifts with all fields including notes
-        $('#save-shift').on('click', function() {
-            const employeeId = $('#modal-employee-id').val();
-            const date = $('#modal-date').val();
-            const taskId = $('#task-select').val();
-            const color = $('#color-picker').val();
-            const assignmentNotes = $('#assignment-notes').val();
+        // Save shift
+        document.getElementById('save-shift').addEventListener('click', function() {
+            const employeeId = document.getElementById('modal-employee-id').value;
+            const date = document.getElementById('modal-date').value;
+            const taskId = document.getElementById('task-select').value;
+            const color = document.getElementById('color-picker').value;
+            const assignmentNotes = document.getElementById('assignment-notes').value;
 
             // Validation for main shift
             if (!taskId) {
@@ -820,8 +842,8 @@
                 return;
             }
 
-            const mainStartTime = $('#start-time').val();
-            const mainEndTime = $('#end-time').val();
+            const mainStartTime = document.getElementById('start-time').value;
+            const mainEndTime = document.getElementById('end-time').value;
 
             if (!mainStartTime || !mainEndTime) {
                 showAlert('Time Required', 'Please enter both start and end times.', 'error');
@@ -844,13 +866,12 @@
 
             // Collect and validate additional shifts
             let validAdditionalShifts = true;
-            $('.additional-shift').each(function() {
-                const $this = $(this);
-                const additionalTask = $this.find('.additional-task').val();
-                const additionalStart = $this.find('.additional-start').val();
-                const additionalEnd = $this.find('.additional-end').val();
-                const additionalColor = $this.find('.additional-color').val();
-                const additionalNotes = $this.find('.additional-notes').val() || '';
+            document.querySelectorAll('.additional-shift').forEach(function(shiftElement) {
+                const additionalTask = shiftElement.querySelector('.additional-task').value;
+                const additionalStart = shiftElement.querySelector('.additional-start').value;
+                const additionalEnd = shiftElement.querySelector('.additional-end').value;
+                const additionalColor = shiftElement.querySelector('.additional-color').value;
+                const additionalNotes = shiftElement.querySelector('.additional-notes').value || '';
 
                 if (additionalStart && additionalEnd) {
                     // Validate required fields for additional shift
@@ -893,7 +914,7 @@
                 }
             });
 
-            $('#assignmentModal').addClass('hidden');
+            document.getElementById('assignmentModal').classList.add('hidden');
             console.log('✅ Shifts saved:', shifts);
 
             // Show success message
@@ -901,7 +922,7 @@
         });
 
         function updateScheduleCell(employeeId, date, shifts) {
-            const $cell = $(`.schedule-cell[data-employee="${employeeId}"][data-date="${date}"]`);
+            const cell = document.querySelector(`.schedule-cell[data-employee="${employeeId}"][data-date="${date}"]`);
 
             if (shifts.length > 0) {
                 const mainShift = shifts[0];
@@ -917,19 +938,19 @@
                 const hasNotes = shifts.some(shift => shift.assignment_notes && shift.assignment_notes.trim() !== '');
                 let notesIndicator = hasNotes ? '<div class="text-xs bg-blue-200 text-blue-800 px-1 rounded mt-1">NOTES</div>' : '';
 
-                $cell.removeClass('border-dashed border-gray-300')
-                    .addClass('has-assignment')
-                    .css('background-color', mainShift.color)
-                    .html(`
-                        <div class="shift-content p-2 relative text-center">
-                            <div class="shift-time text-xs font-semibold">${mainShift.start} - ${mainShift.end}</div>
-                            <div class="shift-hours text-xs opacity-80">${totalHours.toFixed(1)}h</div>
-                            <div class="task-badge absolute top-1 right-1 bg-white bg-opacity-30 text-xs px-1 rounded">T</div>
-                            ${splitIndicator}
-                            ${notesIndicator}
-                        </div>
-                    `)
-                    .css('color', getContrastColor(mainShift.color));
+                cell.classList.remove('border-dashed', 'border-gray-300');
+                cell.classList.add('has-assignment');
+                cell.style.backgroundColor = mainShift.color;
+                cell.innerHTML = `
+                    <div class="shift-content p-2 relative text-center">
+                        <div class="shift-time text-xs font-semibold">${mainShift.start} - ${mainShift.end}</div>
+                        <div class="shift-hours text-xs opacity-80">${totalHours.toFixed(1)}h</div>
+                        <div class="task-badge absolute top-1 right-1 bg-white bg-opacity-30 text-xs px-1 rounded">T</div>
+                        ${splitIndicator}
+                        ${notesIndicator}
+                    </div>
+                `;
+                cell.style.color = getContrastColor(mainShift.color);
             }
         }
 
@@ -944,27 +965,27 @@
 
         // Success message function
         function showSuccessMessage(message) {
-            const $notification = $(`
-                <div class="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transform translate-x-full transition-transform duration-300">
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                        </svg>
-                        ${message}
-                    </div>
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transform translate-x-full transition-transform duration-300';
+            notification.innerHTML = `
+                <div class="flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    ${message}
                 </div>
-            `);
+            `;
 
-            $('body').append($notification);
+            document.body.appendChild(notification);
 
             setTimeout(() => {
-                $notification.removeClass('translate-x-full');
+                notification.classList.remove('translate-x-full');
             }, 100);
 
             setTimeout(() => {
-                $notification.addClass('translate-x-full');
+                notification.classList.add('translate-x-full');
                 setTimeout(() => {
-                    $notification.remove();
+                    notification.remove();
                 }, 300);
             }, 3000);
         }
@@ -973,7 +994,7 @@
         let currentStartDate = new Date('{{ $startDate->format("Y-m-d") }}');
         let currentEndDate = new Date('{{ $endDate->format("Y-m-d") }}');
 
-        $('#prev-week').on('click', function(e) {
+        document.getElementById('prev-week').addEventListener('click', function(e) {
             e.preventDefault();
             const newStartDate = new Date(currentStartDate);
             newStartDate.setDate(newStartDate.getDate() - 7);
@@ -986,7 +1007,7 @@
             window.location.href = `{{ route('admin.schedules.create') }}?start_date=${startDateString}&end_date=${endDateString}`;
         });
 
-        $('#next-week').on('click', function(e) {
+        document.getElementById('next-week').addEventListener('click', function(e) {
             e.preventDefault();
             const newStartDate = new Date(currentStartDate);
             newStartDate.setDate(newStartDate.getDate() + 7);
@@ -999,8 +1020,8 @@
             window.location.href = `{{ route('admin.schedules.create') }}?start_date=${startDateString}&end_date=${endDateString}`;
         });
 
-        // Fixed Save Draft Button
-        $('#save-draft').on('click', function(e) {
+        // Save Draft Button
+        document.getElementById('save-draft').addEventListener('click', function(e) {
             e.preventDefault();
 
             if (Object.keys(window.scheduleData).length === 0) {
@@ -1013,15 +1034,15 @@
                 return { employee_id: employeeId, start_date: date, shifts: shifts };
             });
 
-            $('#schedule_data').val(JSON.stringify(scheduleArray));
-            const scheduleName = `Schedule for Week ${$('#week-display').text().replace('Week: ', '')}`;
-            $('#schedule_name').val(scheduleName);
+            document.getElementById('schedule_data').value = JSON.stringify(scheduleArray);
+            const scheduleName = `Schedule for Week ${document.getElementById('week-display').textContent.replace('Week: ', '')}`;
+            document.getElementById('schedule_name').value = scheduleName;
 
-            $('#schedule-form').submit();
+            document.getElementById('schedule-form').submit();
         });
 
-        // Fixed Publish Schedule Button
-        $('#publish-schedule').on('click', function(e) {
+        // Publish Schedule Button
+        document.getElementById('publish-schedule').addEventListener('click', function(e) {
             e.preventDefault();
 
             if (Object.keys(window.scheduleData).length === 0) {
@@ -1039,38 +1060,44 @@
                         return { employee_id: employeeId, start_date: date, shifts: shifts };
                     });
 
-                    $('#schedule_data').val(JSON.stringify(scheduleArray));
-                    const scheduleName = `Schedule for Week ${$('#week-display').text().replace('Week: ', '')}`;
-                    $('#schedule_name').val(scheduleName);
+                    document.getElementById('schedule_data').value = JSON.stringify(scheduleArray);
+                    const scheduleName = `Schedule for Week ${document.getElementById('week-display').textContent.replace('Week: ', '')}`;
+                    document.getElementById('schedule_name').value = scheduleName;
 
                     // Add publish flag
-                    $('<input>').attr({
-                        type: 'hidden',
-                        name: 'publish',
-                        value: 'true'
-                    }).appendTo('#schedule-form');
+                    const publishInput = document.createElement('input');
+                    publishInput.type = 'hidden';
+                    publishInput.name = 'publish';
+                    publishInput.value = 'true';
+                    document.getElementById('schedule-form').appendChild(publishInput);
 
-                    $('#schedule-form').submit();
+                    document.getElementById('schedule-form').submit();
                 }
             );
         });
 
         // Modal close handlers
-        $('#close-modal, #cancel-modal, #modal-backdrop').on('click', function() {
-            $('#assignmentModal').addClass('hidden');
+        const closeButtons = ['close-modal', 'cancel-modal', 'modal-backdrop'];
+        closeButtons.forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.addEventListener('click', function() {
+                    document.getElementById('assignmentModal').classList.add('hidden');
+                });
+            }
         });
 
         // Custom Alert Functions
         function showAlert(title, message, type = 'info', callback = null) {
-            const modal = $('#customAlertModal');
-            const iconContainer = $('#alert-icon-container');
-            const titleElement = $('#alert-modal-title');
-            const messageElement = $('#alert-modal-message');
-            const buttonsContainer = $('#alert-modal-buttons');
+            const modal = document.getElementById('customAlertModal');
+            const iconContainer = document.getElementById('alert-icon-container');
+            const titleElement = document.getElementById('alert-modal-title');
+            const messageElement = document.getElementById('alert-modal-message');
+            const buttonsContainer = document.getElementById('alert-modal-buttons');
 
             // Set title and message
-            titleElement.text(title);
-            messageElement.text(message);
+            titleElement.textContent = title;
+            messageElement.textContent = message;
 
             // Configure based on alert type
             let iconHtml = '';
@@ -1108,84 +1135,84 @@
             }
 
             // Set icon
-            iconContainer.removeClass().addClass(`mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full sm:mx-0 sm:h-10 sm:w-10 ${iconBgClass}`);
-            iconContainer.html(iconHtml);
+            iconContainer.className = `mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full sm:mx-0 sm:h-10 sm:w-10 ${iconBgClass}`;
+            iconContainer.innerHTML = iconHtml;
 
             // Set buttons
-            buttonsContainer.html(`
+            buttonsContainer.innerHTML = `
                 <button type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 text-base font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 sm:ml-3 sm:w-auto sm:text-sm ${buttonClass}" id="alert-ok-btn">
                     OK
                 </button>
-            `);
+            `;
 
             // Show modal
-            modal.removeClass('hidden');
+            modal.classList.remove('hidden');
 
             // Handle OK button click
-            $('#alert-ok-btn').off('click').on('click', function() {
-                modal.addClass('hidden');
+            document.getElementById('alert-ok-btn').addEventListener('click', function() {
+                modal.classList.add('hidden');
                 if (callback && typeof callback === 'function') {
                     callback();
                 }
             });
 
             // Handle backdrop click
-            $('#alert-modal-backdrop').off('click').on('click', function() {
-                modal.addClass('hidden');
+            document.getElementById('alert-modal-backdrop').addEventListener('click', function() {
+                modal.classList.add('hidden');
             });
         }
 
         function showConfirm(title, message, onConfirm, onCancel = null) {
-            const modal = $('#customAlertModal');
-            const iconContainer = $('#alert-icon-container');
-            const titleElement = $('#alert-modal-title');
-            const messageElement = $('#alert-modal-message');
-            const buttonsContainer = $('#alert-modal-buttons');
+            const modal = document.getElementById('customAlertModal');
+            const iconContainer = document.getElementById('alert-icon-container');
+            const titleElement = document.getElementById('alert-modal-title');
+            const messageElement = document.getElementById('alert-modal-message');
+            const buttonsContainer = document.getElementById('alert-modal-buttons');
 
             // Set title and message
-            titleElement.text(title);
-            messageElement.text(message);
+            titleElement.textContent = title;
+            messageElement.textContent = message;
 
             // Set question icon
-            iconContainer.removeClass().addClass('mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10');
-            iconContainer.html(`
+            iconContainer.className = 'mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10';
+            iconContainer.innerHTML = `
                 <svg class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
-            `);
+            `;
 
             // Set confirm/cancel buttons
-            buttonsContainer.html(`
+            buttonsContainer.innerHTML = `
                 <button type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:ml-3 sm:w-auto sm:text-sm" id="confirm-yes-btn">
                     Yes
                 </button>
                 <button type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm" id="confirm-no-btn">
                     Cancel
                 </button>
-            `);
+            `;
 
             // Show modal
-            modal.removeClass('hidden');
+            modal.classList.remove('hidden');
 
             // Handle Yes button click
-            $('#confirm-yes-btn').off('click').on('click', function() {
-                modal.addClass('hidden');
+            document.getElementById('confirm-yes-btn').addEventListener('click', function() {
+                modal.classList.add('hidden');
                 if (onConfirm && typeof onConfirm === 'function') {
                     onConfirm();
                 }
             });
 
             // Handle Cancel button click
-            $('#confirm-no-btn').off('click').on('click', function() {
-                modal.addClass('hidden');
+            document.getElementById('confirm-no-btn').addEventListener('click', function() {
+                modal.classList.add('hidden');
                 if (onCancel && typeof onCancel === 'function') {
                     onCancel();
                 }
             });
 
             // Handle backdrop click (acts as cancel)
-            $('#alert-modal-backdrop').off('click').on('click', function() {
-                modal.addClass('hidden');
+            document.getElementById('alert-modal-backdrop').addEventListener('click', function() {
+                modal.classList.add('hidden');
                 if (onCancel && typeof onCancel === 'function') {
                     onCancel();
                 }
@@ -1193,11 +1220,11 @@
         }
 
         // Filter tasks for additional shifts
-        function filterAdditionalShiftTasks($container) {
-            const $taskSelect = $container.find('.additional-task');
+        function filterAdditionalShiftTasks(container) {
+            const taskSelect = container.querySelector('.additional-task');
 
-            $taskSelect.find('option').each(function() {
-                const taskId = $(this).val();
+            taskSelect.querySelectorAll('option').forEach(function(option) {
+                const taskId = option.value;
 
                 // Count how many times this task has been assigned
                 let taskAssignmentCount = 0;
@@ -1211,10 +1238,11 @@
 
                 // Disable if task is already assigned once
                 if (taskId && taskAssignmentCount > 0) {
-                    $(this).prop('disabled', true).text($(this).text().replace(' (Assigned)', '') + ' (Assigned)');
+                    option.disabled = true;
+                    option.textContent = option.textContent.replace(' (Assigned)', '') + ' (Assigned)';
                 } else {
-                    $(this).prop('disabled', false);
-                    $(this).text($(this).text().replace(' (Assigned)', ''));
+                    option.disabled = false;
+                    option.textContent = option.textContent.replace(' (Assigned)', '');
                 }
             });
         }

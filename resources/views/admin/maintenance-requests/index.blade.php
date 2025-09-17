@@ -473,17 +473,12 @@
                 </div>
 
                 <!-- Enhanced Pagination -->
-                <div class="px-6 py-4 border-t border-gray-200 bg-gray-50">
-                    <div class="flex justify-between items-center">
-                        <div class="text-sm text-gray-700">
-                            Showing <span class="font-medium">{{ $maintenanceRequests->firstItem() ?? 0 }}</span> to
-                            <span class="font-medium">{{ $maintenanceRequests->lastItem() ?? 0 }}</span> of
-                            <span class="font-medium">{{ $maintenanceRequests->total() ?? 0 }}</span> results
-                        </div>
-                        <div class="flex space-x-1">
+                <div class="px-6 py-4 border-t border-gray-200 bg-gray-50 text-center">
+
+
                             {{ $maintenanceRequests->links() }}
-                        </div>
-                    </div>
+
+
                 </div>
             @else
                 <div class="text-center py-16">

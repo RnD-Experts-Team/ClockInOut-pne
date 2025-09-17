@@ -75,6 +75,8 @@ class ScheduleController extends Controller
             ->distinct()
             ->pluck('role')
             ->toArray();
+
+        session()->forget('success');
         return view('admin.schedules.create', compact(
             'startDate',
             'endDate',
