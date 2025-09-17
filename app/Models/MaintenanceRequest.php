@@ -312,4 +312,9 @@ class MaintenanceRequest extends Model
 
         return $saved;
     }
+
+    public function webhookNotifications()
+    {
+        return $this->hasMany(WebhookNotification::class, 'maintenance_request_id');
+    }
 }
