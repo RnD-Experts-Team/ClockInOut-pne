@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
 class MaintenanceRequestController extends Controller
@@ -323,7 +324,7 @@ class MaintenanceRequestController extends Controller
             'costs' => 'required_if:status,done|nullable|numeric|min:0',
             'how_we_fixed_it' => 'required_if:status,done|nullable|string|max:1000',
             'assigned_to' => 'required_if:status,in_progress,done|nullable|exists:users,id',
-            'due_date' => 'nullable|date|after_or_equal:today',
+            'due_date' => 'nullable|date',
             'progress_description' => 'nullable|string|max:1000' // NEW
 
         ]);
@@ -440,13 +441,17 @@ class MaintenanceRequestController extends Controller
 
     public function destroy(MaintenanceRequest $maintenanceRequest): RedirectResponse
     {
+
         try {
             DB::beginTransaction();
 
+            // Delete related records
             $maintenanceRequest->attachments()->delete();
             $maintenanceRequest->links()->delete();
             $maintenanceRequest->statusHistories()->delete();
-            $maintenanceRequest->delete();
+            $maintenanceRequest->webhookNotifications()->delete(); // Add this line
+            // Force permanent delete if soft deletes are enabled
+            $maintenanceRequest->forceDelete();
 
             DB::commit();
 
@@ -454,6 +459,7 @@ class MaintenanceRequestController extends Controller
                 ->with('success', 'Maintenance request deleted successfully.');
         } catch (\Exception $e) {
             DB::rollback();
+            Log::error('Delete failed', ['exception' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             return back()->withErrors(['error' => 'Failed to delete request: ' . $e->getMessage()]);
         }
     }
