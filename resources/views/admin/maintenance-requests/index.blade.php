@@ -1094,7 +1094,7 @@
                     'Urgency': 'الأولوية',
                     'Status': 'الحالة',
                     'Assigned to': 'مُسند إلى',           // Header translation
-                    'Due Date': 'تاريخ الاستحقاق',
+                    'Due Date': 'تاريخ الصيانة',
                     'Created Date': 'تاريخ الإنشاء',
                     'Date Created': 'تاريخ الإنشاء',
                     'Costs': 'التكاليف',
