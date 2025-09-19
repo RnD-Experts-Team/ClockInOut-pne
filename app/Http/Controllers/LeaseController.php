@@ -17,7 +17,6 @@ class LeaseController extends Controller
     public function index(Request $request): View
     {
         $query = Lease::with('store');
-
         // Create a base query for stats calculation
         $baseQuery = clone $query;
 

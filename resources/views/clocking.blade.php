@@ -144,27 +144,29 @@
                                 </div>
                             </div>
 
-                            <!-- Fix Image (hidden by default) -->
-                            <div class="hidden rounded-lg transition-all duration-300 hover:shadow-md"
-                                 id="fix_image_container">
-                                <label class="mb-1 block text-sm font-medium text-black-700" for="fix_image">
+                            <!-- Fix Image (hidden by default) - UPDATED for multiple images -->
+                            <div class="hidden rounded-lg transition-all duration-300 hover:shadow-md" id="fix_image_container">
+                                <label class="mb-1 block text-sm font-medium text-black-700" for="fix_images">
                                     {{ __('messages.fix_image') }}
                                 </label>
                                 <div class="mt-1">
-                                    <div
-                                        class="flex justify-center rounded-lg border-2 border-dashed border-orange-200 px-6 pb-6 pt-5 transition-all duration-300 hover:border-orange-500">
+                                    <div class="flex justify-center rounded-lg border-2 border-dashed border-orange-200 px-6 pb-6 pt-5 transition-all duration-300 hover:border-orange-500">
                                         <div class="text-center">
-                                            <label
-                                                class="relative cursor-pointer rounded-md font-medium text-black-600 transition-colors duration-300 focus-within:outline-none focus-within:ring-2 focus-within:ring-orange-500 focus-within:ring-offset-2 hover:text-black-500"
-                                                for="fix_image">
-                                                <span>{{ __('messages.upload_file') }}</span>
-                                                <input class="sr-only" id="fix_image" name="fix_image" type="file"
-                                                       accept="image/*" capture="environment">
+                                            <label class="relative cursor-pointer rounded-md font-medium text-black-600 transition-colors duration-300 focus-within:outline-none focus-within:ring-2 focus-within:ring-orange-500 focus-within:ring-offset-2 hover:text-black-500" for="fix_images">
+                                                <span>{{ __('messages.fix_image') }}</span>
+                                                <input class="sr-only" id="fix_images" name="fix_images[]" type="file"
+                                                       accept="image/*" capture="environment" multiple>
                                             </label>
                                             <p class="mt-1 {{ isRtl() ? 'pr-1' : 'pl-1' }}">{{ __('messages.or_drag_drop') }}</p>
                                             <p class="mt-2 text-xs text-black-500">{{ __('messages.camera_gallery_instruction') }}</p>
                                         </div>
                                     </div>
+                                </div>
+
+                                <!-- Preview area for selected images -->
+                                <div id="fix_images_preview" class="mt-3 hidden">
+                                    <label class="block text-sm font-medium text-black-700 mb-2">Selected Images:</label>
+                                    <div id="fix_images_list" class="grid grid-cols-2 gap-2"></div>
                                 </div>
                             </div>
 
@@ -559,32 +561,133 @@
         // -----------------------------------------
         // CLOCK OUT: Show/Hide fix fields if user fixed something
         // -----------------------------------------
+        // Updated fix fields toggle function
         function toggleFixFields(didFix) {
             const descriptionContainer = document.getElementById('fix_description_container');
             const imageContainer = document.getElementById('fix_image_container');
             const descriptionInput = document.getElementById('fix_description');
-            const imageInput = document.getElementById('fix_image');
+            const imageInput = document.getElementById('fix_images');
+            const previewContainer = document.getElementById('fix_images_preview');
 
             console.log('Toggle fix fields called with:', didFix);
 
-            // Add null checks to prevent errors
             if (descriptionContainer && imageContainer && descriptionInput && imageInput) {
                 if (didFix) {
                     descriptionContainer.classList.remove('hidden');
                     imageContainer.classList.remove('hidden');
-                    // Make fix image required when fixing something
                     imageInput.setAttribute('required', 'required');
                 } else {
                     descriptionContainer.classList.add('hidden');
                     imageContainer.classList.add('hidden');
-                    // Remove required attribute when not fixing
+                    previewContainer.classList.add('hidden');
                     imageInput.removeAttribute('required');
-                    // Clear values when hidden
                     descriptionInput.value = '';
                     imageInput.value = '';
+                    // Clear preview
+                    document.getElementById('fix_images_list').innerHTML = '';
                 }
             }
         }
+
+        // Add image preview functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const fixImagesInput = document.getElementById('fix_images');
+
+            if (fixImagesInput) {
+                fixImagesInput.addEventListener('change', function(e) {
+                    const files = e.target.files;
+                    const previewContainer = document.getElementById('fix_images_preview');
+                    const previewList = document.getElementById('fix_images_list');
+
+                    if (files.length > 0) {
+                        previewContainer.classList.remove('hidden');
+                        previewList.innerHTML = '';
+
+                        Array.from(files).forEach((file, index) => {
+                            const reader = new FileReader();
+                            reader.onload = function(e) {
+                                const imageDiv = document.createElement('div');
+                                imageDiv.className = 'relative';
+                                imageDiv.innerHTML = `
+                            <img src="${e.target.result}" class="w-full h-20 object-cover rounded border" alt="Fix image ${index + 1}">
+                            <div class="absolute top-1 right-1 bg-black bg-opacity-50 text-white text-xs px-1 rounded">${index + 1}</div>
+                        `;
+                                previewList.appendChild(imageDiv);
+                            };
+                            reader.readAsDataURL(file);
+                        });
+                    } else {
+                        previewContainer.classList.add('hidden');
+                    }
+                });
+            }
+        });
+
+        // Updated clock-out validation to handle multiple fix images
+        function handleClockOutClicked() {
+            const usingCar = {{ $using_car ? 'true' : 'false' }};
+            const clockOutErrorBox = document.getElementById('clockOutError');
+
+            console.log('=== CLOCK-OUT VALIDATION STARTED ===');
+            console.log('Using car:', usingCar);
+
+            // Clear any previous error
+            clockOutErrorBox.innerText = '';
+            clockOutErrorBox.classList.add('hidden');
+
+            // Get all form data for logging
+            const formData = new FormData(document.getElementById('clockOutForm'));
+
+            // Check radio button states
+            const didBuyYes = document.getElementById('didBuyYes');
+            const didFixYes = document.getElementById('didFixYes');
+
+            // If using car => check miles_out + image_out
+            if (usingCar) {
+                const milesOut = document.getElementById('miles_out').value.trim();
+                const imageOut = document.getElementById('image_out').value;
+                console.log('Car validation - miles_out:', milesOut, 'image_out:', imageOut);
+
+                if (!milesOut || !imageOut) {
+                    console.log('Car validation failed');
+                    clockOutErrorBox.innerText = '{{ __('messages.car_clock_out_validation') }}';
+                    clockOutErrorBox.classList.remove('hidden');
+                    return;
+                }
+            }
+
+            // Validate purchase fields
+            if (didBuyYes && didBuyYes.checked) {
+                const costVal = document.getElementById('purchase_cost').value.trim();
+                const receiptVal = document.getElementById('purchase_receipt').value;
+                console.log('Purchase validation - cost:', costVal, 'receipt:', receiptVal);
+
+                if (!costVal || !receiptVal) {
+                    console.log('Purchase validation failed');
+                    clockOutErrorBox.innerText = '{{ __('messages.purchase_validation') }}';
+                    clockOutErrorBox.classList.remove('hidden');
+                    return;
+                }
+            }
+
+            // Validate fix fields (updated for multiple images)
+            if (didFixYes && didFixYes.checked) {
+                const fixImagesInput = document.getElementById('fix_images');
+                const hasFixImages = fixImagesInput && fixImagesInput.files.length > 0;
+                console.log('Fix validation - images count:', fixImagesInput ? fixImagesInput.files.length : 0);
+
+                if (!hasFixImages) {
+                    console.log('Fix validation failed - no images selected');
+                    clockOutErrorBox.innerText = '{{ __('messages.fix_images_required') }}';
+                    clockOutErrorBox.classList.remove('hidden');
+                    return;
+                }
+            }
+
+            console.log('All validations passed, showing confirmation');
+            showConfirmation('out');
+        }
+
 
     </script>
 

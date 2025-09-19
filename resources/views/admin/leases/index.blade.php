@@ -236,20 +236,36 @@
                             @endphp
                             <tr class="hover:bg-orange-100 transition-colors duration-150">
                                 <!-- Store Info -->
+                                <!-- Store Info -->
                                 <td class="px-3 py-4 text-sm">
                                     <div class="space-y-1">
-                                        <div class="font-medium text-black-900">{{ $lease->store_number }}</div>
-                                        <div class="text-black-700 text-xs">{{ $lease->name }}</div>
+                                        <!-- Store Number -->
+                                        <div class="font-medium text-black-900">Store #{{ $lease->store_number }}</div>
+
+                                        <!-- Store Name from Store Model -->
+                                        @if($lease->store)
+                                            <div class="text-black-700 text-xs font-semibold">{{ $lease->store->name }}</div>
+                                        @else
+                                            <div class="text-red-500 text-xs">No Store Linked</div>
+                                        @endif
+
+                                        <!-- Lease Name (only if different and exists) -->
+                                        @if($lease->name && $lease->name !== ($lease->store->name ?? ''))
+                                            <div class="text-black-600 text-xs italic">{{ $lease->name }}</div>
+                                        @endif
+
+                                        <!-- Additional Info -->
                                         @if($lease->sqf)
                                             <div class="text-xs text-black-600">{{ number_format($lease->sqf) }} SQF</div>
                                         @endif
                                         @if($lease->hvac)
                                             <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                                                HVAC
-                                            </span>
+                HVAC
+            </span>
                                         @endif
                                     </div>
                                 </td>
+
 
                                 <!-- Financial -->
                                 <td class="px-3 py-4 text-sm">

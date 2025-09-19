@@ -6,8 +6,23 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div class="flex justify-between items-center mb-6">
             <div>
-                <h1 class="text-3xl font-bold text-black-900">Lease Details - {{ $lease->store_number }}</h1>
-                <p class="mt-2 text-sm text-black-700">{{ $lease->name }}</p>
+                <h1 class="text-3xl font-bold text-black-900">
+                    Lease Details - Store #{{ $lease->store_number }}
+                </h1>
+                @if($lease->store)
+                    <p class="mt-2 text-sm text-black-700 font-semibold">
+                        📍 {{ $lease->store->name }}
+                    </p>
+                @else
+                    <p class="mt-2 text-sm text-red-600">
+                        ⚠️ No store linked
+                    </p>
+                @endif
+                @if($lease->name && $lease->name !== ($lease->store->name ?? ''))
+                    <p class="mt-1 text-xs text-black-600 italic">
+                        Lease Name: {{ $lease->name }}
+                    </p>
+                @endif
             </div>
             <div class="flex space-x-3">
                 <a href="{{ route('leases.edit', $lease) }}"
@@ -45,8 +60,20 @@
                         </div>
                         <div>
                             <dt class="text-sm font-medium text-black-500">Store Name</dt>
-                            <dd class="mt-1 text-sm text-black-900">{{ $lease->name ?? 'N/A' }}</dd>
+                            <dd class="mt-1 text-sm text-black-900 font-semibold">
+                                @if($lease->store)
+                                    {{ $lease->store->name }}
+                                @else
+                                    <span class="text-red-600">No Store Linked</span>
+                                @endif
+                            </dd>
                         </div>
+                        @if($lease->name && $lease->name !== ($lease->store->name ?? ''))
+                            <div class="md:col-span-2">
+                                <dt class="text-sm font-medium text-black-500">Lease Name</dt>
+                                <dd class="mt-1 text-sm text-black-900 italic">{{ $lease->name }}</dd>
+                            </div>
+                        @endif
                         <div class="md:col-span-2">
                             <dt class="text-sm font-medium text-black-500">Store Address</dt>
                             <dd class="mt-1 text-sm text-black-900">{{ $lease->store_address ?? 'N/A' }}</dd>
@@ -65,6 +92,38 @@
                         </div>
                     </dl>
                 </div>
+
+                <!-- Store Details (additional store info from Store model) -->
+                @if($lease->store)
+                    <div class="bg-orange-50 shadow-sm ring-1 ring-orange-900/5 rounded-lg p-6">
+                        <h2 class="text-lg font-semibold text-black-900 mb-4 flex items-center">
+                            <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                            </svg>
+                            Store Record Details
+                        </h2>
+                        <dl class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <dt class="text-sm font-medium text-black-500">Store ID</dt>
+                                <dd class="mt-1 text-sm text-black-900">{{ $lease->store->id }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-sm font-medium text-black-500">Store Status</dt>
+                                <dd class="mt-1">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $lease->store->is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                                        {{ $lease->store->is_active ? 'Active' : 'Inactive' }}
+                                    </span>
+                                </dd>
+                            </div>
+                            @if($lease->store->address && $lease->store->address !== $lease->store_address)
+                                <div class="md:col-span-2">
+                                    <dt class="text-sm font-medium text-black-500">Store Address (from Store Record)</dt>
+                                    <dd class="mt-1 text-sm text-black-900">{{ $lease->store->address }}</dd>
+                                </div>
+                            @endif
+                        </dl>
+                    </div>
+                @endif
 
                 <!-- Financial Information -->
                 <div class="bg-orange-50 shadow-sm ring-1 ring-orange-900/5 rounded-lg p-6">

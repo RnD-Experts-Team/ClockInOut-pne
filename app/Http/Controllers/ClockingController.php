@@ -285,39 +285,24 @@ class ClockingController extends Controller
             'files' => $request->allFiles(),
             'has_image_out' => $request->hasFile('image_out'),
             'has_purchase_receipt' => $request->hasFile('purchase_receipt'),
-            'has_fix_image' => $request->hasFile('fix_image'), // New logging
+            'has_fix_images' => $request->hasFile('fix_images'), // Updated for multiple
+            'fix_images_count' => $request->hasFile('fix_images') ? count($request->file('fix_images')) : 0,
             'bought_something_value' => $request->input('bought_something'),
-            'fixed_something_value' => $request->input('fixed_something'), // New logging
+            'fixed_something_value' => $request->input('fixed_something'),
         ]);
 
-        // Log fix details when fixed_something is true
-        $fixedSomething = $request->input('fixed_something');
-        if ($fixedSomething == '1' || $fixedSomething === true || $fixedSomething === 'true') {
-            Log::info('Fix detected - detailed validation check', [
-                'fixed_something' => $fixedSomething,
-                'fix_description' => $request->input('fix_description'),
-                'has_fix_image_file' => $request->hasFile('fix_image'),
-                'fix_image_file_info' => $request->hasFile('fix_image') ? [
-                    'name' => $request->file('fix_image')->getClientOriginalName(),
-                    'size' => $request->file('fix_image')->getSize(),
-                    'mime' => $request->file('fix_image')->getMimeType()
-                ] : null
-            ]);
-        }
-
         try {
-            Log::info('Applying validation rules with fix fields');
-
-            // Updated validation rules
+            // Updated validation rules for multiple fix images
             $request->validate([
                 'miles_out'         => 'nullable|integer',
                 'image_out'         => 'nullable|image|mimes:jpg,png,jpeg',
                 'bought_something'  => 'required|boolean',
                 'purchase_cost'     => 'required_if:bought_something,1|nullable|numeric',
                 'purchase_receipt'  => 'required_if:bought_something,1|nullable|image|mimes:jpg,png,jpeg',
-                'fixed_something'   => 'required|boolean', // New validation
-                'fix_description'   => 'nullable|string|max:1000', // New validation
-                'fix_image'         => 'required_if:fixed_something,1|nullable|image|mimes:jpg,png,jpeg', // New validation
+                'fixed_something'   => 'required|boolean',
+                'fix_description'   => 'nullable|string|max:1000',
+                'fix_images'        => 'required_if:fixed_something,1|nullable|array|max:10', // Allow up to 10 images
+                'fix_images.*'      => 'image|mimes:jpg,png,jpeg|max:5120', // Max 5MB per image
             ]);
 
             Log::info('Clock-out validation passed');
@@ -325,16 +310,6 @@ class ClockingController extends Controller
             Log::error('Clock-out validation failed', [
                 'errors' => $e->errors(),
                 'request_data' => $request->all(),
-                'fix_validation' => [
-                    'fixed_something' => $request->input('fixed_something'),
-                    'fix_description' => $request->input('fix_description'),
-                    'has_fix_image' => $request->hasFile('fix_image'),
-                    'fix_errors' => [
-                        'fixed_something' => $e->errors()['fixed_something'] ?? null,
-                        'fix_description' => $e->errors()['fix_description'] ?? null,
-                        'fix_image' => $e->errors()['fix_image'] ?? null,
-                    ]
-                ]
             ]);
             throw $e;
         }
@@ -351,15 +326,20 @@ class ClockingController extends Controller
             $receiptPath = $request->file('purchase_receipt')->store('purchase_receipts', 'public');
         }
 
-        // Handle fix image (NEW)
-        $fixImagePath = null;
-        if ($request->hasFile('fix_image')) {
-            $fixImagePath = $request->file('fix_image')->store('fix_images', 'public');
-            Log::info('Fix image uploaded', ['path' => $fixImagePath]);
+        // Handle multiple fix images
+        $fixImagePaths = [];
+        if ($request->hasFile('fix_images')) {
+            foreach ($request->file('fix_images') as $fixImage) {
+                $path = $fixImage->store('fix_images', 'public');
+                $fixImagePaths[] = $path;
+            }
+            Log::info('Fix images uploaded', ['paths' => $fixImagePaths, 'count' => count($fixImagePaths)]);
         }
 
+        // Convert fix image paths array to JSON for storage
+        $fixImagesJson = !empty($fixImagePaths) ? json_encode($fixImagePaths) : null;
+
         // Retrieve the existing clocking record for clock out
-        Log::info('Looking for active clocking record', ['user_id' => Auth::id()]);
         $clocking = Clocking::where('user_id', Auth::id())
             ->whereNull('clock_out')
             ->where('is_clocked_in', true)
@@ -370,9 +350,7 @@ class ClockingController extends Controller
             return back()->withErrors(['error' => 'No active clock-in record found. Please clock in first.']);
         }
 
-        Log::info('Found active clocking record', ['clocking_id' => $clocking->id]);
-
-        // Prepare update data with new fix fields
+        // Prepare update data with multiple fix images
         $updateData = [
             'clock_out'        => now(),
             'miles_out'        => $request->miles_out,
@@ -381,17 +359,15 @@ class ClockingController extends Controller
             'bought_something' => $request->bought_something,
             'purchase_cost'    => $request->purchase_cost,
             'purchase_receipt' => $receiptPath,
-            'fixed_something'  => $request->fixed_something, // New field
-            'fix_description'  => $request->fix_description, // New field
-            'fix_image'        => $fixImagePath,            // New field
+            'fixed_something'  => $request->fixed_something,
+            'fix_description'  => $request->fix_description,
+            'fix_images'       => $fixImagesJson, // Store as JSON
         ];
 
-        Log::info('Updating clocking record with data including fix fields', $updateData);
-
-        // Update the record with clock-out details
+        Log::info('Updating clocking record with multiple fix images', $updateData);
         $clocking->update($updateData);
 
-        Log::info('Clock-out completed successfully with fix data', ['clocking_id' => $clocking->id]);
+        Log::info('Clock-out completed successfully with multiple fix images', ['clocking_id' => $clocking->id]);
 
         return back()->with('success', 'تم تسجيل الإنصراف بنجاح');
     }
