@@ -20,7 +20,7 @@ use App\Http\Controllers\UserTaskController;
 use App\Http\Middleware\RoleMiddleware;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
-
+use App\Http\Controllers\WorkbookController;
 Route::get('/', function () {
     return view('auth.login');
 });
@@ -193,9 +193,30 @@ Route::middleware(['auth'])->group(function () {
     Route::get('my-schedule', [UserScheduleController::class, 'index'])->name('user.schedule.index');
     Route::get('my-tasks', [UserTaskController::class, 'index'])->name('user.tasks.index');
     Route::patch('my-tasks/{taskAssignment}/status', [UserTaskController::class, 'updateStatus'])
-        ->name('user.tasks.update-status');
-
+        ->name('user.tasks.update-status');  
 
 });
 
+Route::middleware(['auth',RoleMiddleware::class . ':admin'])->group(function () {
+Route::name('workbook.')->group(function () {
+    Route::get('/workbook', [WorkbookController::class, 'index'])->name('index');
+
+    // Columns
+    Route::post('/columns', [WorkbookController::class, 'storeColumn'])->name('columns.store');
+    Route::put('/columns/{column}', [WorkbookController::class, 'updateColumn'])->name('columns.update');
+    Route::delete('/columns/{column}', [WorkbookController::class, 'destroyColumn'])->name('columns.destroy');
+
+    // Rows
+    Route::post('/rows', [WorkbookController::class, 'storeRow'])->name('rows.store');
+    Route::put('/rows/{row}', [WorkbookController::class, 'updateRow'])->name('rows.update');
+    Route::delete('/rows/{row}', [WorkbookController::class, 'destroyRow'])->name('rows.destroy');
+
+    // Cells
+    Route::post('/cells', [WorkbookController::class, 'upsertCell'])->name('cells.upsert'); // form submits can use POST
+    Route::delete('/cells', [WorkbookController::class, 'destroyCell'])->name('cells.destroy');
+
+    Route::post('/rows/{row}/save', [WorkbookController::class, 'saveRow'])
+    ->name('rows.save');
+});
+});
 require __DIR__.'/auth.php';
