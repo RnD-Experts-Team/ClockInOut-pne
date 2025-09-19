@@ -144,7 +144,7 @@
                                 </div>
                             </div>
 
-                            <!-- Fix Image (hidden by default) - UPDATED for multiple images -->
+                            <!-- Fix Image (hidden by default) - UPDATED for multiple images from gallery only -->
                             <div class="hidden rounded-lg transition-all duration-300 hover:shadow-md" id="fix_image_container">
                                 <label class="mb-1 block text-sm font-medium text-black-700" for="fix_images">
                                     {{ __('messages.fix_image') }}
@@ -153,11 +153,13 @@
                                     <div class="flex justify-center rounded-lg border-2 border-dashed border-orange-200 px-6 pb-6 pt-5 transition-all duration-300 hover:border-orange-500">
                                         <div class="text-center">
                                             <label class="relative cursor-pointer rounded-md font-medium text-black-600 transition-colors duration-300 focus-within:outline-none focus-within:ring-2 focus-within:ring-orange-500 focus-within:ring-offset-2 hover:text-black-500" for="fix_images">
-                                                <span>{{ __('messages.fix_image') }}</span>
+                                                <span>{{ __('messages.upload_file') }}</span>
+                                                <!-- REMOVED: capture="environment" attribute -->
                                                 <input class="sr-only" id="fix_images" name="fix_images[]" type="file"
-                                                       accept="image/*" capture="environment" multiple>
+                                                       accept="image/*" multiple>
                                             </label>
                                             <p class="mt-1 {{ isRtl() ? 'pr-1' : 'pl-1' }}">{{ __('messages.or_drag_drop') }}</p>
+                                            <!-- UPDATED: Remove camera instruction -->
                                             <p class="mt-2 text-xs text-black-500">{{ __('messages.camera_gallery_instruction') }}</p>
                                         </div>
                                     </div>
