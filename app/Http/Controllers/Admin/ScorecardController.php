@@ -115,11 +115,8 @@ class ScorecardController extends Controller
                 $totalFuelCost +=  $gasPayment;
             }
 
-            // Add payments made to company (if user bought something)
-            if ($clocking->bought_something && $clocking->purchase_cost) {
                 $totalPaymentsToCompany += $clocking->purchase_cost;
-            }
-
+            
 
         }
 
