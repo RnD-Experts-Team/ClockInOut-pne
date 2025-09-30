@@ -20,7 +20,9 @@ use App\Http\Controllers\UserTaskController;
 use App\Http\Middleware\RoleMiddleware;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\FolderController;
 use App\Http\Controllers\WorkbookController;
+use App\Http\Controllers\RowController;
 Route::get('/', function () {
     return view('auth.login');
 });
@@ -197,26 +199,42 @@ Route::middleware(['auth'])->group(function () {
 
 });
 
-Route::middleware(['auth',RoleMiddleware::class . ':admin'])->group(function () {
-Route::name('workbook.')->group(function () {
-    Route::get('/workbook', [WorkbookController::class, 'index'])->name('index');
+Route::prefix('workbooks')
+    ->name('workbooks.')
+    ->middleware(['auth', RoleMiddleware::class . ':admin'])
+    ->scopeBindings() // ✅ make nested bindings strict (workbook must belong to folder, etc.)
+    ->group(function () {
 
-    // Columns
-    Route::post('/columns', [WorkbookController::class, 'storeColumn'])->name('columns.store');
-    Route::put('/columns/{column}', [WorkbookController::class, 'updateColumn'])->name('columns.update');
-    Route::delete('/columns/{column}', [WorkbookController::class, 'destroyColumn'])->name('columns.destroy');
+        Route::redirect('/', '/workbooks/folders');
 
-    // Rows
-    Route::post('/rows', [WorkbookController::class, 'storeRow'])->name('rows.store');
-    Route::put('/rows/{row}', [WorkbookController::class, 'updateRow'])->name('rows.update');
-    Route::delete('/rows/{row}', [WorkbookController::class, 'destroyRow'])->name('rows.destroy');
+        // Folders
+        Route::controller(FolderController::class)->group(function () {
+            Route::get('/folders', 'index')->name('folders.index');
+            Route::post('/folders', 'store')->name('folders.store');
+            Route::get('/folders/{folder}', 'show')->name('folders.show');
+            Route::put('/folders/{folder}', 'update')->name('folders.update');
+            Route::delete('/folders/{folder}', 'destroy')->name('folders.destroy');
+        });
 
-    // Cells
-    Route::post('/cells', [WorkbookController::class, 'upsertCell'])->name('cells.upsert'); // form submits can use POST
-    Route::delete('/cells', [WorkbookController::class, 'destroyCell'])->name('cells.destroy');
+        // Workbooks (nested under folder)
+        Route::controller(WorkbookController::class)->group(function () {
+            Route::post('/folders/{folder}/workbooks', 'store')->name('store');
+            Route::get('/folders/{folder}/workbooks/{workbook}', 'show')->name('show');
+            Route::get('/folders/{folder}/workbooks/{workbook}/edit', 'edit')->name('edit');
+            Route::put('/folders/{folder}/workbooks/{workbook}', 'update')->name('update');
+            Route::delete('/folders/{folder}/workbooks/{workbook}', 'destroy')->name('destroy');
+        });
 
-    Route::post('/rows/{row}/save', [WorkbookController::class, 'saveRow'])
-    ->name('rows.save');
-});
-});
+        // Rows (nested under folder + workbook)
+        Route::controller(RowController::class)
+            ->prefix('/folders/{folder}/workbooks/{workbook}/rows')
+            ->name('rows.')
+            ->group(function () {
+                Route::get('/create', 'create')->name('create');
+                Route::post('/', 'store')->name('store');
+                Route::get('/{row}/edit',  'edit')->name('edit');
+                Route::put('/{row}', 'update')->name('update');
+                Route::delete('/{row}', 'destroy')->name('destroy');
+            });
+    });
 require __DIR__.'/auth.php';
