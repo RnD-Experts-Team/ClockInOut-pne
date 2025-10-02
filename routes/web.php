@@ -11,6 +11,7 @@ use App\Http\Controllers\ClockingController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\ExpirationController;
 use App\Http\Controllers\ExportController;
+use App\Http\Controllers\FolderController;
 use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\LeaseController;
 use App\Http\Controllers\MaintenanceRequestController;
@@ -18,6 +19,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReminderController;
+use App\Http\Controllers\RowController;
 use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\StoreController;
 use App\Http\Controllers\TaskAssignmentController;
@@ -341,3 +343,45 @@ Route::get('/leases/lease-tracker', [LeaseController::class, 'leaseTracker'])->n
 
 //export Clock in out data to excel
 Route::get('/export-clocking/{startDate?}/{endDate?}', [ExportController::class, 'exportToExcel'])->name('export.clocking');
+
+
+
+
+Route::prefix('workbooks')
+    ->name('workbooks.')
+    ->middleware(['auth', RoleMiddleware::class . ':admin'])
+    ->scopeBindings() // ✅ make nested bindings strict (workbook must belong to folder, etc.)
+    ->group(function () {
+
+        Route::redirect('/', '/workbooks/folders');
+
+        // Folders
+        Route::controller(FolderController::class)->group(function () {
+            Route::get('/folders', 'index')->name('folders.index');
+            Route::post('/folders', 'store')->name('folders.store');
+            Route::get('/folders/{folder}', 'show')->name('folders.show');
+            Route::put('/folders/{folder}', 'update')->name('folders.update');
+            Route::delete('/folders/{folder}', 'destroy')->name('folders.destroy');
+        });
+
+        // Workbooks (nested under folder)
+        Route::controller(WorkbookController::class)->group(function () {
+            Route::post('/folders/{folder}/workbooks', 'store')->name('store');
+            Route::get('/folders/{folder}/workbooks/{workbook}', 'show')->name('show');
+            Route::get('/folders/{folder}/workbooks/{workbook}/edit', 'edit')->name('edit');
+            Route::put('/folders/{folder}/workbooks/{workbook}', 'update')->name('update');
+            Route::delete('/folders/{folder}/workbooks/{workbook}', 'destroy')->name('destroy');
+        });
+
+        // Rows (nested under folder + workbook)
+        Route::controller(RowController::class)
+            ->prefix('/folders/{folder}/workbooks/{workbook}/rows')
+            ->name('rows.')
+            ->group(function () {
+                Route::get('/create', 'create')->name('create');
+                Route::post('/', 'store')->name('store');
+                Route::get('/{row}/edit',  'edit')->name('edit');
+                Route::put('/{row}', 'update')->name('update');
+                Route::delete('/{row}', 'destroy')->name('destroy');
+            });
+    });
