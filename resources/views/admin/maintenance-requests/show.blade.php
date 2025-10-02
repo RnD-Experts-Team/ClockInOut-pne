@@ -70,17 +70,19 @@
                             </dd>
                         </div>
                         <div>
-                            <dt class="text-sm font-medium text-black-500">Due Date</dt>
+                            <dt class="text-sm font-medium text-black-500">
+                                @if($maintenanceRequest->status === 'done')
+                                    Task End Date
+                                @else
+                                    Due Date
+                                @endif
+                            </dt>
                             <dd class="mt-1 text-sm text-black-900">
-                                {{ $maintenanceRequest->effective_due_date ? $maintenanceRequest->effective_due_date->format('M d, Y') : 'N/A' }}
-                            </dd>
-                        </div>
-                        <div>
-                            <dt class="text-sm font-medium text-black-500">Due Date</dt>
-                            <dd class="mt-1 text-sm text-black-900">
-                                {{ $maintenanceRequest->due_date ?
-                                   (is_string($maintenanceRequest->due_date) ? $maintenanceRequest->due_date : $maintenanceRequest->due_date->format('M d, Y'))
-                                   : 'N/A' }}
+                                @if($maintenanceRequest->status === 'done')
+                                    {{ $maintenanceRequest->task_end_date ? $maintenanceRequest->task_end_date->format('M d, Y H:i') : 'N/A' }}
+                                @else
+                                    {{ $maintenanceRequest->due_date ? (is_string($maintenanceRequest->due_date) ? $maintenanceRequest->due_date : $maintenanceRequest->due_date->format('M d, Y')) : 'N/A' }}
+                                @endif
                             </dd>
                         </div>
                         <div>
@@ -136,18 +138,18 @@
                         <div>
                             <dt class="text-sm font-medium text-black-500">Basic Troubleshoot Done</dt>
                             <dd class="mt-1">
-                            <span class="inline-flex items-center px-2 py-1 text-sm font-semibold rounded-full {{ $maintenanceRequest->basic_troubleshoot_done ? 'bg-orange-100 text-black-800' : 'bg-orange-100 text-black-800' }}">
+                                <span class="inline-flex items-center px-2 py-1 text-sm font-semibold rounded-full {{ $maintenanceRequest->basic_troubleshoot_done ? 'bg-orange-100 text-black-800' : 'bg-orange-100 text-black-800' }}">
                                 @if($maintenanceRequest->basic_troubleshoot_done)
-                                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                        <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
                                     </svg>
-                                    Yes
-                                @else
-                                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                        Yes
+                                    @else
+                                        <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
                                     </svg>
-                                    No
-                                @endif
+                                        No
+                                    @endif
                             </span>
                             </dd>
                         </div>
@@ -305,12 +307,12 @@
                             </div>
                         @endif
 
-                            @if($maintenanceRequest->progress_description && $maintenanceRequest->status === 'in_progress')
-                                <div class="md:col-span-2">
-                                    <dt class="text-sm font-medium text-black-500">Progress Description</dt>
-                                    <dd class="mt-1 text-sm text-black-900 whitespace-pre-wrap bg-blue-50 p-3 rounded border border-blue-200">{{ $maintenanceRequest->progress_description }}</dd>
-                                </div>
-                            @endif
+                        @if($maintenanceRequest->progress_description && $maintenanceRequest->status === 'in_progress')
+                            <div class="md:col-span-2">
+                                <dt class="text-sm font-medium text-black-500">Progress Description</dt>
+                                <dd class="mt-1 text-sm text-black-900 whitespace-pre-wrap bg-blue-50 p-3 rounded border border-blue-200">{{ $maintenanceRequest->progress_description }}</dd>
+                            </div>
+                        @endif
 
                     </div>
                 </div>
@@ -358,10 +360,31 @@
                                 <textarea name="progress_description" id="progress_description" rows="3" class="block w-full rounded-lg border-orange-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm" placeholder="Describe what work is being done or the current progress...">{{ $maintenanceRequest->progress_description ?? '' }}</textarea>
                             </div>
 
+                            <!-- Due Date Field (for in_progress status only) -->
+                            <div id="dueDateField" style="display: {{ $maintenanceRequest->status === 'in_progress' ? 'block' : 'none' }};">
+                                <label for="due_date" class="block text-sm font-medium text-black-700 mb-2">
+                                    Due Date
+                                </label>
+                                <input type="date"
+                                       name="due_date"
+                                       id="due_date"
+                                       class="block w-full rounded-lg border-orange-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm"
+                                       value="{{ $maintenanceRequest->due_date ? $maintenanceRequest->due_date->format('Y-m-d') : '' }}">
+                            </div>
 
-                            <div id="dueDateField" style="display: {{ in_array($maintenanceRequest->status, ['in_progress', 'done']) ? 'block' : 'none' }};">
-                                <label for="due_date" class="block text-sm font-medium text-black-700 mb-2">Due Date</label>
-                                <input type="date" name="due_date" id="due_date" class="block w-full rounded-lg border-orange-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm" value="{{ $maintenanceRequest->due_date ? $maintenanceRequest->due_date->format('Y-m-d') : '' }}">
+                            <!-- Task End Date Field (for done status only) -->
+                            <div id="taskEndDateField" style="display: {{ $maintenanceRequest->status === 'done' ? 'block' : 'none' }};">
+                                <label for="task_end_date" class="block text-sm font-medium text-black-700 mb-2">
+                                    Task End Date <span class="text-red-500">*</span>
+                                </label>
+                                <input type="datetime-local"
+                                       id="task_end_date"
+                                       name="task_end_date"
+                                       class="w-full px-3 py-2 border border-orange-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                                       value="{{ old('task_end_date', $maintenanceRequest->task_end_date ? $maintenanceRequest->task_end_date->format('Y-m-d\TH:i') : '') }}">
+                                @error('task_end_date')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
                             </div>
 
                             <div id="costsField" style="display: {{ $maintenanceRequest->status === 'done' ? 'block' : 'none' }};">
@@ -442,7 +465,6 @@
     <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
 </svg>
                                                     @break
-
                                                 @case('in_progress')
                                                     <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
                                                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
@@ -499,13 +521,15 @@
             const fixField = document.getElementById('fixField');
             const assignedToField = document.getElementById('assignedToField');
             const dueDateField = document.getElementById('dueDateField');
+            const taskEndDateField = document.getElementById('taskEndDateField');
             const reasonField = document.getElementById('reasonField');
+            const progressDescriptionField = document.getElementById('progressDescriptionField');
             const costsInput = document.getElementById('costs');
             const fixTextarea = document.getElementById('how_we_fixed_it');
             const assignedToSelect = document.getElementById('assigned_to');
             const reasonTextarea = document.getElementById('reason');
-            const progressDescriptionTextarea = document.getElementById('progress_description'); // NEW
-
+            const progressDescriptionTextarea = document.getElementById('progress_description');
+            const taskEndDateInput = document.getElementById('task_end_date');
 
             if (statusSelect) {
                 statusSelect.addEventListener('change', function() {
@@ -516,30 +540,31 @@
                     fixField.style.display = 'none';
                     assignedToField.style.display = 'none';
                     dueDateField.style.display = 'none';
+                    taskEndDateField.style.display = 'none';
                     reasonField.style.display = 'none';
-                    progressDescriptionField.style.display = 'none'; // NEW
-
+                    progressDescriptionField.style.display = 'none';
 
                     // Reset requirements
                     costsInput.required = false;
                     fixTextarea.required = false;
                     assignedToSelect.required = false;
                     reasonTextarea.required = false;
-                    progressDescriptionTextarea.required = false; // NEW
-
+                    progressDescriptionTextarea.required = false;
+                    taskEndDateInput.required = false;
 
                     if (value === 'done') {
                         costsField.style.display = 'block';
                         fixField.style.display = 'block';
                         assignedToField.style.display = 'block';
-                        dueDateField.style.display = 'block';
+                        taskEndDateField.style.display = 'block';
                         costsInput.required = true;
                         fixTextarea.required = true;
                         assignedToSelect.required = true;
+                        taskEndDateInput.required = true;
                     } else if (value === 'in_progress') {
                         assignedToField.style.display = 'block';
                         dueDateField.style.display = 'block';
-                        progressDescriptionField.style.display = 'block'; // NEW
+                        progressDescriptionField.style.display = 'block';
                         assignedToSelect.required = true;
                     } else if (value === 'on_hold') {
                         reasonField.style.display = 'block';
@@ -550,3 +575,5 @@
         });
     </script>
 @endsection
+
+

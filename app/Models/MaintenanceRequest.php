@@ -34,6 +34,8 @@ class MaintenanceRequest extends Model
         'due_date',
         'assignment_source',
         'current_task_assignment_id',
+        'task_end_date',
+
     ];
 
     protected $casts = [
@@ -44,6 +46,8 @@ class MaintenanceRequest extends Model
         'date_submitted' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'task_end_date' => 'datetime',
+
     ];
 
     public function currentTaskAssignment()
@@ -140,10 +144,10 @@ class MaintenanceRequest extends Model
     {
         return $this->latestTaskAssignment?->due_date;
     }
-    public function assignedTo()
-    {
-        return $this->belongsTo(User::class, 'assigned_to');
-    }
+//    public function assignedTo()
+//    {
+//        return $this->belongsTo(User::class, 'assigned_to');
+//    }
 
     public function store(): BelongsTo
     {
@@ -317,4 +321,27 @@ class MaintenanceRequest extends Model
     {
         return $this->hasMany(WebhookNotification::class, 'maintenance_request_id');
     }
+
+// Add this method to your MaintenanceRequest model
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assigned_to');
+    }
+
+    /**
+     * Get the assigned user (same as user but with different name)
+     */
+    public function assignedUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assigned_to');
+    }
+
+    /**
+     * Get the user assigned to this maintenance request (legacy naming)
+     */
+    public function assignedTo(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assigned_to');
+    }
+
 }

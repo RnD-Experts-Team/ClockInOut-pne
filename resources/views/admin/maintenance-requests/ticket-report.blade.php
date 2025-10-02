@@ -57,6 +57,13 @@
                         <th class="border border-gray-300 px-3 py-3 text-left text-sm font-semibold cursor-pointer hover:bg-[#e55b17] transition-colors select-none"
                             onclick="sortTicketReportTable(6, 'date')" id="ticketreport-header-6">
                             <div class="flex items-center justify-center">
+                                Task End Date
+                                <span class="ml-2 text-xs opacity-75" id="ticketreport-sort-indicator-6">↑</span>
+                            </div>
+                        </th>
+                        <th class="border border-gray-300 px-3 py-3 text-left text-sm font-semibold cursor-pointer hover:bg-[#e55b17] transition-colors select-none"
+                            onclick="sortTicketReportTable(6, 'date')" id="ticketreport-header-6">
+                            <div class="flex items-center justify-center">
                                 Created Date
                                 <span class="ml-2 text-xs opacity-75" id="ticketreport-sort-indicator-6">↑</span>
                             </div>
@@ -81,6 +88,7 @@
                     @foreach($maintenanceRequests as $index => $request)
                         <tr class="{{ $index % 2 == 0 ? 'bg-white' : 'bg-gray-50' }} hover:bg-[#fff4ed]">
                             <td class="border border-gray-300 px-3 py-3 text-sm text-center" data-sort="{{ $request->entry_number ?? $request->id }}">{{ $request->entry_number ?? $request->id }}</td>
+
                             <td class="border border-gray-300 px-3 py-3 text-sm" data-sort="{{ is_object($request->store) ? $request->store->store_number : ($request->store ?? 'N/A') }}">
                                 @if($request->store && is_object($request->store))
                                     {{ $request->store->store_number }} - {{ $request->store->name ?: 'No Name' }}
@@ -88,12 +96,19 @@
                                     {{ $request->store ?: 'No Store' }}
                                 @endif
                             </td>
+
                             <td class="border border-gray-300 px-3 py-3 text-sm" data-sort="{{ $request->equipment_with_issue ?? 'No Equipment' }}">{{ Str::limit($request->equipment_with_issue ?? 'No Equipment', 30) }}</td>
+
                             <td class="border border-gray-300 px-3 py-3 text-sm text-center" data-sort="{{ $request->status }}">
                                 @switch($request->status)
                                     @case('on_hold')
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                                             On Hold
+                                        </span>
+                                        @break
+                                    @case('received')
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                            Received
                                         </span>
                                         @break
                                     @case('in_progress')
@@ -111,19 +126,14 @@
                                             Canceled
                                         </span>
                                         @break
-                                        @case('received')
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                            received
-                                        </span>
-                                        @break
                                 @endswitch
                             </td>
-                            {{-- ✅ FIXED: Use effective assignment instead of direct assignedTo --}}
+
                             <td class="border border-gray-300 px-3 py-3 text-sm" data-sort="{{ $request->effective_assigned_user ? $request->effective_assigned_user->name : 'Not Assigned' }}">
                                 @if($request->effective_assigned_user)
                                     <div class="flex items-center">
                                         <div class="font-medium">{{ $request->effective_assigned_user->name }}</div>
-                                        <div class="text-xs text-gray-500">
+                                        <div class="text-xs text-gray-500 ml-1">
                                             ({{ $request->assignment_source === 'task_assignment' ? 'Task' : 'Direct' }})
                                         </div>
                                     </div>
@@ -131,13 +141,39 @@
                                     <span class="text-gray-500">Not Assigned</span>
                                 @endif
                             </td>
-                            {{-- ✅ FIXED: Use effective due date instead of direct due_date --}}
+
                             <td class="border border-gray-300 px-3 py-3 text-sm text-center" data-sort="{{ $request->effective_due_date ? $request->effective_due_date->format('Y-m-d') : '9999-12-31' }}">
-                                {{ $request->effective_due_date ? $request->effective_due_date->format('M d, Y') : 'N/A' }}
+                                @if($request->effective_due_date)
+                                    <div>
+                                        <div class="font-medium">{{ $request->effective_due_date->format('M d, Y') }}</div>
+                                        <div class="text-xs text-gray-500">{{ $request->effective_due_date->format('g:i A') }}</div>
+                                    </div>
+                                @else
+                                    <span class="text-gray-400">N/A</span>
+                                @endif
                             </td>
+
+                            <!-- NEW: Task End Date Column -->
+                            <td class="border border-gray-300 px-3 py-3 text-sm text-center" data-sort="{{ $request->task_end_date ? $request->task_end_date->format('Y-m-d') : '9999-12-31' }}">
+                                @if($request->task_end_date)
+                                    <div class="flex items-center justify-center">
+                                        <svg class="w-4 h-4 mr-1 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                        <div>
+                                            <div class="font-medium text-green-700">{{ $request->task_end_date->format('M d, Y') }}</div>
+                                            <div class="text-xs text-gray-500">{{ $request->task_end_date->format('g:i A') }}</div>
+                                        </div>
+                                    </div>
+                                @else
+                                    <span class="text-gray-400">-</span>
+                                @endif
+                            </td>
+
                             <td class="border border-gray-300 px-3 py-3 text-sm text-center" data-sort="{{ $request->created_at ? $request->created_at->format('Y-m-d') : '9999-12-31' }}">
                                 {{ $request->created_at ? $request->created_at->format('M d, Y') : 'N/A' }}
                             </td>
+
                             <td class="border border-gray-300 px-3 py-3 text-sm text-center" data-sort="{{ $request->urgencyLevel ? $request->urgencyLevel->name : 'Unknown' }}">
                                 @if($request->urgencyLevel)
                                     @switch($request->urgencyLevel->name)
@@ -169,11 +205,12 @@
                                     </span>
                                 @endif
                             </td>
+
                             <td class="border border-gray-300 px-3 py-3 text-sm text-right" data-sort="{{ $request->costs ?: 0 }}">
                                 @if($request->costs)
                                     ${{ number_format($request->costs, 2) }}
                                 @else
-                                    N/A
+                                    <span class="text-gray-400">N/A</span>
                                 @endif
                             </td>
                         </tr>

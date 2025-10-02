@@ -255,7 +255,7 @@
                             <th class="py-4 pl-6 pr-3 text-left">
                                 <input type="checkbox" id="selectAll" form="bulkForm" class="rounded border-gray-300 text-orange-600 focus:ring-orange-500 w-4 h-4">
                             </th>
-                            <th class="px-4 py-4 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">Entry #</th>
+                            <th class="px-4 py-4 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">Entry</th>
                             <th class="px-4 py-4 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">Store</th>
                             <th class="px-4 py-4 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">Requester</th>
                             <th class="px-4 py-4 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">Equipment</th>
@@ -263,6 +263,7 @@
                             <th class="px-4 py-4 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">Status</th>
                             <th class="px-4 py-4 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">Assigned To</th>
                             <th class="px-4 py-4 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">Due Date</th>
+                            <th class="px-4 py-4 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">Task End Date</th>
                             <th class="px-4 py-4 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">Date</th>
                             <th class="px-4 py-4 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">Cognito Status</th>
                             <th class="px-4 py-4 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">Actions</th>
@@ -270,12 +271,12 @@
                         </thead>
                         <tbody class="divide-y divide-gray-200">
                         @foreach($maintenanceRequests as $index => $request)
-                            <tr class="{{ $index % 2 == 0 ? 'bg-white' : 'bg-gray-50' }} hover:bg-orange-50 transition-colors duration-150 cursor-pointer">
+                            <tr class="{{ ($index % 2 == 0) ? 'bg-white' : 'bg-gray-50' }} hover:bg-orange-50 transition-colors duration-150 cursor-pointer">
                                 <td class="py-4 pl-6 pr-3">
                                     <input type="checkbox" form="bulkForm" name="request_ids[]" value="{{ $request->id }}" class="request-checkbox rounded border-gray-300 text-orange-600 focus:ring-orange-500 w-4 h-4">
                                 </td>
                                 <td class="px-4 py-4 text-sm font-bold text-gray-900">
-                                    <span class="bg-gray-100 px-2 py-1 rounded-lg">{{ $request->entry_number ?? $request->id }}</span>
+                                    <span class="bg-gray-100 px-2 py-1 rounded-lg">#{{ $request->entry_number ?? $request->id }}</span>
                                 </td>
                                 <td class="px-4 py-4 text-sm text-gray-600">
                                     @if($request->store && is_object($request->store))
@@ -288,19 +289,15 @@
                                 <td class="px-4 py-4 text-sm text-gray-600">
                                     <div class="flex items-center">
                                         <div class="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center mr-3">
-                                            <span class="text-xs font-medium text-gray-700">
-                                                {{ substr($request->requester->first_name ?? 'N', 0, 1) }}{{ substr($request->requester->last_name ?? 'A', 0, 1) }}
-                                            </span>
+                                            <span class="text-xs font-medium text-gray-700">{{ substr($request->requester->first_name ?? 'N', 0, 1) }}{{ substr($request->requester->last_name ?? 'A', 0, 1) }}</span>
                                         </div>
                                         <div>
-                                            <div class="font-medium text-gray-900">{{ $request->requester->first_name ?? 'N/A' }} {{ $request->requester->last_name ?? '' }}</div>
+                                            <div class="font-medium text-gray-900">{{ ($request->requester->first_name ?? 'N/A') }} {{ ($request->requester->last_name ?? '') }}</div>
                                         </div>
                                     </div>
                                 </td>
                                 <td class="px-4 py-4 text-sm text-gray-600 max-w-xs">
-                                    <div class="truncate" title="{{ $request->equipment_with_issue ?? 'No Equipment' }}">
-                                        {{ Str::limit($request->equipment_with_issue ?? 'No Equipment', 30) }}
-                                    </div>
+                                    <div class="truncate" title="{{ $request->equipment_with_issue ?? 'No Equipment' }}">{{ Str::limit($request->equipment_with_issue ?? 'No Equipment', 30) }}</div>
                                 </td>
                                 <td class="px-4 py-4 text-sm">
                                     @if($request->urgencyLevel)
@@ -308,85 +305,82 @@
                                             @case('Critical')
                                             @case('Impacts Sales')
                                                 <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800 border border-red-200">
-                                                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
-                                                    </svg>
-                                                    {{ $request->urgencyLevel->name }}
-                                                </span>
+                                                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                                                        </svg>
+                                                        {{ $request->urgencyLevel->name }}
+                                                    </span>
                                                 @break
                                             @case('High')
                                                 <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-800 border border-orange-200">
-                                                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path fill-rule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 9.134a1 1 0 010 1.732L14.146 12.8l-1.179 4.456a1 1 0 01-1.934 0L9.854 12.8 6.5 10.866a1 1 0 010-1.732L9.854 7.2l1.179-4.456A1 1 0 0112 2z" clip-rule="evenodd"></path>
-                                                    </svg>
-                                                    {{ $request->urgencyLevel->name }}
-                                                </span>
+                                                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path fill-rule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 9.134a1 1 0 010 1.732L14.146 12.8l-1.179 4.456a1 1 0 01-1.934 0L9.854 12.8 6.5 10.866a1 1 0 010-1.732L9.854 7.2l1.179-4.456A1 1 0 0112 2z" clip-rule="evenodd"></path>
+                                                        </svg>
+                                                        {{ $request->urgencyLevel->name }}
+                                                    </span>
                                                 @break
                                             @case('Medium')
                                                 <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800 border border-yellow-200">
-                                                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
-                                                    </svg>
-                                                    {{ $request->urgencyLevel->name }}
-                                                </span>
+                                                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                                                        </svg>
+                                                        {{ $request->urgencyLevel->name }}
+                                                    </span>
                                                 @break
                                             @case('Low')
                                                 <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800 border border-green-200">
-                                                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                                                    </svg>
-                                                    {{ $request->urgencyLevel->name }}
-                                                </span>
+                                                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                                        </svg>
+                                                        {{ $request->urgencyLevel->name }}
+                                                    </span>
                                                 @break
                                         @endswitch
                                     @else
-                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                            Unknown
-                                        </span>
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">Unknown</span>
                                     @endif
                                 </td>
                                 <td class="px-4 py-4 text-sm">
                                     @switch($request->status)
                                         @case('on_hold')
                                             <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800 border border-yellow-200">
-            <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path>
-            </svg>
-            On Hold
-        </span>
+                                                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                                                    </svg>
+                                                    On Hold
+                                                </span>
                                             @break
-                                        @case('received') {{-- CHANGED from reserved --}}
-                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-800 border border-purple-200">
-    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-    </svg>
-    Received
-</span>
-                                        @break
-
+                                        @case('received')
+                                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-800 border border-purple-200">
+                                                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                                    </svg>
+                                                    Received
+                                                </span>
+                                            @break
                                         @case('in_progress')
                                             <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-200">
-                                                <svg class="w-3 h-3 mr-1 animate-spin" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"></path>
-                                                </svg>
-                                                In Progress
-                                            </span>
+                                                    <svg class="w-3 h-3 mr-1 animate-spin" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"></path>
+                                                    </svg>
+                                                    In Progress
+                                                </span>
                                             @break
                                         @case('done')
                                             <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800 border border-green-200">
-                                                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                                                </svg>
-                                                Done
-                                            </span>
+                                                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                                    </svg>
+                                                    Done
+                                                </span>
                                             @break
                                         @case('canceled')
                                             <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800 border border-red-200">
-                                                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
-                                                </svg>
-                                                Canceled
-                                            </span>
+                                                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                                                    </svg>
+                                                    Canceled
+                                                </span>
                                             @break
                                     @endswitch
                                 </td>
@@ -394,23 +388,18 @@
                                     @if($request->effective_assigned_user)
                                         <div class="flex items-center">
                                             <div class="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center mr-2">
-                <span class="text-xs font-medium text-white">
-                    {{ substr($request->effective_assigned_user->name, 0, 1) }}
-                </span>
+                                                <span class="text-xs font-medium text-white">{{ substr($request->effective_assigned_user->name, 0, 1) }}</span>
                                             </div>
                                             <div>
                                                 <div class="font-medium text-gray-900">{{ $request->effective_assigned_user->name }}</div>
-                                                <div class="text-xs text-gray-500">
-                                                    {{ $request->assignment_source === 'task_assignment' ? 'Task Assignment' : 'Direct Assignment' }}
-                                                </div>
+                                                <div class="text-xs text-gray-500">{{ $request->assignment_source == 'task_assignment' ? 'Task Assignment' : 'Direct Assignment' }}</div>
                                             </div>
                                         </div>
                                     @else
                                         <span class="text-gray-400 italic">Not Assigned</span>
                                     @endif
                                 </td>
-
-                                <!-- ✅ Display due date from latest TaskAssignment -->
+                                <!-- Due Date Column -->
                                 <td class="px-4 py-4 text-sm text-gray-600">
                                     @if($request->latestTaskAssignment && $request->latestTaskAssignment->due_date)
                                         <div class="flex items-center">
@@ -422,8 +411,34 @@
                                                 <div class="text-xs text-gray-500">{{ $request->latestTaskAssignment->due_date->format('g:i A') }}</div>
                                             </div>
                                         </div>
+                                    @elseif($request->due_date)
+                                        <div class="flex items-center">
+                                            <svg class="w-4 h-4 mr-1 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                            </svg>
+                                            <div>
+                                                <div class="font-medium text-gray-900">{{ $request->due_date->format('M d, Y') }}</div>
+                                                <div class="text-xs text-gray-500">Due Date</div>
+                                            </div>
+                                        </div>
                                     @else
-                                        <span class="text-gray-400">No Due Date Set</span>
+                                        <span class="text-gray-400">-</span>
+                                    @endif
+                                </td>
+                                <!-- Task End Date Column -->
+                                <td class="px-4 py-4 text-sm text-gray-600">
+                                    @if($request->task_end_date)
+                                        <div class="flex items-center">
+                                            <svg class="w-4 h-4 mr-1 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                            </svg>
+                                            <div>
+                                                <div class="font-medium text-gray-900">{{ $request->task_end_date->format('M d, Y') }}</div>
+                                                <div class="text-xs text-gray-500">{{ $request->task_end_date->format('g:i A') }}</div>
+                                            </div>
+                                        </div>
+                                    @else
+                                        <span class="text-gray-400">-</span>
                                     @endif
                                 </td>
                                 <td class="px-4 py-4 text-sm text-gray-600">
@@ -441,24 +456,23 @@
                                 <td class="px-4 py-4 text-sm">
                                     @if($request->not_in_cognito)
                                         <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-200">
-                                            <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fill-rule="evenodd" d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" clip-rule="evenodd"></path>
-                                            </svg>
-                                            Local Only
-                                        </span>
+                                                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd" d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" clip-rule="evenodd"></path>
+                                                </svg>
+                                                Local Only
+                                            </span>
                                     @else
                                         <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
-                                            <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                                            </svg>
-                                            Synced
-                                        </span>
+                                                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                                </svg>
+                                                Synced
+                                            </span>
                                     @endif
                                 </td>
                                 <td class="px-4 py-4 text-sm">
                                     <div class="flex space-x-2">
-                                        <a href="{{ route('maintenance-requests.show', $request) }}"
-                                           class="text-blue-600 hover:text-blue-900 font-medium hover:underline transition-colors">View</a>
+                                        <a href="{{ route('maintenance-requests.show', $request) }}" class="text-blue-600 hover:text-blue-900 font-medium hover:underline transition-colors">View</a>
                                         <form action="{{ route('maintenance-requests.destroy', $request) }}" method="POST" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this request?')">
                                             @csrf
                                             @method('DELETE')
@@ -474,23 +488,18 @@
 
                 <!-- Enhanced Pagination -->
                 <div class="px-6 py-4 border-t border-gray-200 bg-gray-50 text-center">
-
-
-                            {{ $maintenanceRequests->links() }}
-
-
+                    {{ $maintenanceRequests->links() }}
                 </div>
             @else
                 <div class="text-center py-16">
                     <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
                     </svg>
                     <h3 class="mt-4 text-lg font-medium text-gray-900">No maintenance requests found</h3>
                     <p class="mt-2 text-sm text-gray-500">No requests match your current filters. Try adjusting your search criteria.</p>
                 </div>
             @endif
         </div>
-
         <!-- Enhanced Ticket Report Modal -->
         <div id="ticketReportModal" class="hidden fixed inset-0 bg-opacity-50 overflow-y-auto h-full w-full z-50">
             <div class="relative top-4 mx-auto p-5 border w-11/12 max-w-7xl shadow-2xl rounded-xl bg-white">
@@ -1030,6 +1039,7 @@
                     'Status': 'الحالة',
                     'Assigned To': 'تم التعيين لـ',
                     'Due Date': 'تاريخ التسليم',
+                    'Task End Date': 'تاريخ الصيانة',
                     'Created Date': 'تاريخ الإنشاء',
                     'Costs': 'التكاليف',
                     'On Hold': 'قيد الانتظار',
@@ -1094,7 +1104,8 @@
                     'Urgency': 'الأولوية',
                     'Status': 'الحالة',
                     'Assigned to': 'مُسند إلى',           // Header translation
-                    'Due Date': 'تاريخ الصيانة',
+                    'Due Date': 'تاريخ انتهاء الطلب',
+                    'Task End Date': 'تاريخ الصيانة',
                     'Created Date': 'تاريخ الإنشاء',
                     'Date Created': 'تاريخ الإنشاء',
                     'Costs': 'التكاليف',
