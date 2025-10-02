@@ -343,7 +343,19 @@
                                 <!-- Store Info -->
                                 <td class="px-3 py-4 text-sm">
                                     <div class="space-y-1">
-                                        <div class="font-medium text-black-900">{{ $payment->store }}</div>
+{{--                                        @dd($payment);--}}
+                                        <div class="font-medium text-black-900">
+                                            @if($payment->store)
+                                                {{ $payment->store->name }}
+                                            @elseif($payment->store_id)
+                                                @php
+                                                    $store = \App\Models\Store::find($payment->store_id);
+                                                @endphp
+                                                {{ $store ? $store->name : 'Store ID: ' . $payment->store_id }}
+                                            @else
+                                                Store Not Found
+                                            @endif
+                                        </div>
                                         <div class="text-black-700 text-xs">{{ $payment->date->format('M d, Y') }}</div>
                                         <div class="text-xs text-black-700">Week {{ $payment->week }}</div>
                                     </div>

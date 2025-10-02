@@ -10,7 +10,7 @@
             <!-- Summary Statistics -->
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
                 <div class="bg-white rounded-lg shadow p-4 text-center">
-                    <div class="text-2xl font-bold text-[#ff671b]">{{ $stores->count() }}</div>
+                    <div class="text-2xl font-bold text-[#ff671b]">{{ $storeNames->count() }}</div>
                     <div class="text-sm text-gray-600">Active Stores</div>
                 </div>
                 <div class="bg-white rounded-lg shadow p-4 text-center">
@@ -35,7 +35,7 @@
 
             <!-- Excel-like Table -->
             <div class="bg-white shadow-lg rounded-lg overflow-hidden">
-                @if($stores->count() > 0)
+                @if($storeNames->count() > 0)
                     <div class="overflow-x-auto">
                         <table class="min-w-full border-collapse" id="weeklyMaintenanceTable">
                             <thead>
@@ -186,7 +186,7 @@
                             <tfoot>
                             <tr class="bg-[#e55b17] text-white font-bold">
                                 <td class="border border-gray-300 px-4 py-4 text-sm text-center">
-                                    TOTALS ({{ $stores->count() }} stores)
+                                    TOTALS ({{ $storeNames->count() }} stores)
                                 </td>
                                 <td class="border border-gray-300 px-4 py-4 text-sm text-center">
                                     ${{ number_format($totalEquipmentCost, 2) }}
