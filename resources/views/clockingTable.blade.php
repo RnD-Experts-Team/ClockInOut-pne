@@ -190,53 +190,164 @@
                                         <td class="whitespace-nowrap px-3 py-4 text-sm text-black-500">
                                             <div class="flex flex-row space-x-2">
                                                 @if ($clocking->image_in)
-                                                    <a href="{{ asset('storage/' . $clocking->image_in) }}"
-                                                       target="_blank" class="group relative" title="Clock In Image">
-                                                        <img src="{{ asset('storage/' . $clocking->image_in) }}"
-                                                             alt="Clock In"
-                                                             class="h-10 w-10 rounded-lg object-cover ring-1 ring-orange-200 hover:ring-orange-500">
+                                                    <button type="button"
+                                                            data-modal-target="clock-in-modal-{{ $clocking->id }}"
+                                                            data-modal-toggle="clock-in-modal-{{ $clocking->id }}"
+                                                            class="group relative flex items-center justify-center h-10 w-10 rounded-lg bg-blue-100 hover:bg-blue-200 ring-1 ring-blue-200 hover:ring-blue-500 transition-all duration-200"
+                                                            title="View Clock In Image">
+                                                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                                        </svg>
                                                         <div class="absolute -top-1 -left-1 bg-blue-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center">
                                                             IN
                                                         </div>
-                                                    </a>
-                                                @endif
-                                                @if ($clocking->image_out)
-                                                    <a href="{{ asset('storage/' . $clocking->image_out) }}"
-                                                       target="_blank" class="group relative" title="Clock Out Image">
-                                                        <img src="{{ asset('storage/' . $clocking->image_out) }}"
-                                                             alt="Clock Out"
-                                                             class="h-10 w-10 rounded-lg object-cover ring-1 ring-orange-200 hover:ring-orange-500">
-                                                        <div class="absolute -top-2 -left-2 bg-red-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center">
-                                                            <span class="text-xs font-bold">OUT</span>
-                                                        </div>
+                                                    </button>
 
-                                                    </a>
+                                                    <!-- Clock In Modal -->
+                                                    <div id="clock-in-modal-{{ $clocking->id }}" tabindex="-1" aria-hidden="true"
+                                                         class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
+                                                        <div class="relative p-4 w-full max-w-2xl max-h-full">
+                                                            <div class="relative bg-white rounded-lg shadow-lg dark:bg-gray-700">
+                                                                <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
+                                                                    <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Clock In Image</h3>
+                                                                    <button type="button"
+                                                                            class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
+                                                                            data-modal-hide="clock-in-modal-{{ $clocking->id }}">
+                                                                        <svg class="w-3 h-3" aria-hidden="true" fill="none" viewBox="0 0 14 14">
+                                                                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+                                                                        </svg>
+                                                                    </button>
+                                                                </div>
+                                                                <div class="p-4 md:p-5">
+                                                                    <img src="{{ asset('storage/' . $clocking->image_in) }}"
+                                                                         alt="Clock In Image"
+                                                                         class="w-full max-h-96 object-contain rounded-lg">
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                 @endif
+
+                                                @if ($clocking->image_out)
+                                                    <button type="button"
+                                                            data-modal-target="clock-out-modal-{{ $clocking->id }}"
+                                                            data-modal-toggle="clock-out-modal-{{ $clocking->id }}"
+                                                            class="group relative flex items-center justify-center h-10 w-10 rounded-lg bg-red-100 hover:bg-red-200 ring-1 ring-red-200 hover:ring-red-500 transition-all duration-200"
+                                                            title="View Clock Out Image">
+                                                        <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                                        </svg>
+                                                        <div class="absolute -top-1 -left-1 bg-red-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center">
+                                                            OUT
+                                                        </div>
+                                                    </button>
+
+                                                    <!-- Clock Out Modal -->
+                                                    <div id="clock-out-modal-{{ $clocking->id }}" tabindex="-1" aria-hidden="true"
+                                                         class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
+                                                        <div class="relative p-4 w-full max-w-2xl max-h-full">
+                                                            <div class="relative bg-white rounded-lg shadow-lg dark:bg-gray-700">
+                                                                <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
+                                                                    <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Clock Out Image</h3>
+                                                                    <button type="button"
+                                                                            class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
+                                                                            data-modal-hide="clock-out-modal-{{ $clocking->id }}">
+                                                                        <svg class="w-3 h-3" aria-hidden="true" fill="none" viewBox="0 0 14 14">
+                                                                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+                                                                        </svg>
+                                                                    </button>
+                                                                </div>
+                                                                <div class="p-4 md:p-5">
+                                                                    <img src="{{ asset('storage/' . $clocking->image_out) }}"
+                                                                         alt="Clock Out Image"
+                                                                         class="w-full max-h-96 object-contain rounded-lg">
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                @endif
+
                                                 @if ($clocking->purchase_receipt)
-                                                    <a href="{{ asset('storage/' . $clocking->purchase_receipt) }}"
-                                                       target="_blank" class="group relative" title="Purchase Receipt">
-                                                        <img src="{{ asset('storage/' . $clocking->purchase_receipt) }}"
-                                                             alt="Receipt"
-                                                             class="h-10 w-10 rounded-lg object-cover ring-1 ring-orange-200 hover:ring-orange-500">
+                                                    <button type="button"
+                                                            data-modal-target="receipt-modal-{{ $clocking->id }}"
+                                                            data-modal-toggle="receipt-modal-{{ $clocking->id }}"
+                                                            class="group relative flex items-center justify-center h-10 w-10 rounded-lg bg-green-100 hover:bg-green-200 ring-1 ring-green-200 hover:ring-green-500 transition-all duration-200"
+                                                            title="View Purchase Receipt">
+                                                        <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 8h6m-5 0a3 3 0 110 6H9l3 3-3-3h1.5a1.5 1.5 0 000-3H9z"/>
+                                                        </svg>
                                                         <div class="absolute -top-1 -left-1 bg-green-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
                                                             $
                                                         </div>
-                                                    </a>
+                                                    </button>
+
+                                                    <!-- Receipt Modal -->
+                                                    <div id="receipt-modal-{{ $clocking->id }}" tabindex="-1" aria-hidden="true"
+                                                         class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
+                                                        <div class="relative p-4 w-full max-w-2xl max-h-full">
+                                                            <div class="relative bg-white rounded-lg shadow-lg dark:bg-gray-700">
+                                                                <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
+                                                                    <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Purchase Receipt</h3>
+                                                                    <button type="button"
+                                                                            class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
+                                                                            data-modal-hide="receipt-modal-{{ $clocking->id }}">
+                                                                        <svg class="w-3 h-3" aria-hidden="true" fill="none" viewBox="0 0 14 14">
+                                                                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+                                                                        </svg>
+                                                                    </button>
+                                                                </div>
+                                                                <div class="p-4 md:p-5">
+                                                                    <img src="{{ asset('storage/' . $clocking->purchase_receipt) }}"
+                                                                         alt="Purchase Receipt"
+                                                                         class="w-full max-h-96 object-contain rounded-lg">
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                 @endif
-                                                <!-- NEW: Fix Image -->
+
                                                 @if ($clocking->fix_image)
-                                                    <a href="{{ asset('storage/' . $clocking->fix_image) }}"
-                                                       target="_blank" class="group relative" title="Fix Image">
-                                                        <img src="{{ asset('storage/' . $clocking->fix_image) }}"
-                                                             alt="Fix"
-                                                             class="h-10 w-10 rounded-lg object-cover ring-1 ring-orange-200 hover:ring-orange-500">
+                                                    <button type="button"
+                                                            data-modal-target="fix-modal-{{ $clocking->id }}"
+                                                            data-modal-toggle="fix-modal-{{ $clocking->id }}"
+                                                            class="group relative flex items-center justify-center h-10 w-10 rounded-lg bg-purple-100 hover:bg-purple-200 ring-1 ring-purple-200 hover:ring-purple-500 transition-all duration-200"
+                                                            title="View Fix Image">
+                                                        <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                        </svg>
                                                         <div class="absolute -top-1 -left-1 bg-purple-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center">
                                                             FIX
                                                         </div>
-                                                    </a>
+                                                    </button>
+
+                                                    <!-- Fix Modal -->
+                                                    <div id="fix-modal-{{ $clocking->id }}" tabindex="-1" aria-hidden="true"
+                                                         class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
+                                                        <div class="relative p-4 w-full max-w-2xl max-h-full">
+                                                            <div class="relative bg-white rounded-lg shadow-lg dark:bg-gray-700">
+                                                                <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
+                                                                    <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Fix Image</h3>
+                                                                    <button type="button"
+                                                                            class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
+                                                                            data-modal-hide="fix-modal-{{ $clocking->id }}">
+                                                                        <svg class="w-3 h-3" aria-hidden="true" fill="none" viewBox="0 0 14 14">
+                                                                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+                                                                        </svg>
+                                                                    </button>
+                                                                </div>
+                                                                <div class="p-4 md:p-5">
+                                                                    <img src="{{ asset('storage/' . $clocking->fix_image) }}"
+                                                                         alt="Fix Image"
+                                                                         class="w-full max-h-96 object-contain rounded-lg">
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                 @endif
                                             </div>
-                                        </td>                                        <td class="whitespace-nowrap px-3 py-4 text-sm text-black-500">
+                                        </td>
+                                        <td class="whitespace-nowrap px-3 py-4 text-sm text-black-500">
                                             <div class="flex space-x-2">
                                                 <button type="button"
                                                         class="edit-btn inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
@@ -517,5 +628,37 @@
                         hideModal();
                     }
                 });
+
+                document.addEventListener('DOMContentLoaded', function() {
+                    // Modal functionality
+                    const modalToggles = document.querySelectorAll('[data-modal-toggle]');
+                    const modalHides = document.querySelectorAll('[data-modal-hide]');
+
+                    modalToggles.forEach(toggle => {
+                        toggle.addEventListener('click', function() {
+                            const targetModal = document.getElementById(this.getAttribute('data-modal-target'));
+                            if (targetModal) {
+                                targetModal.classList.remove('hidden');
+                            }
+                        });
+                    });
+
+                    modalHides.forEach(hide => {
+                        hide.addEventListener('click', function() {
+                            const targetModal = document.getElementById(this.getAttribute('data-modal-hide'));
+                            if (targetModal) {
+                                targetModal.classList.add('hidden');
+                            }
+                        });
+                    });
+
+                    // Close modal when clicking backdrop
+                    document.addEventListener('click', function(e) {
+                        if (e.target.classList.contains('fixed') && e.target.classList.contains('z-50')) {
+                            e.target.classList.add('hidden');
+                        }
+                    });
+                });
+
             </script>
 @endsection

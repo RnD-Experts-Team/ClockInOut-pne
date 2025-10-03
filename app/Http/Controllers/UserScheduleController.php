@@ -16,10 +16,10 @@ class UserScheduleController extends Controller
 
         // Get current week or requested week
         $startDate = $request->input('start_date')
-            ? Carbon::parse($request->input('start_date'))->startOfWeek()
-            : Carbon::now()->startOfWeek();
+            ? Carbon::parse($request->input('start_date'))->startOfWeek(Carbon::MONDAY)
+            : Carbon::now()->startOfWeek(Carbon::MONDAY);
 
-        $endDate = $startDate->copy()->endOfWeek();
+        $endDate = $startDate->copy()->endOfWeek(Carbon::SUNDAY);
         $currentWeekStart = $startDate->copy();
         $currentWeekEnd = $endDate->copy();
         $previousWeek = $startDate->copy()->subWeek();
