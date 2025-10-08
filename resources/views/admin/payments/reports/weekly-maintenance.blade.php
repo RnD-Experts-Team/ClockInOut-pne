@@ -98,10 +98,14 @@
                             <tbody id="weeklyMaintenanceBody">
                             @foreach($storeData as $index => $data)
                                 <tr class="{{ $index % 2 == 0 ? 'bg-gray-50' : 'bg-white' }} hover:bg-[#fff4ed]">
+
                                     <td class="border border-gray-300 px-4 py-3 text-sm text-center font-medium" data-sort="{{ $data['store'] }}">
-                                        <div class="flex items-center justify-center">
-                                            <div class="w-3 h-3 bg-[#ff671b] rounded-full mr-2"></div>
-                                            {{ $data['store'] }}
+                                        <div class="flex flex-col items-center justify-center">
+                                            <div class="flex items-center">
+                                                <div class="w-3 h-3 bg-[#ff671b] rounded-full mr-2"></div>
+                                                <span class="font-semibold">{{ $data['store'] }}</span>
+                                            </div>
+                                            <span class="text-xs text-gray-500 mt-1">Store #{{ $data['store_number'] }}</span>
                                         </div>
                                     </td>
 

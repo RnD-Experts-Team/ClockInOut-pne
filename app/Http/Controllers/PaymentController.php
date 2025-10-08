@@ -508,10 +508,10 @@ class PaymentController extends Controller
     public function storeImageView($store)
     {
         try {
-            $payments = Payment::where('store', $store)
-                ->orWhereHas('store', function($q) use ($store) {
-                    $q->where('store_number', $store);
-                })
+            $payments = Payment::whereHas('store', function($q) use ($store) {
+                $q->where('name', $store)
+                    ->orWhere('store_number', $store);
+            })
                 ->with(['company', 'store'])
                 ->orderByDesc('date')
                 ->get();
@@ -528,7 +528,6 @@ class PaymentController extends Controller
 
             return view('admin.payments.reports.store-image', compact('store', 'grouped', 'grandTotal'));
         } catch (\Exception $e) {
-
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
