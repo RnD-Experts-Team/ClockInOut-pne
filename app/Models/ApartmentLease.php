@@ -25,6 +25,14 @@ class ApartmentLease extends Model
         'notes',
         'lease_holder',
         'created_by',
+        // ADD THESE NEW FIELDS:
+        'renewal_date',
+        'renewal_reminder_sent',
+        'renewal_notes',
+        'renewal_status',
+        'renewal_created_by',
+        'renewal_reminder_sent_at',
+        'renewal_completed_at',
     ];
 
     // Add proper casting for your fields
@@ -82,6 +90,8 @@ class ApartmentLease extends Model
         'has_car' => 'integer',
         'number_of_AT' => 'integer',
         'store_number' => 'integer',
+        'renewal_date' => 'datetime',
+
     ];
 
     // Add these to appends if you want them always included in JSON
@@ -445,4 +455,200 @@ class ApartmentLease extends Model
             ];
         }
     }
+    // ADD THESE NEW RELATIONSHIPS (add after existing relationships):
+    /**
+     * Who created the renewal reminder
+     */
+    public function renewalCreatedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'renewal_created_by');
+    }
+
+// ADD THESE NEW SCOPES (add after existing scopes):
+    /**
+     * Scope for renewal reminders that haven't been sent
+     */
+    public function scopePendingRenewalReminders($query)
+    {
+        return $query->whereNotNull('renewal_date')
+            ->where('renewal_reminder_sent', false)
+            ->where('renewal_status', 'pending');
+    }
+
+    /**
+     * Scope for renewals coming due soon
+     */
+    public function scopeRenewalsDueSoon($query, $days = 30)
+    {
+        return $query->whereNotNull('renewal_date')
+            ->where('renewal_date', '<=', now()->addDays($days))
+            ->where('renewal_status', 'pending');
+    }
+
+    /**
+     * Scope for overdue renewals
+     */
+    public function scopeOverdueRenewals($query)
+    {
+        return $query->whereNotNull('renewal_date')
+            ->where('renewal_date', '<', now())
+            ->where('renewal_status', 'pending');
+    }
+
+// ADD THESE NEW ACCESSOR METHODS (add after existing accessors):
+    /**
+     * Get formatted renewal date
+     */
+    public function getFormattedRenewalDateAttribute()
+    {
+        if (!$this->renewal_date) {
+            return null;
+        }
+
+        try {
+            // Ensure we have a Carbon instance
+            $renewalDate = $this->renewal_date instanceof Carbon
+                ? $this->renewal_date
+                : Carbon::parse($this->renewal_date);
+
+            return $renewalDate->format('M j, Y');
+        } catch (\Exception $e) {
+            return 'Invalid date';
+        }
+    }
+
+    /**
+     * Get days until renewal
+     */
+    public function getDaysUntilRenewalAttribute()
+    {
+        if (!$this->renewal_date) {
+            return null;
+        }
+
+        return now()->diffInDays($this->renewal_date, false);
+    }
+
+    /**
+     * Check if renewal is overdue
+     */
+    public function getIsRenewalOverdueAttribute()
+    {
+        if (!$this->renewal_date) {
+            return false;
+        }
+
+        // Convert to Carbon if it's a string
+        $renewalDate = $this->renewal_date instanceof \Carbon\Carbon
+            ? $this->renewal_date
+            : \Carbon\Carbon::parse($this->renewal_date);
+
+        return $renewalDate->isPast();
+    }
+    /**
+     * Get renewal status with CSS classes
+     */
+    public function getRenewalStatusInfoAttribute()
+    {
+        if (!$this->renewal_date) {
+            return [
+                'status' => 'no_date',
+                'message' => 'No renewal date',
+                'class' => 'text-gray-400'
+            ];
+        }
+
+        $daysUntilRenewal = $this->days_until_renewal;
+
+        if ($this->renewal_status === 'completed') {
+            return [
+                'status' => 'completed',
+                'message' => 'Renewal completed',
+                'class' => 'bg-green-100 text-green-800'
+            ];
+        }
+
+        if ($this->renewal_status === 'declined') {
+            return [
+                'status' => 'declined',
+                'message' => 'Renewal declined',
+                'class' => 'bg-red-100 text-red-800'
+            ];
+        }
+
+        if ($daysUntilRenewal < 0) {
+            return [
+                'status' => 'overdue',
+                'message' => 'Renewal overdue (' . abs($daysUntilRenewal) . ' days)',
+                'class' => 'bg-red-100 text-red-800'
+            ];
+        } elseif ($daysUntilRenewal <= 7) {
+            return [
+                'status' => 'urgent',
+                'message' => 'Renewal due in ' . $daysUntilRenewal . ' days',
+                'class' => 'bg-yellow-100 text-yellow-800'
+            ];
+        } elseif ($daysUntilRenewal <= 30) {
+            return [
+                'status' => 'upcoming',
+                'message' => 'Renewal due in ' . $daysUntilRenewal . ' days',
+                'class' => 'bg-blue-100 text-blue-800'
+            ];
+        }
+
+        return [
+            'status' => 'scheduled',
+            'message' => 'Renewal scheduled for ' . $this->formatted_renewal_date,
+            'class' => 'text-gray-600'
+        ];
+    }
+
+    /**
+     * Create calendar event for renewal
+     */
+    public function createRenewalCalendarEvent()
+    {
+        if (!$this->renewal_date) {
+            return null;
+        }
+
+        return \App\Models\CalendarEvent::create([
+            'title' => 'Apartment Lease Renewal - Store ' . $this->store_number,
+            'description' => 'Renewal for apartment lease at ' . $this->apartment_address,
+            'event_type' => 'lease_renewal',
+            'start_date' => $this->renewal_date,
+            'start_time' => '09:00:00',
+            'is_all_day' => false,
+            'color_code' => '#fd7e14',
+            'related_model_type' => self::class,
+            'related_model_id' => $this->id,
+            'created_by' => $this->renewal_created_by ?? auth()->id(),
+        ]);
+    }
+
+    /**
+     * Mark renewal reminder as sent
+     */
+    public function markRenewalReminderSent()
+    {
+        $this->update([
+            'renewal_reminder_sent' => true,
+            'renewal_reminder_sent_at' => now(),
+        ]);
+    }
+
+    /**
+     * Complete renewal process
+     */
+    public function completeRenewal(?string $notes = null)
+    {
+        $this->update([
+            'renewal_status' => 'completed',
+            'renewal_completed_at' => now(),
+            'renewal_notes' => $notes ? ($this->renewal_notes ? $this->renewal_notes . "\n\n" . $notes : $notes) : $this->renewal_notes,
+        ]);
+    }
+
+
+
 }

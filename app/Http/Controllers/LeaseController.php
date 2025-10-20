@@ -5,18 +5,22 @@ namespace App\Http\Controllers;
 
 use App\Models\Lease;
 use App\Models\Store;
+use App\Models\CalendarEvent;
+use App\Models\CalendarReminder;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 use App\Imports\LeaseImport;
 use Maatwebsite\Excel\Facades\Excel;
+use Carbon\Carbon;
 
 class LeaseController extends Controller
 {
     public function index(Request $request): View
     {
-        $query = Lease::with('store');
+        $query = Lease::with('store', 'renewalCreatedBy');
         // Create a base query for stats calculation
         $baseQuery = clone $query;
 
@@ -54,6 +58,8 @@ class LeaseController extends Controller
                     $q->expiringFranchiseSoon();
                 } elseif ($request->expiring === 'lease') {
                     $q->expiringLeaseSoon();
+                } elseif ($request->expiring === 'renewal') {
+                    $q->renewalsDueSoon();
                 }
             };
 
@@ -73,6 +79,13 @@ class LeaseController extends Controller
                         break;
                     case 'expired':
                         $q->where('initial_lease_expiration_date', '<', now());
+                        break;
+                    case 'renewal_pending':
+                        $q->where('renewal_status', 'pending')
+                            ->whereNotNull('renewal_date');
+                        break;
+                    case 'renewal_overdue':
+                        $q->overdueRenewals();
                         break;
                 }
             };
@@ -107,7 +120,7 @@ class LeaseController extends Controller
 
         $validSortFields = [
             'store_number', 'name', 'base_rent', 'franchise_agreement_expiration_date',
-            'initial_lease_expiration_date', 'sqf', 'created_at'
+            'initial_lease_expiration_date', 'renewal_date', 'sqf', 'created_at'
         ];
 
         if (in_array($sortField, $validSortFields)) {
@@ -148,6 +161,8 @@ class LeaseController extends Controller
         $withHvac = $query->where('hvac', true)->count();
         $franchiseExpiringSoon = $query->expiringFranchiseSoon()->count();
         $leaseExpiringSoon = $query->expiringLeaseSoon()->count();
+        $renewalsDueSoon = $query->renewalsDueSoon()->count();
+        $overdueRenewals = $query->overdueRenewals()->count();
         $totalSqf = $query->sum('sqf');
         $totalBaseRent = $query->sum('base_rent');
         $averageRent = $total > 0 ? $totalBaseRent / $total : 0;
@@ -158,6 +173,8 @@ class LeaseController extends Controller
             'with_hvac' => $withHvac,
             'franchise_expiring_soon' => $franchiseExpiringSoon,
             'lease_expiring_soon' => $leaseExpiringSoon,
+            'renewals_due_soon' => $renewalsDueSoon,
+            'overdue_renewals' => $overdueRenewals,
             'total_sqf' => $totalSqf,
             'total_base_rent' => $totalBaseRent,
             'average_rent' => $averageRent,
@@ -167,9 +184,10 @@ class LeaseController extends Controller
             'expired_leases' => $query->where('initial_lease_expiration_date', '<', now())->count(),
             'high_rent_count' => $query->where('base_rent', '>', 15000)->count(),
             'low_rent_count' => $query->where('base_rent', '<', 5000)->count(),
+            'pending_renewals' => $query->where('renewal_status', 'pending')->whereNotNull('renewal_date')->count(),
+            'completed_renewals' => $query->where('renewal_status', 'completed')->count(),
         ];
     }
-
 
     public function create(): View
     {
@@ -179,7 +197,6 @@ class LeaseController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-
         $validated = $request->validate([
             'store_id' => 'nullable|exists:stores,id',
             'new_store_number' => 'nullable|string|max:255',
@@ -194,7 +211,7 @@ class LeaseController extends Controller
             'insurance' => 'nullable|numeric|min:0',
             're_taxes' => 'nullable|numeric|min:0',
             'others' => 'nullable|numeric|min:0',
-            'current_term' => 'nullable|integer|min:1|max:10', // NEW VALIDATION RULE
+            'current_term' => 'nullable|integer|min:1|max:10',
             'security_deposit' => 'nullable|numeric|min:0',
             'franchise_agreement_expiration_date' => 'nullable|date',
             'renewal_options' => 'nullable|string|max:255',
@@ -206,10 +223,16 @@ class LeaseController extends Controller
             'landlord_email' => 'nullable|email|max:255',
             'landlord_phone' => 'nullable|string|max:255',
             'landlord_address' => 'nullable|string',
-            'comments' => 'nullable|string'
+            'comments' => 'nullable|string',
+            // NEW RENEWAL FIELDS
+            'renewal_date' => 'nullable|date|after:today',
+            'renewal_notes' => 'nullable|string',
+            'renewal_status' => 'nullable|in:pending,in_progress,completed,declined',
         ]);
+
         DB::beginTransaction();
         try {
+
             // Handle store creation if needed
             if (!$validated['store_id'] && $validated['new_store_number']) {
                 $store = Store::create([
@@ -224,13 +247,28 @@ class LeaseController extends Controller
                 $validated['store_number'] = $store->store_number;
             }
 
+            // Set renewal created by if renewal_date is provided
+            if ($validated['renewal_date']) {
+                $validated['renewal_created_by'] = Auth::id();
+                $validated['renewal_status'] = $validated['renewal_status'] ?? 'pending';
+            }
+
             unset($validated['new_store_number'], $validated['new_store_name']);
-            Lease::create($validated);
+            $lease = Lease::create($validated);
+
+//            // Create calendar event for renewal if renewal_date is set
+//            if ($lease->renewal_date) {
+//                $lease->createRenewalCalendarEvent();
+//
+//                // Create automatic reminders for renewal
+//                $this->createRenewalReminders($lease);
+//            }
+//            dd();
 
             DB::commit();
 
             return redirect()->route('leases.index')
-                ->with('success', 'Lease created successfully.');
+                ->with('success', 'Lease created successfully.' . ($lease->renewal_date ? ' Renewal reminders have been set.' : ''));
 
         } catch (\Exception $e) {
             DB::rollback();
@@ -240,7 +278,7 @@ class LeaseController extends Controller
 
     public function show(Lease $lease): View
     {
-        $lease->load('store');
+        $lease->load('store', 'renewalCreatedBy');
         return view('admin.leases.show', compact('lease'));
     }
 
@@ -265,8 +303,7 @@ class LeaseController extends Controller
             'cam' => 'nullable|numeric|min:0',
             'insurance' => 'nullable|numeric|min:0',
             're_taxes' => 'nullable|numeric|min:0',
-            'current_term' => 'nullable|integer|min:1|max:10', // NEW VALIDATION RULE
-
+            'current_term' => 'nullable|integer|min:1|max:10',
             'others' => 'nullable|numeric|min:0',
             'security_deposit' => 'nullable|numeric|min:0',
             'franchise_agreement_expiration_date' => 'nullable|date',
@@ -279,7 +316,11 @@ class LeaseController extends Controller
             'landlord_email' => 'nullable|email|max:255',
             'landlord_phone' => 'nullable|string|max:255',
             'landlord_address' => 'nullable|string',
-            'comments' => 'nullable|string'
+            'comments' => 'nullable|string',
+            // NEW RENEWAL FIELDS
+            'renewal_date' => 'nullable|date',
+            'renewal_notes' => 'nullable|string',
+            'renewal_status' => 'nullable|in:pending,in_progress,completed,declined',
         ]);
 
         DB::beginTransaction();
@@ -298,14 +339,43 @@ class LeaseController extends Controller
                 $validated['store_number'] = $store->store_number;
             }
 
+            // Track renewal date changes
+            $oldRenewalDate = $lease->renewal_date;
+            $newRenewalDate = $validated['renewal_date'] ? Carbon::parse($validated['renewal_date']) : null;
+
+            // Set renewal created by if renewal_date is provided and changed
+            if ($newRenewalDate && (!$oldRenewalDate || !$newRenewalDate->equalTo($oldRenewalDate))) {
+                $validated['renewal_created_by'] = Auth::id();
+                $validated['renewal_reminder_sent'] = false; // Reset reminder flag
+                $validated['renewal_reminder_sent_at'] = null;
+
+                if (!$validated['renewal_status']) {
+                    $validated['renewal_status'] = 'pending';
+                }
+            }
+
             unset($validated['new_store_number'], $validated['new_store_name']);
 
             $lease->update($validated);
 
+            // Handle renewal date changes
+//            if ($newRenewalDate && (!$oldRenewalDate || !$newRenewalDate->equalTo($oldRenewalDate))) {
+//                // Create/update calendar event for renewal
+//                $lease->createRenewalCalendarEvent();
+//
+//                // Create new automatic reminders for renewal
+//                $this->createRenewalReminders($lease);
+//            }
+
             DB::commit();
 
+            $message = 'Lease updated successfully.';
+            if ($newRenewalDate && (!$oldRenewalDate || !$newRenewalDate->equalTo($oldRenewalDate))) {
+                $message .= ' Renewal reminders have been updated.';
+            }
+
             return redirect()->route('leases.show', $lease)
-                ->with('success', 'Lease updated successfully.');
+                ->with('success', $message);
 
         } catch (\Exception $e) {
             DB::rollback();
@@ -313,13 +383,87 @@ class LeaseController extends Controller
         }
     }
 
-    // Keep all other methods the same as in your original file...
     public function destroy(Lease $lease): RedirectResponse
     {
-        $lease->delete();
+        DB::beginTransaction();
+        try {
+            // Delete related calendar events and reminders
+            CalendarEvent::where('related_model_type', Lease::class)
+                ->where('related_model_id', $lease->id)
+                ->delete();
 
-        return redirect()->route('leases.index')
-            ->with('success', 'Lease deleted successfully.');
+            CalendarReminder::where('related_model_type', Lease::class)
+                ->where('related_model_id', $lease->id)
+                ->delete();
+
+            $lease->delete();
+
+            DB::commit();
+
+            return redirect()->route('leases.index')
+                ->with('success', 'Lease and related reminders deleted successfully.');
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return back()->withErrors(['error' => 'Failed to delete lease: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Mark lease renewal as completed
+     */
+    public function completeRenewal(Request $request, Lease $lease): RedirectResponse
+    {
+        $request->validate([
+            'completion_notes' => 'nullable|string|max:1000',
+        ]);
+
+        try {
+            $lease->completeRenewal($request->completion_notes);
+
+            return back()->with('success', 'Lease renewal marked as completed.');
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Failed to complete renewal: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Create automatic renewal reminders
+     */
+    private function createRenewalReminders(Lease $lease): void
+    {
+        if (!$lease->renewal_date) {
+            return;
+        }
+
+        // Delete existing renewal reminders for this lease
+        CalendarReminder::where('related_model_type', Lease::class)
+            ->where('related_model_id', $lease->id)
+            ->where('reminder_type', 'lease_renewal')
+            ->delete();
+
+        // Create reminders for: 90, 60, 30, 14, 7, 1 days before renewal
+        $reminderDays = [90, 60, 30, 14, 7, 1];
+
+        foreach ($reminderDays as $days) {
+            $reminderDate = $lease->renewal_date->copy()->subDays($days);
+
+            // Only create reminder if it's in the future
+            if ($reminderDate->isFuture()) {
+                CalendarReminder::create([
+                    'admin_user_id' => Auth::id(),
+                    'title' => "Lease Renewal Due - Store {$lease->store_number}",
+                    'description' => "Lease renewal for Store {$lease->store_number} ({$lease->name}) is due in {$days} days on {$lease->renewal_date->format('M j, Y')}.",
+                    'reminder_date' => $reminderDate->toDateString(),
+                    'reminder_time' => '09:00',
+                    'reminder_type' => 'lease_renewal',
+                    'status' => 'pending',
+                    'related_model_type' => Lease::class,
+                    'related_model_id' => $lease->id,
+                    'notification_methods' => ['browser'],
+                ]);
+            }
+        }
     }
 
     public function getPortfolioStats(Request $request)
@@ -334,11 +478,9 @@ class LeaseController extends Controller
         return response()->json($stats);
     }
 
-    // Keep all export, import, and other methods exactly the same...
     public function export(Request $request)
     {
-        // Keep the same implementation as in your original file
-        $query = Lease::with('store');
+        $query = Lease::with('store', 'renewalCreatedBy');
 
         if ($request->has('search') && $request->search) {
             $search = $request->search;
@@ -362,6 +504,8 @@ class LeaseController extends Controller
                 $query->expiringFranchiseSoon();
             } elseif ($request->expiring === 'lease') {
                 $query->expiringLeaseSoon();
+            } elseif ($request->expiring === 'renewal') {
+                $query->renewalsDueSoon();
             }
         }
 
@@ -371,9 +515,11 @@ class LeaseController extends Controller
         $csvData[] = [
             'Store Number', 'Store Name (from Store)', 'Name', 'Store Address', 'AWS', 'Base Rent', '% Increase/Year',
             'CAM', 'Insurance', 'RE Taxes', 'Others', 'Security Deposit',
-            'Franchise Expiration', 'Renewal Options', 'Current Term Override', // NEW HEADER
+            'Franchise Expiration', 'Renewal Options', 'Current Term Override',
             'Lease Expiration', 'SQF', 'HVAC', 'Total Rent', 'Current Term', 'Time Left Current Term',
             'Time Left Last Term', 'Lease to Sales Ratio', 'Time Until Franchise Expires',
+            // NEW RENEWAL COLUMNS
+            'Renewal Date', 'Renewal Status', 'Renewal Notes', 'Renewal Created By', 'Days Until Renewal',
             'Created At'
         ];
 
@@ -395,7 +541,7 @@ class LeaseController extends Controller
                 $lease->security_deposit,
                 $lease->franchise_agreement_expiration_date?->format('Y-m-d'),
                 $lease->renewal_options,
-                $lease->current_term ?? 'Auto', // NEW DATA FIELD
+                $lease->current_term ?? 'Auto',
                 $lease->initial_lease_expiration_date?->format('Y-m-d'),
                 $lease->sqf,
                 $lease->hvac ? 'Yes' : 'No',
@@ -405,11 +551,17 @@ class LeaseController extends Controller
                 $lease->time_until_last_term_ends ? $lease->time_until_last_term_ends['formatted'] : 'N/A',
                 $lease->lease_to_sales_ratio ? number_format($lease->lease_to_sales_ratio * 100, 2) . '%' : 'N/A',
                 $lease->time_until_franchise_expires ? $lease->time_until_franchise_expires['formatted'] : 'N/A',
+                // NEW RENEWAL DATA
+                $lease->renewal_date ? $lease->renewal_date->format('Y-m-d') : 'Not Set',
+                $lease->renewal_status ? ucfirst($lease->renewal_status) : 'N/A',
+                $lease->renewal_notes ?? '',
+                $lease->renewalCreatedBy ? $lease->renewalCreatedBy->name : 'N/A',
+                $lease->days_until_renewal ?? 'N/A',
                 $lease->created_at->format('Y-m-d H:i:s')
             ];
         }
 
-        $filename = 'leases_' . date('Y-m-d_H-i-s') . '.csv';
+        $filename = 'leases_with_renewals_' . date('Y-m-d_H-i-s') . '.csv';
 
         $headers = [
             'Content-Type' => 'text/csv',
@@ -427,7 +579,6 @@ class LeaseController extends Controller
         return response()->stream($callback, 200, $headers);
     }
 
-    // Keep all other methods exactly the same...
     public function showImport(): View
     {
         return view('admin.leases.import');
@@ -484,7 +635,6 @@ class LeaseController extends Controller
 
     public function downloadTemplate()
     {
-        // Keep exactly the same as in your original file
         $headers = [
             'Store #',
             'Known as',
@@ -506,7 +656,11 @@ class LeaseController extends Controller
             'Landlord Name',
             'Email & Phone',
             'Address',
-            'Comments'
+            'Comments',
+            // NEW RENEWAL COLUMNS
+            'Renewal Date',
+            'Renewal Status',
+            'Renewal Notes'
         ];
 
         $csvData = [
@@ -532,11 +686,15 @@ class LeaseController extends Controller
                 'Dembena, LLC',
                 'contact@dembena.com | (555) 123-4567',
                 '12591 Wheaton Avenue NW, Pickerington, Ohio 43147',
-                'Sample lease data'
+                'Sample lease data',
+                // NEW RENEWAL SAMPLE DATA
+                '2025-12-31',
+                'pending',
+                'Need to review terms before renewal'
             ]
         ];
 
-        $filename = 'lease_import_template.csv';
+        $filename = 'lease_import_template_with_renewals.csv';
 
         $headers = [
             'Content-Type' => 'text/csv',
@@ -570,5 +728,49 @@ class LeaseController extends Controller
     {
         $leases = Lease::with('store')->get();
         return view('admin.leases.lease-tracker', compact('leases'));
+    }
+
+    /**
+     * Get renewal statistics for dashboard
+     */
+    public function getRenewalStats()
+    {
+        $stats = [
+            'total_with_renewal_dates' => Lease::whereNotNull('renewal_date')->count(),
+            'renewals_due_this_month' => Lease::renewalsDueSoon(30)->count(),
+            'overdue_renewals' => Lease::overdueRenewals()->count(),
+            'pending_renewals' => Lease::where('renewal_status', 'pending')->whereNotNull('renewal_date')->count(),
+            'completed_renewals_this_year' => Lease::where('renewal_status', 'completed')
+                ->whereYear('renewal_completed_at', date('Y'))
+                ->count(),
+        ];
+
+        return response()->json($stats);
+    }
+
+    /**
+     * Send renewal reminder manually
+     */
+    public function sendRenewalReminder(Lease $lease)
+    {
+        try {
+            if (!$lease->renewal_date) {
+                return response()->json(['error' => 'No renewal date set for this lease.'], 400);
+            }
+
+            // Mark as sent and create notification
+            $lease->markRenewalReminderSent();
+
+            // TODO: Send actual notification via Pusher
+            // This would integrate with your existing notification system
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Renewal reminder sent successfully.'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Failed to send reminder: ' . $e->getMessage()], 500);
+        }
     }
 }

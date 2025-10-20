@@ -3,611 +3,711 @@
 @section('title', 'Lease Management')
 
 @section('content')
-    <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <!-- Header Section -->
-        <div class="sm:flex sm:items-center sm:justify-between mb-6">
-            <div>
-                <h1 class="text-3xl font-bold text-black-900">Lease Management</h1>
-                <p class="mt-2 text-sm text-black-600">Manage store leases, terms, and financial analytics</p>
-            </div>
-            <div class="mt-4 sm:mt-0 flex space-x-3">
-                <button type="button" id="openPortfolioModal"
-                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-all duration-300 hover:shadow-lg">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                    </svg>
-                    Portfolio Analytics
-                </button>
-                <a href="{{ route('leases.create') }}"
-                   class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-all duration-300 hover:shadow-lg">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                    </svg>
-                    Add Lease
-                </a>
-                <a href="{{ route('leases.export', request()->query()) }}"
-                   class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300 hover:shadow-lg">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    Export CSV
-                </a>
-
-                <!-- Report Views Dropdown -->
-                <div class="relative inline-block text-left">
-                    <button type="button" id="reportsDropdown"
+        <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <!-- Header Section -->
+            <div class="sm:flex sm:items-center sm:justify-between mb-6">
+                <div>
+                    <h1 class="text-3xl font-bold text-black-900">Lease Management</h1>
+                    <p class="mt-2 text-sm text-black-600">Manage store leases, terms, financial analytics, and renewals</p>
+                </div>
+                <div class="mt-4 sm:mt-0 flex space-x-3">
+                    <button type="button" id="openPortfolioModal"
                             class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-all duration-300 hover:shadow-lg">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a4 4 0 01-4-4V5a4 4 0 014-4h10a4 4 0 014 4v10a4 4 0 01-4 4z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                         </svg>
-                        View Reports
-                        <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                        </svg>
+                        Portfolio Analytics
                     </button>
-                    <div id="reportsMenu" class="hidden origin-top-right absolute right-0 mt-2 w-64 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
-                        <div class="py-1" role="menu">
-                            <button onclick="openModal('landlordContactModal')"
-                                    class="group flex items-center px-4 py-2 text-sm text-black-700 hover:bg-orange-100 hover:text-black-600 w-full text-left"
-                                    role="menuitem">
-                                <svg class="w-4 h-4 mr-3 text-black-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                                </svg>
-                                Landlord Contact Directory
-                            </button>
-                            <button onclick="openModal('costBreakdownModal')"
-                                    class="group flex items-center px-4 py-2 text-sm text-black-700 hover:bg-orange-100 hover:text-black-600 w-full text-left"
-                                    role="menuitem">
-                                <svg class="w-4 h-4 mr-3 text-black-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
-                                </svg>
-                                Cost Breakdown Analysis
-                            </button>
-                            <button onclick="openModal('leaseTrackerModal')"
-                                    class="group flex items-center px-4 py-2 text-sm text-black-700 hover:bg-orange-100 hover:text-black-600 w-full text-left"
-                                    role="menuitem">
-                                <svg class="w-4 h-4 mr-3 text-black-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                                </svg>
-                                Lease Tracker Dashboard
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <a href="{{ route('leases.import.form') }}"
-                   class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-all duration-300 hover:shadow-lg">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                    </svg>
-                    Import Leases
-                </a>
-            </div>
-        </div>
-
-        <!-- Quick Stats Overview -->
-        <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
-            <div class="bg-orange-50 rounded-lg shadow-sm p-6 border border-orange-200 hover:shadow-md transition-shadow">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <svg class="w-8 h-8 text-black-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-2m-14 0h2m0 0V9a2 2 0 012-2h2a2 2 0 012 2v10" />
+                    <a href="{{ route('leases.create') }}"
+                       class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-all duration-300 hover:shadow-lg">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                         </svg>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-black-700">Total Leases</p>
-                        <p class="text-2xl font-bold text-black-600">{{ $stats['total'] }}</p>
-                    </div>
-                </div>
-            </div>
-            <div class="bg-orange-50 rounded-lg shadow-sm p-6 border border-orange-200 hover:shadow-md transition-shadow">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064" />
+                        Add Lease
+                    </a>
+                    <a href="{{ route('leases.export', request()->query()) }}"
+                       class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300 hover:shadow-lg">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-black-700">With HVAC</p>
-                        <p class="text-2xl font-bold text-green-600">{{ $stats['with_hvac'] }}</p>
-                    </div>
-                </div>
-            </div>
-            <div class="bg-orange-50 rounded-lg shadow-sm p-6 border border-orange-200 hover:shadow-md transition-shadow">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-black-700">Franchise Expiring</p>
-                        <p class="text-2xl font-bold text-red-600">{{ $stats['franchise_expiring_soon'] }}</p>
-                    </div>
-                </div>
-            </div>
-            <div class="bg-orange-50 rounded-lg shadow-sm p-6 border border-orange-200 hover:shadow-md transition-shadow">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <svg class="w-8 h-8 text-black-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-black-700">Lease Expiring</p>
-                        <p class="text-2xl font-bold text-black-600">{{ $stats['lease_expiring_soon'] }}</p>
-                    </div>
-                </div>
-            </div>
-            <div class="bg-orange-50 rounded-lg shadow-sm p-6 border border-orange-200 hover:shadow-md transition-shadow">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
-                        </svg>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-black-700">Total SQF</p>
-                        <p class="text-2xl font-bold text-purple-600">{{ number_format($stats['total_sqf']) }}</p>
-                    </div>
-                </div>
-            </div>
-        </div>
+                        Export CSV
+                    </a>
 
-        <!-- Filters Section -->
-        <div class="bg-orange-50 shadow-lg rounded-xl p-6 mb-8 transition-all duration-300 hover:shadow-xl border border-orange-200">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-lg font-semibold text-black-900">Filter Leases</h2>
-                <button type="button" id="toggleFilters" class="text-sm text-black-600 hover:text-black-700">
-                    <span id="toggleText">Hide Filters</span>
-                    <svg id="toggleIcon" class="w-4 h-4 inline ml-1 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                    </svg>
-                </button>
-            </div>
-            <form method="GET" action="{{ route('leases.index') }}" id="filterForm" class="space-y-6">
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                    <div>
-                        <label for="search" class="block text-sm font-semibold text-black-700 mb-2">Search</label>
-                        <input type="text" name="search" id="search"
-                               class="block w-full rounded-xl border-orange-300 shadow-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 sm:text-sm transition-all duration-200 hover:border-orange-500 py-3 px-4"
-                               placeholder="Store number, name, address..."
-                               value="{{ request('search') }}">
-                    </div>
-                    <div>
-                        <label for="hvac" class="block text-sm font-semibold text-black-700 mb-2">HVAC</label>
-                        <select name="hvac" id="hvac" class="block w-full rounded-xl border-orange-300 shadow-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 sm:text-sm transition-all duration-200 hover:border-orange-500 py-3 px-4">
-                            <option value="all" {{ request('hvac') === 'all' || !request('hvac') ? 'selected' : '' }}>All</option>
-                            <option value="1" {{ request('hvac') === '1' ? 'selected' : '' }}>With HVAC</option>
-                            <option value="0" {{ request('hvac') === '0' ? 'selected' : '' }}>Without HVAC</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="expiring" class="block text-sm font-semibold text-black-700 mb-2">Expiring Soon</label>
-                        <select name="expiring" id="expiring" class="block w-full rounded-xl border-orange-300 shadow-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 sm:text-sm transition-all duration-200 hover:border-orange-500 py-3 px-4">
-                            <option value="all" {{ request('expiring') === 'all' || !request('expiring') ? 'selected' : '' }}>All</option>
-                            <option value="franchise" {{ request('expiring') === 'franchise' ? 'selected' : '' }}>Franchise Expiring</option>
-                            <option value="lease" {{ request('expiring') === 'lease' ? 'selected' : '' }}>Lease Expiring</option>
-                        </select>
-                    </div>
-                    <div class="flex items-end">
-                        <div class="w-full space-y-2">
-                            <button type="submit"
-                                    class="w-full inline-flex justify-center items-center px-4 py-3 border border-transparent text-sm font-medium rounded-xl text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-all duration-200">
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                </svg>
-                                Apply Filter
-                            </button>
-                            <a href="{{ route('leases.index') }}"
-                               class="w-full inline-flex justify-center items-center px-4 py-2 border border-orange-300 text-sm font-medium rounded-xl text-black-700 bg-white hover:bg-orange-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-all duration-200">
-                                Reset
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </form>
-        </div>
-
-        <!-- Leases Table -->
-        <div class="bg-orange-50 shadow-sm ring-1 ring-black ring-opacity-5 rounded-lg overflow-hidden">
-            @if($leases->count() > 0)
-                <!-- Desktop Table View -->
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-orange-200">
-                        <thead class="bg-orange-100">
-                        <tr>
-                            <th class="px-3 py-3.5 text-left text-xs font-medium text-black-700 uppercase tracking-wide">Store Info</th>
-                            <th class="px-3 py-3.5 text-left text-xs font-medium text-black-700 uppercase tracking-wide">Financial</th>
-                            <th class="px-3 py-3.5 text-left text-xs font-medium text-black-700 uppercase tracking-wide">Current Term</th>
-                            <th class="px-3 py-3.5 text-left text-xs font-medium text-black-700 uppercase tracking-wide">Portfolio Metrics</th>
-                            <th class="px-3 py-3.5 text-left text-xs font-medium text-black-700 uppercase tracking-wide">Expirations</th>
-                            <th class="px-3 py-3.5 text-left text-xs font-medium text-black-700 uppercase tracking-wide">Actions</th>
-                        </tr>
-                        </thead>
-                        <tbody class="divide-y divide-orange-200 bg-orange-50">
-                        @foreach($leases as $lease)
-                            @php
-                                $currentTerm = $lease->current_term_info;
-                                $timeUntilLastTerm = $lease->time_until_last_term_ends;
-                                $leaseToSalesRatio = $lease->lease_to_sales_ratio;
-                                $timeUntilFranchiseExpires = $lease->time_until_franchise_expires;
-                                $termDates = $lease->term_expiration_dates;
-                            @endphp
-                            <tr class="hover:bg-orange-100 transition-colors duration-150">
-                                <!-- Store Info -->
-                                <!-- Store Info -->
-                                <td class="px-3 py-4 text-sm">
-                                    <div class="space-y-1">
-                                        <!-- Store Number -->
-                                        <div class="font-medium text-black-900">Store #{{ $lease->store_number }}</div>
-
-                                        <!-- Store Name from Store Model -->
-                                        @if($lease->store)
-                                            <div class="text-black-700 text-xs font-semibold">{{ $lease->store->name }}</div>
-                                        @else
-                                            <div class="text-red-500 text-xs">No Store Linked</div>
-                                        @endif
-
-                                        <!-- Lease Name (only if different and exists) -->
-                                        @if($lease->name && $lease->name !== ($lease->store->name ?? ''))
-                                            <div class="text-black-600 text-xs italic">{{ $lease->name }}</div>
-                                        @endif
-
-                                        <!-- Additional Info -->
-                                        @if($lease->sqf)
-                                            <div class="text-xs text-black-600">{{ number_format($lease->sqf) }} SQF</div>
-                                        @endif
-                                        @if($lease->hvac)
-                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                HVAC
-            </span>
-                                        @endif
-                                    </div>
-                                </td>
-
-
-                                <!-- Financial -->
-                                <td class="px-3 py-4 text-sm">
-                                    <div class="space-y-1">
-                                        <div class="font-semibold text-green-600">${{ number_format($lease->total_rent, 2) }}/mo</div>
-                                        @if($lease->aws)
-                                            <div class="text-xs text-black-600">AWS: ${{ number_format($lease->aws, 2) }}</div>
-                                        @endif
-                                        @if($lease->base_rent)
-                                            <div class="text-xs text-black-700">Base: ${{ number_format($lease->base_rent, 2) }}</div>
-                                        @endif
-                                    </div>
-                                </td>
-
-                                <!-- Current Term -->
-                                <td class="px-3 py-4 text-sm">
-                                    @if($currentTerm)
-                                        <div class="space-y-1">
-                                            <div class="font-medium text-black-900 text-xs">{{ $currentTerm['term_name'] }}</div>
-                                            <div class="text-xs {{ $currentTerm['time_left']['expired'] ? 'text-red-600' : 'text-black-700' }}">
-                                                {{ $currentTerm['time_left']['expired'] ? 'Expired' : $currentTerm['time_left']['formatted'] }}
-                                            </div>
-                                            <div class="text-xs text-black-700">
-                                                {{ $currentTerm['expiration_date']->format('M d, Y') }}
-                                            </div>
-                                        </div>
-                                    @else
-                                        <span class="text-black-700 text-xs">No term data</span>
-                                    @endif
-                                </td>
-
-                                <!-- Portfolio Metrics -->
-                                <td class="px-3 py-4 text-sm">
-                                    <div class="space-y-2">
-                                        @if($leaseToSalesRatio)
-                                            <div class="text-center">
-                                                <div class="font-medium text-xs {{ $leaseToSalesRatio > 0.15 ? 'text-red-600' : ($leaseToSalesRatio > 0.10 ? 'text-black-600' : 'text-green-600') }}">
-                                                    {{ number_format($leaseToSalesRatio * 100, 1) }}%
-                                                </div>
-                                                <div class="text-xs text-black-700">L2S Ratio</div>
-                                            </div>
-                                        @endif
-                                        @if($termDates->count() > 0)
-                                            <div class="text-center">
-                                                <div class="font-medium text-xs text-purple-600">{{ $termDates->count() }}</div>
-                                                <div class="text-xs text-black-700">Terms</div>
-                                            </div>
-                                        @endif
-                                    </div>
-                                </td>
-
-                                <!-- Expirations -->
-                                <td class="px-3 py-4 text-sm">
-                                    <div class="space-y-1">
-                                        @if($timeUntilLastTerm)
-                                            <div class="text-xs">
-                                                <span class="text-black-700">Last Term:</span>
-                                                <span class="{{ $timeUntilLastTerm['expired'] ? 'text-red-600' : 'text-black-700' }}">
-                                                    {{ $timeUntilLastTerm['expired'] ? 'Expired' : $timeUntilLastTerm['formatted'] }}
-                                                </span>
-                                            </div>
-                                        @endif
-                                        @if($timeUntilFranchiseExpires)
-                                            <div class="text-xs">
-                                                <span class="text-black-700">Franchise:</span>
-                                                <span class="{{ $timeUntilFranchiseExpires['expired'] ? 'text-red-600' : 'text-black-700' }}">
-                                                    {{ $timeUntilFranchiseExpires['expired'] ? 'Expired' : $timeUntilFranchiseExpires['formatted'] }}
-                                                </span>
-                                            </div>
-                                        @endif
-                                    </div>
-                                </td>
-
-                                <!-- Actions -->
-                                <td class="px-3 py-4 text-sm">
-                                    <div class="flex space-x-2">
-                                        <a href="{{ route('leases.show', $lease) }}"
-                                           class="inline-flex items-center text-black-600 hover:text-black-700 font-medium transition-colors duration-150">
-                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                            </svg>
-                                            View
-                                        </a>
-                                        <a href="{{ route('leases.edit', $lease) }}"
-                                           class="inline-flex items-center text-black-600 hover:text-black-700 font-medium transition-colors duration-150">
-                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                            </svg>
-                                            Edit
-                                        </a>
-                                    </div>
-                                </td>
-                            </tr>
-                        @endforeach
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Mobile Card View -->
-                <div class="sm:hidden space-y-4 p-4">
-                    @foreach($leases as $lease)
-                        @php
-                            $currentTerm = $lease->current_term_info;
-                            $leaseToSalesRatio = $lease->lease_to_sales_ratio;
-                        @endphp
-                        <div class="bg-orange-50 border border-orange-200 rounded-lg p-4 shadow-sm">
-                            <div class="flex justify-between items-start mb-3">
-                                <div>
-                                    <p class="text-sm font-medium text-black-900">{{ $lease->store_number }}</p>
-                                    <p class="text-xs text-black-700">{{ $lease->name }}</p>
-                                </div>
-                                <div class="text-right">
-                                    <p class="text-sm font-semibold text-green-600">${{ number_format($lease->total_rent, 0) }}/mo</p>
-                                    @if($leaseToSalesRatio)
-                                        <p class="text-xs {{ $leaseToSalesRatio > 0.15 ? 'text-red-600' : ($leaseToSalesRatio > 0.10 ? 'text-black-600' : 'text-green-600') }}">
-                                            {{ number_format($leaseToSalesRatio * 100, 1) }}% L2S
-                                        </p>
-                                    @endif
-                                </div>
-                            </div>
-
-                            @if($currentTerm)
-                                <div class="mb-3 p-2 bg-orange-100 rounded">
-                                    <p class="text-xs font-medium text-black-900">{{ $currentTerm['term_name'] }}</p>
-                                    <p class="text-xs text-black-700">
-                                        {{ $currentTerm['time_left']['expired'] ? 'Expired' : $currentTerm['time_left']['formatted'] . ' remaining' }}
-                                    </p>
-                                </div>
-                            @endif
-
-                            <div class="flex justify-between items-center">
-                                <div class="flex space-x-4 text-xs text-black-700">
-                                    @if($lease->aws)
-                                        <span>AWS: ${{ number_format($lease->aws, 0) }}</span>
-                                    @endif
-                                    @if($lease->sqf)
-                                        <span>{{ number_format($lease->sqf) }} SQF</span>
-                                    @endif
-                                </div>
-                                <div class="flex space-x-3">
-                                    <a href="{{ route('leases.show', $lease) }}" class="text-black-600 hover:text-black-700 font-medium text-sm">View</a>
-                                    <a href="{{ route('leases.edit', $lease) }}" class="text-black-600 hover:text-black-700 font-medium text-sm">Edit</a>
-                                </div>
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
-
-                <!-- Pagination -->
-                <div class="px-4 py-3 border-t border-orange-200 sm:px-6">
-                    <div class="flex justify-between items-center">
-                        <div class="text-sm text-black-700">
-                            Showing {{ $leases->firstItem() ?? 0 }} to {{ $leases->lastItem() ?? 0 }}
-                            of {{ $leases->total() }} results
-                        </div>
-                        <div class="flex space-x-1">
-                            {{ $leases->links() }}
-                        </div>
-                    </div>
-                </div>
-            @else
-                <div class="text-center py-12">
-                    <svg class="mx-auto h-12 w-12 text-black-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-2m-14 0h2m0 0V9a2 2 0 012-2h2a2 2 0 012 2v10" />
-                    </svg>
-                    <h3 class="mt-2 text-sm font-medium text-black-900">No leases found</h3>
-                    <p class="mt-1 text-sm text-black-700">Get started by creating a new lease.</p>
-                    <div class="mt-6">
-                        <a href="{{ route('leases.create') }}"
-                           class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-orange-600 hover:bg-orange-700">
+                    <!-- Report Views Dropdown -->
+                    <div class="relative inline-block text-left">
+                        <button type="button" id="reportsDropdown"
+                                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-all duration-300 hover:shadow-lg">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a4 4 0 01-4-4V5a4 4 0 014-4h10a4 4 0 014 4v10a4 4 0 01-4 4z"></path>
                             </svg>
-                            Add Lease
-                        </a>
+                            View Reports
+                            <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <div id="reportsMenu" class="hidden origin-top-right absolute right-0 mt-2 w-64 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
+                            <div class="py-1" role="menu">
+                                <button onclick="openModal('landlordContactModal')"
+                                        class="group flex items-center px-4 py-2 text-sm text-black-700 hover:bg-orange-100 hover:text-black-600 w-full text-left"
+                                        role="menuitem">
+                                    <svg class="w-4 h-4 mr-3 text-black-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                    </svg>
+                                    Landlord Contact Directory
+                                </button>
+                                <button onclick="openModal('costBreakdownModal')"
+                                        class="group flex items-center px-4 py-2 text-sm text-black-700 hover:bg-orange-100 hover:text-black-600 w-full text-left"
+                                        role="menuitem">
+                                    <svg class="w-4 h-4 mr-3 text-black-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                                    </svg>
+                                    Cost Breakdown Analysis
+                                </button>
+                                <button onclick="openModal('leaseTrackerModal')"
+                                        class="group flex items-center px-4 py-2 text-sm text-black-700 hover:bg-orange-100 hover:text-black-600 w-full text-left"
+                                        role="menuitem">
+                                    <svg class="w-4 h-4 mr-3 text-black-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                    </svg>
+                                    Lease Tracker Dashboard
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <a href="{{ route('leases.import.form') }}"
+                       class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-all duration-300 hover:shadow-lg">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                        </svg>
+                        Import Leases
+                    </a>
+                </div>
+            </div>
+
+            <!-- NEW: Renewal Alerts Banner -->
+            @if(isset($stats['renewals_due_soon']) && $stats['renewals_due_soon'] > 0)
+                <div class="mb-6 bg-blue-50 border-l-4 border-blue-400 p-4 rounded-lg shadow-sm">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <div class="ml-3 flex-1">
+                            <p class="text-sm text-blue-700">
+                                <span class="font-medium">🔔 Lease Renewals Alert:</span>
+                                {{ $stats['renewals_due_soon'] }} lease{{ $stats['renewals_due_soon'] > 1 ? 's' : '' }}
+                                {{ $stats['renewals_due_soon'] > 1 ? 'are' : 'is' }} due for renewal within 30 days.
+                                @if(isset($stats['overdue_renewals']) && $stats['overdue_renewals'] > 0)
+                                    <span class="font-semibold text-red-600">{{ $stats['overdue_renewals'] }} renewal{{ $stats['overdue_renewals'] > 1 ? 's are' : ' is' }} overdue!</span>
+                                @endif
+                            </p>
+                        </div>
+                        <div class="ml-3">
+                            <button onclick="filterByRenewals()" class="inline-flex items-center px-3 py-1 border border-blue-300 text-xs font-medium rounded text-blue-700 bg-blue-100 hover:bg-blue-200">
+                                View Renewals
+                            </button>
+                        </div>
                     </div>
                 </div>
             @endif
-        </div>
 
-        <!-- Modal Containers -->
-        <!-- Landlord Contact Modal -->
-        <div id="landlordContactModal" class="hidden fixed inset-0  bg-opacity-50 overflow-y-auto h-full w-full z-50">
-            <div class="relative top-4 mx-auto p-5 border w-11/12 max-w-7xl shadow-lg rounded-md bg-orange-50">
-                <div class="mt-3">
-                    <div class="flex justify-between items-center mb-4">
-                        <div class="flex space-x-2">
-                            <button onclick="generateScreenshot('landlordContactModal', 'landlord-contact')"
-                                    class="inline-flex items-center px-3 py-2 bg-green-600 text-white text-sm font-medium rounded hover:bg-green-700 transition-colors">
-                                📸 Screenshot
-                            </button>
-                            <button onclick="closeModal('landlordContactModal')"
-                                    class="text-black-700 hover:text-black-600 text-xl font-bold">&times;</button>
-                        </div>
-                    </div>
-                    <div id="landlordContactContent" class="modal-content">
-                        <!-- Content will be loaded here -->
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Cost Breakdown Modal -->
-        <div id="costBreakdownModal" class="hidden fixed inset-0  bg-opacity-50 overflow-y-auto h-full w-full z-50">
-            <div class="relative top-4 mx-auto p-5 border w-11/12 max-w-7xl shadow-lg rounded-md bg-orange-50">
-                <div class="mt-3">
-                    <div class="flex justify-between items-center mb-4">
-                        <div class="flex space-x-2">
-                            <button onclick="generateScreenshot('costBreakdownModal', 'cost-breakdown')"
-                                    class="inline-flex items-center px-3 py-2 bg-green-600 text-white text-sm font-medium rounded hover:bg-green-700 transition-colors">
-                                📸 Screenshot
-                            </button>
-                            <button onclick="closeModal('costBreakdownModal')"
-                                    class="text-black-700 hover:text-black-600 text-xl font-bold">&times;</button>
-                        </div>
-                    </div>
-                    <div id="costBreakdownContent" class="modal-content">
-                        <!-- Content will be loaded here -->
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Lease Tracker Modal -->
-        <div id="leaseTrackerModal" class="hidden fixed inset-0 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-            <div class="relative top-4 mx-auto p-5 border w-11/12 max-w-7xl shadow-lg rounded-md bg-orange-50">
-                <div class="mt-3">
-                    <div class="flex justify-between items-center mb-4">
-                        <div class="flex space-x-2">
-                            <button onclick="generateScreenshot('leaseTrackerModal', 'lease-tracker')"
-                                    class="inline-flex items-center px-3 py-2 bg-green-600 text-white text-sm font-medium rounded hover:bg-green-700 transition-colors">
-                                📸 Screenshot
-                            </button>
-                            <button onclick="closeModal('leaseTrackerModal')"
-                                    class="text-black-700 hover:text-black-600 text-xl font-bold">&times;</button>
-                        </div>
-                    </div>
-                    <div id="leaseTrackerContent" class="modal-content no-scrollbar">
-                        <!-- Content will be loaded here -->
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Portfolio Analytics Modal -->
-        <div id="portfolioModal" class="fixed inset-0 z-50 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-            <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-                <div class="fixed  transition-opacity" aria-hidden="true" id="modalBackdrop"></div>
-
-                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-
-                <div class="inline-block align-bottom bg-orange-50 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-6xl sm:w-full">
-                    <div class="bg-orange-50 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                        <div class="flex justify-between items-center mb-6">
-                            <h3 class="text-2xl font-bold text-black-900" id="modal-title">Portfolio Analytics</h3>
-                            <button type="button" id="closePortfolioModal" class="text-black-700 hover:text-black-600">
-                                <span class="sr-only">Close</span>
-                                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
-                        </div>
-
-                        <!-- Store Selection -->
-                        <div class="mb-6 bg-orange-100 rounded-lg p-4">
-                            <h4 class="text-lg font-semibold text-black-900 mb-4">Select Stores for Analysis</h4>
-                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                <div>
-                                    <label for="modal_portfolio_stores" class="block text-sm font-medium text-black-700 mb-2">
-                                        Choose Stores
-                                    </label>
-                                    <select id="modal_portfolio_stores" multiple
-                                            class="block w-full rounded-lg border-orange-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm"
-                                            style="min-height: 150px;">
-                                        @foreach($availableStores as $store)
-                                            <option value="{{ $store->id }}">{{ $store->store_number }}</option>
-                                        @endforeach
-                                    </select>
-                                    <p class="mt-1 text-xs text-black-700">Hold Ctrl/Cmd to select multiple stores</p>
-                                </div>
-
-                                <div class="flex flex-col justify-center space-y-3">
-                                    <button type="button" id="modalSelectAllStores"
-                                            class="inline-flex justify-center items-center px-4 py-2 border border-orange-300 text-sm font-medium rounded-lg text-black-700 bg-white hover:bg-orange-100">
-                                        Select All Stores
-                                    </button>
-                                    <button type="button" id="modalClearStoreSelection"
-                                            class="inline-flex justify-center items-center px-4 py-2 border border-orange-300 text-sm font-medium rounded-lg text-black-700 bg-white hover:bg-orange-100">
-                                        Clear Selection
-                                    </button>
-                                    <button type="button" id="updatePortfolioStats"
-                                            class="inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-orange-600 hover:bg-orange-700">
-                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                        </svg>
-                                        Update Analytics
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Portfolio Statistics Display -->
-                        <div id="portfolioStatsContainer">
-                            <!-- Selected Stores Info -->
-                            <div id="selectedStoresInfo" class="mb-4 hidden">
-                                <div class="bg-orange-100 border border-orange-200 rounded-lg p-4">
-                                    <h4 class="text-sm font-semibold text-black-600 mb-2">Analysis Scope:</h4>
-                                    <div id="selectedStoresList" class="flex flex-wrap gap-2"></div>
-                                </div>
-                            </div>
-
-                            <!-- Portfolio Totals -->
-                            <div class="mb-6">
-                                <h4 class="text-lg font-semibold text-black-900 mb-4 text-center">Portfolio Totals</h4>
-                                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4" id="portfolioTotals">
-                                    <!-- Stats will be populated via JavaScript -->
-                                </div>
-                            </div>
-
-                            <!-- Portfolio Averages -->
-                            <div class="mb-6">
-                                <h4 class="text-lg font-semibold text-black-900 mb-4 text-center">Portfolio Averages</h4>
-                                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4" id="portfolioAverages">
-                                    <!-- Averages will be populated via JavaScript -->
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Loading Indicator -->
-                        <div id="portfolioLoading" class="hidden text-center py-8">
-                            <svg class="animate-spin -ml-1 mr-3 h-8 w-8 text-black-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            <!-- Enhanced Quick Stats Overview with Renewal Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-6 gap-4 mb-8">
+                <div class="bg-orange-50 rounded-lg shadow-sm p-6 border border-orange-200 hover:shadow-md transition-shadow">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <svg class="w-8 h-8 text-black-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-2m-14 0h2m0 0V9a2 2 0 012-2h2a2 2 0 012 2v10" />
                             </svg>
-                            <p class="text-black-700 mt-2">Calculating portfolio statistics...</p>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-black-700">Total Leases</p>
+                            <p class="text-2xl font-bold text-black-600">{{ $stats['total'] }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-orange-50 rounded-lg shadow-sm p-6 border border-orange-200 hover:shadow-md transition-shadow">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064" />
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-black-700">With HVAC</p>
+                            <p class="text-2xl font-bold text-green-600">{{ $stats['with_hvac'] }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-orange-50 rounded-lg shadow-sm p-6 border border-orange-200 hover:shadow-md transition-shadow">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-black-700">Franchise Expiring</p>
+                            <p class="text-2xl font-bold text-red-600">{{ $stats['franchise_expiring_soon'] }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-orange-50 rounded-lg shadow-sm p-6 border border-orange-200 hover:shadow-md transition-shadow">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <svg class="w-8 h-8 text-black-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-black-700">Lease Expiring</p>
+                            <p class="text-2xl font-bold text-black-600">{{ $stats['lease_expiring_soon'] }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- NEW: Renewals Due Soon -->
+                <div class="bg-blue-50 rounded-lg shadow-sm p-6 border border-blue-200 hover:shadow-md transition-shadow">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-blue-700">Renewals Due</p>
+                            <p class="text-2xl font-bold text-blue-600">{{ $stats['renewals_due_soon'] ?? 0 }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- NEW: Overdue Renewals -->
+                <div class="bg-red-50 rounded-lg shadow-sm p-6 border border-red-200 hover:shadow-md transition-shadow">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-red-700">Overdue Renewals</p>
+                            <p class="text-2xl font-bold text-red-600">{{ $stats['overdue_renewals'] ?? 0 }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Enhanced Filters Section with Renewal Filters -->
+            <div class="bg-orange-50 shadow-lg rounded-xl p-6 mb-8 transition-all duration-300 hover:shadow-xl border border-orange-200">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-semibold text-black-900">Filter Leases</h2>
+                    <button type="button" id="toggleFilters" class="text-sm text-black-600 hover:text-black-700">
+                        <span id="toggleText">Hide Filters</span>
+                        <svg id="toggleIcon" class="w-4 h-4 inline ml-1 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                </div>
+                <form method="GET" action="{{ route('leases.index') }}" id="filterForm" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-5 gap-6">
+                        <div>
+                            <label for="search" class="block text-sm font-semibold text-black-700 mb-2">Search</label>
+                            <input type="text" name="search" id="search"
+                                   class="block w-full rounded-xl border-orange-300 shadow-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 sm:text-sm transition-all duration-200 hover:border-orange-500 py-3 px-4"
+                                   placeholder="Store number, name, address..."
+                                   value="{{ request('search') }}">
+                        </div>
+
+                        <div>
+                            <label for="hvac" class="block text-sm font-semibold text-black-700 mb-2">HVAC</label>
+                            <select name="hvac" id="hvac" class="block w-full rounded-xl border-orange-300 shadow-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 sm:text-sm transition-all duration-200 hover:border-orange-500 py-3 px-4">
+                                <option value="all" {{ request('hvac') === 'all' || !request('hvac') ? 'selected' : '' }}>All</option>
+                                <option value="1" {{ request('hvac') === '1' ? 'selected' : '' }}>With HVAC</option>
+                                <option value="0" {{ request('hvac') === '0' ? 'selected' : '' }}>Without HVAC</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="expiring" class="block text-sm font-semibold text-black-700 mb-2">Expiring Soon</label>
+                            <select name="expiring" id="expiring" class="block w-full rounded-xl border-orange-300 shadow-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 sm:text-sm transition-all duration-200 hover:border-orange-500 py-3 px-4">
+                                <option value="all" {{ request('expiring') === 'all' || !request('expiring') ? 'selected' : '' }}>All</option>
+                                <option value="franchise" {{ request('expiring') === 'franchise' ? 'selected' : '' }}>Franchise Expiring</option>
+                                <option value="lease" {{ request('expiring') === 'lease' ? 'selected' : '' }}>Lease Expiring</option>
+                                <option value="renewal" {{ request('expiring') === 'renewal' ? 'selected' : '' }}>🔔 Renewals Due</option>
+                            </select>
+                        </div>
+
+                        <!-- NEW: Lease Status Filter with Renewal Options -->
+                        <div>
+                            <label for="lease_status" class="block text-sm font-semibold text-black-700 mb-2">Status</label>
+                            <select name="lease_status" id="lease_status" class="block w-full rounded-xl border-orange-300 shadow-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 sm:text-sm transition-all duration-200 hover:border-orange-500 py-3 px-4">
+                                <option value="all" {{ request('lease_status') === 'all' || !request('lease_status') ? 'selected' : '' }}>All Status</option>
+                                <option value="active" {{ request('lease_status') === 'active' ? 'selected' : '' }}>Active Leases</option>
+                                <option value="expiring_soon" {{ request('lease_status') === 'expiring_soon' ? 'selected' : '' }}>Expiring Soon</option>
+                                <option value="expired" {{ request('lease_status') === 'expired' ? 'selected' : '' }}>Expired</option>
+                                <option value="renewal_pending" {{ request('lease_status') === 'renewal_pending' ? 'selected' : '' }}>🔔 Renewal Pending</option>
+                                <option value="renewal_overdue" {{ request('lease_status') === 'renewal_overdue' ? 'selected' : '' }}>⚠️ Renewal Overdue</option>
+                            </select>
+                        </div>
+
+                        <div class="flex items-end">
+                            <div class="w-full space-y-2">
+                                <button type="submit"
+                                        class="w-full inline-flex justify-center items-center px-4 py-3 border border-transparent text-sm font-medium rounded-xl text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-all duration-200">
+                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                    </svg>
+                                    Apply Filter
+                                </button>
+                                <a href="{{ route('leases.index') }}"
+                                   class="w-full inline-flex justify-center items-center px-4 py-2 border border-orange-300 text-sm font-medium rounded-xl text-black-700 bg-white hover:bg-orange-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-all duration-200">
+                                    Reset
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Enhanced Leases Table with Renewal Information -->
+            <div class="bg-orange-50 shadow-sm ring-1 ring-black ring-opacity-5 rounded-lg overflow-hidden">
+                @if($leases->count() > 0)
+                    <!-- Desktop Table View -->
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-orange-200">
+                            <thead class="bg-orange-100">
+                            <tr>
+                                <th class="px-3 py-3.5 text-left text-xs font-medium text-black-700 uppercase tracking-wide">Store Info</th>
+                                <th class="px-3 py-3.5 text-left text-xs font-medium text-black-700 uppercase tracking-wide">Financial</th>
+                                <th class="px-3 py-3.5 text-left text-xs font-medium text-black-700 uppercase tracking-wide">Current Term</th>
+                                <th class="px-3 py-3.5 text-left text-xs font-medium text-black-700 uppercase tracking-wide">📋 Renewal Status</th>
+                                <th class="px-3 py-3.5 text-left text-xs font-medium text-black-700 uppercase tracking-wide">Expirations</th>
+                                <th class="px-3 py-3.5 text-left text-xs font-medium text-black-700 uppercase tracking-wide">Actions</th>
+                            </tr>
+                            </thead>
+                            <tbody class="divide-y divide-orange-200 bg-orange-50">
+                            @foreach($leases as $lease)
+                                @php
+                                    $currentTerm = $lease->current_term_info;
+                                    $timeUntilLastTerm = $lease->time_until_last_term_ends;
+                                    $leaseToSalesRatio = $lease->lease_to_sales_ratio;
+                                    $timeUntilFranchiseExpires = $lease->time_until_franchise_expires;
+                                    $termDates = $lease->term_expiration_dates;
+                                    $renewalStatusInfo = $lease->renewal_status_info;
+                                @endphp
+                                <tr class="hover:bg-orange-100 transition-colors duration-150 {{ $lease->is_renewal_overdue ? 'bg-red-50 border-l-4 border-red-400' : '' }}">
+                                    <!-- Store Info -->
+                                    <td class="px-3 py-4 text-sm">
+                                        <div class="space-y-1">
+                                            <div class="font-medium text-black-900">Store #{{ $lease->store_number }}</div>
+                                            @if($lease->store)
+                                                <div class="text-black-700 text-xs font-semibold">{{ $lease->store->name }}</div>
+                                            @else
+                                                <div class="text-red-500 text-xs">No Store Linked</div>
+                                            @endif
+                                            @if($lease->name && $lease->name !== ($lease->store->name ?? ''))
+                                                <div class="text-black-600 text-xs italic">{{ $lease->name }}</div>
+                                            @endif
+                                            @if($lease->sqf)
+                                                <div class="text-xs text-black-600">{{ number_format($lease->sqf) }} SQF</div>
+                                            @endif
+                                            @if($lease->hvac)
+                                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">HVAC</span>
+                                            @endif
+                                        </div>
+                                    </td>
+
+                                    <!-- Financial -->
+                                    <td class="px-3 py-4 text-sm">
+                                        <div class="space-y-1">
+                                            <div class="font-semibold text-green-600">${{ number_format($lease->total_rent, 2) }}/mo</div>
+                                            @if($lease->aws)
+                                                <div class="text-xs text-black-600">AWS: ${{ number_format($lease->aws, 2) }}</div>
+                                            @endif
+                                            @if($lease->base_rent)
+                                                <div class="text-xs text-black-700">Base: ${{ number_format($lease->base_rent, 2) }}</div>
+                                            @endif
+                                        </div>
+                                    </td>
+
+                                    <!-- Current Term -->
+                                    <td class="px-3 py-4 text-sm">
+                                        @if($currentTerm)
+                                            <div class="space-y-1">
+                                                <div class="font-medium text-black-900 text-xs">{{ $currentTerm['term_name'] }}</div>
+                                                <div class="text-xs {{ $currentTerm['time_left']['expired'] ? 'text-red-600' : 'text-black-700' }}">
+                                                    {{ $currentTerm['time_left']['expired'] ? 'Expired' : $currentTerm['time_left']['formatted'] }}
+                                                </div>
+                                                <div class="text-xs text-black-700">
+                                                    {{ $currentTerm['expiration_date']->format('M d, Y') }}
+                                                </div>
+                                            </div>
+                                        @else
+                                            <span class="text-black-700 text-xs">No term data</span>
+                                        @endif
+                                    </td>
+
+                                    <!-- NEW: Renewal Status Column -->
+                                    <td class="px-3 py-4 text-sm">
+                                        <div class="space-y-2">
+                                            @if($lease->renewal_date)
+                                                <div class="space-y-1">
+                                                    <!-- Renewal Status Badge -->
+                                                    <div class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {{ $renewalStatusInfo['class'] }}">
+                                                        {{ $renewalStatusInfo['message'] }}
+                                                    </div>
+                                                    <!-- Renewal Date -->
+                                                    <div class="text-xs text-gray-600">
+                                                        Due: {{ $lease->formatted_renewal_date }}
+                                                    </div>
+                                                    <!-- Created By -->
+                                                    @if($lease->renewalCreatedBy)
+                                                        <div class="text-xs text-gray-500">
+                                                            By: {{ $lease->renewalCreatedBy->name }}
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                                <!-- Renewal Action Buttons -->
+                                                <div class="flex space-x-1">
+                                                    @if($lease->renewal_status === 'pending')
+                                                        <button onclick="completeRenewal({{ $lease->id }})"
+                                                                class="inline-flex items-center px-2 py-1 text-xs font-medium rounded text-green-700 bg-green-100 hover:bg-green-200">
+                                                            ✅ Complete
+                                                        </button>
+                                                        <button onclick="sendRenewalReminder({{ $lease->id }})"
+                                                                class="inline-flex items-center px-2 py-1 text-xs font-medium rounded text-blue-700 bg-blue-100 hover:bg-blue-200">
+                                                            🔔 Remind
+                                                        </button>
+                                                    @elseif($lease->renewal_status === 'completed')
+                                                        <span class="inline-flex items-center px-2 py-1 text-xs font-medium rounded text-green-700 bg-green-100">
+                                                    ✅ Done
+                                                </span>
+                                                    @endif
+                                                </div>
+                                            @else
+                                                <div class="text-xs text-gray-500">
+                                                    No renewal date set
+                                                </div>
+                                                <button onclick="setRenewalDate({{ $lease->id }})"
+                                                        class="inline-flex items-center px-2 py-1 text-xs font-medium rounded text-blue-700 bg-blue-100 hover:bg-blue-200">
+                                                    📅 Set Date
+                                                </button>
+                                            @endif
+                                        </div>
+                                    </td>
+
+                                    <!-- Expirations -->
+                                    <td class="px-3 py-4 text-sm">
+                                        <div class="space-y-1">
+                                            @if($timeUntilLastTerm)
+                                                <div class="text-xs">
+                                                    <span class="text-black-700">Last Term:</span>
+                                                    <span class="{{ $timeUntilLastTerm['expired'] ? 'text-red-600' : 'text-black-700' }}">
+                                                {{ $timeUntilLastTerm['expired'] ? 'Expired' : $timeUntilLastTerm['formatted'] }}
+                                            </span>
+                                                </div>
+                                            @endif
+                                            @if($timeUntilFranchiseExpires)
+                                                <div class="text-xs">
+                                                    <span class="text-black-700">Franchise:</span>
+                                                    <span class="{{ $timeUntilFranchiseExpires['expired'] ? 'text-red-600' : 'text-black-700' }}">
+                                                {{ $timeUntilFranchiseExpires['expired'] ? 'Expired' : $timeUntilFranchiseExpires['formatted'] }}
+                                            </span>
+                                                </div>
+                                            @endif
+                                        </div>
+                                    </td>
+
+                                    <!-- Actions -->
+                                    <td class="px-3 py-4 text-sm">
+                                        <div class="flex space-x-2">
+                                            <a href="{{ route('leases.show', $lease) }}"
+                                               class="inline-flex items-center text-black-600 hover:text-black-700 font-medium transition-colors duration-150">
+                                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                </svg>
+                                                View
+                                            </a>
+                                            <a href="{{ route('leases.edit', $lease) }}"
+                                               class="inline-flex items-center text-black-600 hover:text-black-700 font-medium transition-colors duration-150">
+                                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                </svg>
+                                                Edit
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div class="px-4 py-3 border-t border-orange-200 sm:px-6">
+                        <div class="flex justify-between items-center">
+                            <div class="text-sm text-black-700">
+                                Showing {{ $leases->firstItem() ?? 0 }} to {{ $leases->lastItem() ?? 0 }}
+                                of {{ $leases->total() }} results
+                            </div>
+                            <div class="flex space-x-1">
+                                {{ $leases->links() }}
+                            </div>
+                        </div>
+                    </div>
+                @else
+                    <div class="text-center py-12">
+                        <svg class="mx-auto h-12 w-12 text-black-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-2m-14 0h2m0 0V9a2 2 0 012-2h2a2 2 0 012 2v10" />
+                        </svg>
+                        <h3 class="mt-2 text-sm font-medium text-black-900">No leases found</h3>
+                        <p class="mt-1 text-sm text-black-700">Get started by creating a new lease.</p>
+                        <div class="mt-6">
+                            <a href="{{ route('leases.create') }}"
+                               class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-orange-600 hover:bg-orange-700">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                </svg>
+                                Add Lease
+                            </a>
+                        </div>
+                    </div>
+                @endif
+            </div>
+
+            <!-- Existing Modals (keeping them as they are) -->
+            <!-- ... keep all your existing modal code ... -->
+            <!-- Modal Containers -->
+            <!-- Landlord Contact Modal -->
+            <div id="landlordContactModal" class="hidden fixed inset-0  bg-opacity-50 overflow-y-auto h-full w-full z-50">
+                <div class="relative top-4 mx-auto p-5 border w-11/12 max-w-7xl shadow-lg rounded-md bg-orange-50">
+                    <div class="mt-3">
+                        <div class="flex justify-between items-center mb-4">
+                            <div class="flex space-x-2">
+                                <button onclick="generateScreenshot('landlordContactModal', 'landlord-contact')"
+                                        class="inline-flex items-center px-3 py-2 bg-green-600 text-white text-sm font-medium rounded hover:bg-green-700 transition-colors">
+                                    📸 Screenshot
+                                </button>
+                                <button onclick="closeModal('landlordContactModal')"
+                                        class="text-black-700 hover:text-black-600 text-xl font-bold">&times;</button>
+                            </div>
+                        </div>
+                        <div id="landlordContactContent" class="modal-content">
+                            <!-- Content will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cost Breakdown Modal -->
+            <div id="costBreakdownModal" class="hidden fixed inset-0  bg-opacity-50 overflow-y-auto h-full w-full z-50">
+                <div class="relative top-4 mx-auto p-5 border w-11/12 max-w-7xl shadow-lg rounded-md bg-orange-50">
+                    <div class="mt-3">
+                        <div class="flex justify-between items-center mb-4">
+                            <div class="flex space-x-2">
+                                <button onclick="generateScreenshot('costBreakdownModal', 'cost-breakdown')"
+                                        class="inline-flex items-center px-3 py-2 bg-green-600 text-white text-sm font-medium rounded hover:bg-green-700 transition-colors">
+                                    📸 Screenshot
+                                </button>
+                                <button onclick="closeModal('costBreakdownModal')"
+                                        class="text-black-700 hover:text-black-600 text-xl font-bold">&times;</button>
+                            </div>
+                        </div>
+                        <div id="costBreakdownContent" class="modal-content">
+                            <!-- Content will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lease Tracker Modal -->
+            <div id="leaseTrackerModal" class="hidden fixed inset-0 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+                <div class="relative top-4 mx-auto p-5 border w-11/12 max-w-7xl shadow-lg rounded-md bg-orange-50">
+                    <div class="mt-3">
+                        <div class="flex justify-between items-center mb-4">
+                            <div class="flex space-x-2">
+                                <button onclick="generateScreenshot('leaseTrackerModal', 'lease-tracker')"
+                                        class="inline-flex items-center px-3 py-2 bg-green-600 text-white text-sm font-medium rounded hover:bg-green-700 transition-colors">
+                                    📸 Screenshot
+                                </button>
+                                <button onclick="closeModal('leaseTrackerModal')"
+                                        class="text-black-700 hover:text-black-600 text-xl font-bold">&times;</button>
+                            </div>
+                        </div>
+                        <div id="leaseTrackerContent" class="modal-content no-scrollbar">
+                            <!-- Content will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Portfolio Analytics Modal -->
+            <div id="portfolioModal" class="fixed inset-0 z-50 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+                <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                    <div class="fixed  transition-opacity" aria-hidden="true" id="modalBackdrop"></div>
+
+                    <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+                    <div class="inline-block align-bottom bg-orange-50 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-6xl sm:w-full">
+                        <div class="bg-orange-50 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                            <div class="flex justify-between items-center mb-6">
+                                <h3 class="text-2xl font-bold text-black-900" id="modal-title">Portfolio Analytics</h3>
+                                <button type="button" id="closePortfolioModal" class="text-black-700 hover:text-black-600">
+                                    <span class="sr-only">Close</span>
+                                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+
+                            <!-- Store Selection -->
+                            <div class="mb-6 bg-orange-100 rounded-lg p-4">
+                                <h4 class="text-lg font-semibold text-black-900 mb-4">Select Stores for Analysis</h4>
+                                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                    <div>
+                                        <label for="modal_portfolio_stores" class="block text-sm font-medium text-black-700 mb-2">
+                                            Choose Stores
+                                        </label>
+                                        <select id="modal_portfolio_stores" multiple
+                                                class="block w-full rounded-lg border-orange-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm"
+                                                style="min-height: 150px;">
+                                            @foreach($availableStores as $store)
+                                                <option value="{{ $store->id }}">{{ $store->store_number }}</option>
+                                            @endforeach
+                                        </select>
+                                        <p class="mt-1 text-xs text-black-700">Hold Ctrl/Cmd to select multiple stores</p>
+                                    </div>
+
+                                    <div class="flex flex-col justify-center space-y-3">
+                                        <button type="button" id="modalSelectAllStores"
+                                                class="inline-flex justify-center items-center px-4 py-2 border border-orange-300 text-sm font-medium rounded-lg text-black-700 bg-white hover:bg-orange-100">
+                                            Select All Stores
+                                        </button>
+                                        <button type="button" id="modalClearStoreSelection"
+                                                class="inline-flex justify-center items-center px-4 py-2 border border-orange-300 text-sm font-medium rounded-lg text-black-700 bg-white hover:bg-orange-100">
+                                            Clear Selection
+                                        </button>
+                                        <button type="button" id="updatePortfolioStats"
+                                                class="inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-orange-600 hover:bg-orange-700">
+                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                            </svg>
+                                            Update Analytics
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Portfolio Statistics Display -->
+                            <div id="portfolioStatsContainer">
+                                <!-- Selected Stores Info -->
+                                <div id="selectedStoresInfo" class="mb-4 hidden">
+                                    <div class="bg-orange-100 border border-orange-200 rounded-lg p-4">
+                                        <h4 class="text-sm font-semibold text-black-600 mb-2">Analysis Scope:</h4>
+                                        <div id="selectedStoresList" class="flex flex-wrap gap-2"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Portfolio Totals -->
+                                <div class="mb-6">
+                                    <h4 class="text-lg font-semibold text-black-900 mb-4 text-center">Portfolio Totals</h4>
+                                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4" id="portfolioTotals">
+                                        <!-- Stats will be populated via JavaScript -->
+                                    </div>
+                                </div>
+
+                                <!-- Portfolio Averages -->
+                                <div class="mb-6">
+                                    <h4 class="text-lg font-semibold text-black-900 mb-4 text-center">Portfolio Averages</h4>
+                                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4" id="portfolioAverages">
+                                        <!-- Averages will be populated via JavaScript -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Loading Indicator -->
+                            <div id="portfolioLoading" class="hidden text-center py-8">
+                                <svg class="animate-spin -ml-1 mr-3 h-8 w-8 text-black-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <p class="text-black-700 mt-2">Calculating portfolio statistics...</p>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+            <!-- NEW: Renewal Action Modals -->
+            <!-- Set Renewal Date Modal -->
+            <div id="setRenewalModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+                <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                    <div class="mt-3">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">Set Renewal Date</h3>
+                        <form id="setRenewalForm">
+                            <input type="hidden" id="renewal_lease_id" />
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Renewal Date</label>
+                                <input type="date" id="renewal_date_input"
+                                       class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                       min="{{ date('Y-m-d') }}">
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Notes</label>
+                                <textarea id="renewal_notes_input" rows="3"
+                                          class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                          placeholder="Add notes about the renewal..."></textarea>
+                            </div>
+                            <div class="flex justify-end space-x-3">
+                                <button type="button" onclick="closeRenewalModal()"
+                                        class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+                                    Cancel
+                                </button>
+                                <button type="submit"
+                                        class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                                    Set Renewal Date
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Complete Renewal Modal -->
+            <div id="completeRenewalModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+                <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                    <div class="mt-3">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">Complete Renewal</h3>
+                        <form id="completeRenewalForm">
+                            <input type="hidden" id="complete_lease_id" />
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Completion Notes</label>
+                                <textarea id="completion_notes" rows="3"
+                                          class="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+                                          placeholder="Add notes about the completed renewal..."></textarea>
+                            </div>
+                            <div class="flex justify-end space-x-3">
+                                <button type="button" onclick="closeCompleteModal()"
+                                        class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+                                    Cancel
+                                </button>
+                                <button type="submit"
+                                        class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
+                                    Mark as Completed
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     <style>
         /* Hide last column ONLY in landlord contact modal for screenshots */
         #landlordContactModal table.hide-last-column th:last-child,
@@ -1771,6 +1871,160 @@
         `;
             });
         };
+
+        function filterByRenewals() {
+            const form = document.getElementById('filterForm');
+            const expiringSelect = document.getElementById('expiring');
+            expiringSelect.value = 'renewal';
+            form.submit();
+        }
+
+        function setRenewalDate(leaseId) {
+            document.getElementById('renewal_lease_id').value = leaseId;
+            document.getElementById('setRenewalModal').classList.remove('hidden');
+        }
+
+        function closeRenewalModal() {
+            document.getElementById('setRenewalModal').classList.add('hidden');
+            document.getElementById('setRenewalForm').reset();
+        }
+
+        function completeRenewal(leaseId) {
+            document.getElementById('complete_lease_id').value = leaseId;
+            document.getElementById('completeRenewalModal').classList.remove('hidden');
+        }
+
+        function closeCompleteModal() {
+            document.getElementById('completeRenewalModal').classList.add('hidden');
+            document.getElementById('completeRenewalForm').reset();
+        }
+
+        async function sendRenewalReminder(leaseId) {
+            try {
+                const response = await fetch(`/leases/${leaseId}/send-renewal-reminder`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showNotification('✅ Renewal Reminder Sent', data.message, 'success');
+                } else {
+                    showNotification('❌ Error', data.error, 'error');
+                }
+            } catch (error) {
+                showNotification('❌ Network Error', 'Failed to send reminder', 'error');
+            }
+        }
+
+        // Handle Set Renewal Date Form
+        document.getElementById('setRenewalForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const leaseId = document.getElementById('renewal_lease_id').value;
+            const renewalDate = document.getElementById('renewal_date_input').value;
+            const renewalNotes = document.getElementById('renewal_notes_input').value;
+
+            try {
+                const response = await fetch(`/leases/${leaseId}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({
+                        renewal_date: renewalDate,
+                        renewal_notes: renewalNotes,
+                        renewal_status: 'pending'
+                    })
+                });
+
+                if (response.ok) {
+                    showNotification('✅ Renewal Date Set', 'Automatic reminders have been created', 'success');
+                    closeRenewalModal();
+                    setTimeout(() => location.reload(), 2000);
+                } else {
+                    showNotification('❌ Error', 'Failed to set renewal date', 'error');
+                }
+            } catch (error) {
+                showNotification('❌ Network Error', 'Failed to set renewal date', 'error');
+            }
+        });
+
+        // Handle Complete Renewal Form
+        document.getElementById('completeRenewalForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const leaseId = document.getElementById('complete_lease_id').value;
+            const completionNotes = document.getElementById('completion_notes').value;
+
+            try {
+                const response = await fetch(`/leases/${leaseId}/complete-renewal`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({
+                        completion_notes: completionNotes
+                    })
+                });
+
+                if (response.ok) {
+                    showNotification('✅ Renewal Completed', 'Lease renewal has been marked as completed', 'success');
+                    closeCompleteModal();
+                    setTimeout(() => location.reload(), 2000);
+                } else {
+                    showNotification('❌ Error', 'Failed to complete renewal', 'error');
+                }
+            } catch (error) {
+                showNotification('❌ Network Error', 'Failed to complete renewal', 'error');
+            }
+        });
+
+        // Notification Function
+        function showNotification(title, message, type = 'info') {
+            // Remove existing notifications
+            const existing = document.querySelectorAll('.lease-notification');
+            existing.forEach(n => n.remove());
+
+            const colors = {
+                success: 'bg-green-100 border-green-500 text-green-800',
+                error: 'bg-red-100 border-red-500 text-red-800',
+                warning: 'bg-yellow-100 border-yellow-500 text-yellow-800',
+                info: 'bg-blue-100 border-blue-500 text-blue-800'
+            };
+
+            const notification = document.createElement('div');
+            notification.className = `lease-notification fixed top-4 right-4 max-w-sm ${colors[type]} border-l-4 p-4 rounded-lg shadow-lg z-50`;
+            notification.innerHTML = `
+        <div class="flex justify-between items-start">
+            <div>
+                <h4 class="font-semibold text-sm">${title}</h4>
+                <p class="text-sm mt-1">${message}</p>
+            </div>
+            <button onclick="this.parentElement.parentElement.remove()" class="text-lg font-bold ml-4">&times;</button>
+        </div>
+    `;
+
+            document.body.appendChild(notification);
+
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.remove();
+                }
+            }, 5000);
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔔 Lease renewal system initialized');
+        });
     </script>
 
 

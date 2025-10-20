@@ -8,7 +8,7 @@
         <div class="sm:flex sm:items-center sm:justify-between mb-6">
             <div>
                 <h1 class="text-3xl font-bold text-black-900">Apartment Lease Management</h1>
-                <p class="mt-2 text-sm text-black-700">Manage apartment leases, tenant information, and expiration tracking</p>
+                <p class="mt-2 text-sm text-black-700">Manage apartment leases, tenant information, renewals, and expiration tracking</p>
             </div>
             <div class="mt-4 sm:mt-0 flex space-x-3">
                 <!-- View Lease List Button -->
@@ -62,6 +62,34 @@
             </div>
         </div>
 
+        <!-- NEW: Renewal Alerts Banner -->
+        @if(isset($stats['renewals_due_soon']) && $stats['renewals_due_soon'] > 0)
+            <div class="mb-6 bg-blue-50 border-l-4 border-blue-400 p-4 rounded-lg shadow-sm">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div class="ml-3 flex-1">
+                        <p class="text-sm text-blue-700">
+                            <span class="font-medium">🔔 Apartment Lease Renewals Alert:</span>
+                            {{ $stats['renewals_due_soon'] }} apartment lease{{ $stats['renewals_due_soon'] > 1 ? 's' : '' }}
+                            {{ $stats['renewals_due_soon'] > 1 ? 'are' : 'is' }} due for renewal within 30 days.
+                            @if(isset($stats['overdue_renewals']) && $stats['overdue_renewals'] > 0)
+                                <span class="font-semibold text-red-600">{{ $stats['overdue_renewals'] }} renewal{{ $stats['overdue_renewals'] > 1 ? 's are' : ' is' }} overdue!</span>
+                            @endif
+                        </p>
+                    </div>
+                    <div class="ml-3">
+                        <button onclick="filterByApartmentRenewals()" class="inline-flex items-center px-3 py-1 border border-blue-300 text-xs font-medium rounded text-blue-700 bg-blue-100 hover:bg-blue-200">
+                            View Renewals
+                        </button>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         <script>
             document.getElementById('xlsx_file_input').addEventListener('change', function() {
                 if (this.files.length > 0) {
@@ -70,8 +98,8 @@
             });
         </script>
 
-        <!-- Quick Stats Overview -->
-        <div class="grid grid-cols-1 md:grid-cols-6 gap-4 mb-8">
+        <!-- Enhanced Quick Stats Overview with Renewal Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
             <div class="bg-orange-50 rounded-lg shadow-sm p-6 border border-orange-200 hover:shadow-md transition-shadow">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
@@ -150,9 +178,39 @@
                     </div>
                 </div>
             </div>
+
+            <!-- NEW: Renewals Due Soon -->
+            <div class="bg-blue-50 rounded-lg shadow-sm p-6 border border-blue-200 hover:shadow-md transition-shadow">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-blue-700">Renewals Due</p>
+                        <p class="text-2xl font-bold text-blue-600">{{ $stats['renewals_due_soon'] ?? 0 }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NEW: Overdue Renewals -->
+            <div class="bg-red-50 rounded-lg shadow-sm p-6 border border-red-200 hover:shadow-md transition-shadow">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-red-700">Overdue Renewals</p>
+                        <p class="text-2xl font-bold text-red-600">{{ $stats['overdue_renewals'] ?? 0 }}</p>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <!-- Filters Section -->
+        <!-- Enhanced Filters Section with Renewal Filters -->
         <div class="bg-orange-50 shadow-lg rounded-xl p-6 mb-8 transition-all duration-300 hover:shadow-xl border border-orange-100">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-lg font-semibold text-black-900">Filter Apartments</h2>
@@ -164,7 +222,7 @@
                 </button>
             </div>
             <form method="GET" action="{{ route('admin.apartment-leases.index') }}" id="filterForm" class="space-y-6">
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-6">
                     <div>
                         <label for="search" class="block text-sm font-semibold text-black-800 mb-2">Search</label>
                         <input type="text" name="search" id="search"
@@ -188,6 +246,21 @@
                             <option value="with_car" {{ request('car_filter') === 'with_car' ? 'selected' : '' }}>With Car</option>
                         </select>
                     </div>
+
+                    <!-- NEW: Lease Status Filter with Renewal Options -->
+                    <div>
+                        <label for="lease_status" class="block text-sm font-semibold text-black-800 mb-2">Status</label>
+                        <select name="lease_status" id="lease_status" class="block w-full rounded-xl border-orange-200 shadow-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 sm:text-sm transition-all duration-200 hover:border-orange-400 py-3 px-4">
+                            <option value="all" {{ request('lease_status') === 'all' || !request('lease_status') ? 'selected' : '' }}>All Status</option>
+                            <option value="active" {{ request('lease_status') === 'active' ? 'selected' : '' }}>Active Leases</option>
+                            <option value="expiring_soon" {{ request('lease_status') === 'expiring_soon' ? 'selected' : '' }}>Expiring Soon</option>
+                            <option value="expired" {{ request('lease_status') === 'expired' ? 'selected' : '' }}>Expired</option>
+                            <option value="renewal_pending" {{ request('lease_status') === 'renewal_pending' ? 'selected' : '' }}>🔔 Renewal Pending</option>
+                            <option value="renewal_overdue" {{ request('lease_status') === 'renewal_overdue' ? 'selected' : '' }}>⚠️ Renewal Overdue</option>
+                            <option value="renewal_completed" {{ request('lease_status') === 'renewal_completed' ? 'selected' : '' }}>✅ Renewal Completed</option>
+                        </select>
+                    </div>
+
                     <div class="flex items-end">
                         <div class="w-full space-y-2">
                             <button type="submit"
@@ -207,7 +280,7 @@
             </form>
         </div>
 
-        <!-- Apartments Table -->
+        <!-- Enhanced Apartments Table with Renewal Information -->
         <div class="bg-orange-50 shadow-sm ring-1 ring-orange-900/5 rounded-lg overflow-hidden">
             @if($leases->count() > 0)
                 <!-- Desktop Table View -->
@@ -218,6 +291,7 @@
                             <th class="px-3 py-3.5 text-left text-xs font-medium text-black-500 uppercase tracking-wide">Apartment Info</th>
                             <th class="px-3 py-3.5 text-left text-xs font-medium text-black-500 uppercase tracking-wide">Financial</th>
                             <th class="px-3 py-3.5 text-left text-xs font-medium text-black-500 uppercase tracking-wide">AT & Details</th>
+                            <th class="px-3 py-3.5 text-left text-xs font-medium text-black-500 uppercase tracking-wide">📋 Renewal Status</th>
                             <th class="px-3 py-3.5 text-left text-xs font-medium text-black-500 uppercase tracking-wide">Lease Details</th>
                             <th class="px-3 py-3.5 text-left text-xs font-medium text-black-500 uppercase tracking-wide">Expiration Status</th>
                             <th class="px-3 py-3.5 text-left text-xs font-medium text-black-500 uppercase tracking-wide">Actions</th>
@@ -225,7 +299,10 @@
                         </thead>
                         <tbody class="divide-y divide-orange-200 bg-orange-50">
                         @foreach($leases as $lease)
-                            <tr class="hover:bg-orange-100 transition-colors duration-150">
+                            @php
+                                $renewalStatusInfo = $lease->renewal_status_info ?? null;
+                            @endphp
+                            <tr class="hover:bg-orange-100 transition-colors duration-150 {{ $lease->is_renewal_overdue ?? false ? 'bg-red-50 border-l-4 border-red-400' : '' }}">
                                 <!-- Apartment Info -->
                                 <td class="px-3 py-4 text-sm">
                                     <div class="space-y-1">
@@ -257,15 +334,64 @@
                                         <div class="flex space-x-2">
                                             @if($lease->is_family === 'Yes' || $lease->is_family === 'yes')
                                                 <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                                                    Family
-                                                </span>
+                                            Family
+                                        </span>
                                             @endif
                                             @if($lease->has_car > 0)
                                                 <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-orange-100 text-black-800">
-                                                    {{ $lease->has_car }} Car{{ $lease->has_car > 1 ? 's' : '' }}
-                                                </span>
+                                            {{ $lease->has_car }} Car{{ $lease->has_car > 1 ? 's' : '' }}
+                                        </span>
                                             @endif
                                         </div>
+                                    </div>
+                                </td>
+
+                                <!-- NEW: Renewal Status Column -->
+                                <td class="px-3 py-4 text-sm">
+                                    <div class="space-y-2">
+                                        @if($lease->renewal_date)
+                                            <div class="space-y-1">
+                                                <!-- Renewal Status Badge -->
+                                                <div class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {{ $renewalStatusInfo['class'] ?? 'bg-gray-100 text-gray-800' }}">
+                                                    {{ $renewalStatusInfo['message'] ?? 'Unknown Status' }}
+                                                </div>
+                                                <!-- Renewal Date -->
+                                                <div class="text-xs text-gray-600">
+                                                    Due: {{ $lease->formatted_renewal_date ?? $lease->renewal_date->format('M j, Y') }}
+                                                </div>
+                                                <!-- Created By -->
+                                                @if($lease->renewalCreatedBy)
+                                                    <div class="text-xs text-gray-500">
+                                                        By: {{ $lease->renewalCreatedBy->name }}
+                                                    </div>
+                                                @endif
+                                            </div>
+                                            <!-- Renewal Action Buttons -->
+                                            <div class="flex space-x-1">
+                                                @if($lease->renewal_status === 'pending')
+                                                    <button onclick="completeApartmentRenewal({{ $lease->id }})"
+                                                            class="inline-flex items-center px-2 py-1 text-xs font-medium rounded text-green-700 bg-green-100 hover:bg-green-200">
+                                                        ✅ Complete
+                                                    </button>
+                                                    <button onclick="sendApartmentRenewalReminder({{ $lease->id }})"
+                                                            class="inline-flex items-center px-2 py-1 text-xs font-medium rounded text-blue-700 bg-blue-100 hover:bg-blue-200">
+                                                        🔔 Remind
+                                                    </button>
+                                                @elseif($lease->renewal_status === 'completed')
+                                                    <span class="inline-flex items-center px-2 py-1 text-xs font-medium rounded text-green-700 bg-green-100">
+                                                ✅ Done
+                                            </span>
+                                                @endif
+                                            </div>
+                                        @else
+                                            <div class="text-xs text-gray-500">
+                                                No renewal date set
+                                            </div>
+                                            <button onclick="setApartmentRenewalDate({{ $lease->id }})"
+                                                    class="inline-flex items-center px-2 py-1 text-xs font-medium rounded text-blue-700 bg-blue-100 hover:bg-blue-200">
+                                                📅 Set Date
+                                            </button>
+                                        @endif
                                     </div>
                                 </td>
 
@@ -314,11 +440,12 @@
                                         <div class="space-y-1">
                                             <div class="text-xs font-medium text-black-700">Lease Expiration Date</div>
                                             <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {{ $statusClass }}">
-                                                {{ $formattedDate }}
-                                            </span>
+                                        {{ $formattedDate }}
+                                    </span>
                                         </div>
                                     @endif
                                 </td>
+
                                 <!-- Actions -->
                                 <td class="px-3 py-4 text-sm">
                                     <div class="flex space-x-2">
@@ -348,7 +475,7 @@
                 <!-- Mobile Card View -->
                 <div class="sm:hidden space-y-4 p-4">
                     @foreach($leases as $lease)
-                        <div class="bg-orange-50 border border-orange-200 rounded-lg p-4 shadow-sm">
+                        <div class="bg-orange-50 border border-orange-200 rounded-lg p-4 shadow-sm {{ $lease->is_renewal_overdue ?? false ? 'border-l-4 border-l-red-400' : '' }}">
                             <div class="flex justify-between items-start mb-3">
                                 <div>
                                     @if($lease->store_number)
@@ -361,6 +488,27 @@
                                     <p class="text-xs text-black-500">{{ $lease->number_of_AT }} AT</p>
                                 </div>
                             </div>
+
+                            <!-- NEW: Mobile Renewal Status -->
+                            @if($lease->renewal_date)
+                                @php $renewalStatusInfo = $lease->renewal_status_info ?? null; @endphp
+                                <div class="mb-3 p-2 bg-blue-50 rounded border border-blue-200">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {{ $renewalStatusInfo['class'] ?? 'bg-gray-100 text-gray-800' }}">
+                                        {{ $renewalStatusInfo['message'] ?? 'Unknown Status' }}
+                                    </span>
+                                            <p class="text-xs text-gray-600 mt-1">Due: {{ $lease->formatted_renewal_date ?? $lease->renewal_date->format('M j, Y') }}</p>
+                                        </div>
+                                        @if($lease->renewal_status === 'pending')
+                                            <button onclick="completeApartmentRenewal({{ $lease->id }})"
+                                                    class="text-xs px-2 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200">
+                                                ✅ Complete
+                                            </button>
+                                        @endif
+                                    </div>
+                                </div>
+                            @endif
 
                             @php $status = $lease->expiration_status @endphp
                             @if($status['status'] !== 'no_date' && $status['status'] !== 'active')
@@ -404,26 +552,88 @@
                     <svg class="mx-auto h-12 w-12 text-black-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-2m-14 0h2m0 0V9a2 2 0 012-2h2a2 2 0 012 2v10" />
                     </svg>
-                    <h3 class="mt-2 text-sm font-medium text-black-900">No leases found</h3>
-                    <p class="mt-1 text-sm text-black-500">Get started by creating a new lease.</p>
+                    <h3 class="mt-2 text-sm font-medium text-black-900">No apartment leases found</h3>
+                    <p class="mt-1 text-sm text-black-500">Get started by creating a new apartment lease.</p>
                     <div class="mt-6">
                         <a href="{{ route('admin.apartment-leases.create') }}"
                            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-orange-600 hover:bg-orange-700">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                             </svg>
-                            Add Lease
+                            Add Apartment Lease
                         </a>
                     </div>
                 </div>
             @endif
         </div>
 
+        <!-- NEW: Apartment Renewal Action Modals -->
+        <!-- Set Apartment Renewal Date Modal -->
+        <div id="setApartmentRenewalModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                <div class="mt-3">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Set Apartment Renewal Date</h3>
+                    <form id="setApartmentRenewalForm">
+                        <input type="hidden" id="apartment_renewal_lease_id" />
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Renewal Date</label>
+                            <input type="date" id="apartment_renewal_date_input"
+                                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                   min="{{ date('Y-m-d') }}">
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Notes</label>
+                            <textarea id="apartment_renewal_notes_input" rows="3"
+                                      class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                      placeholder="Add notes about the apartment renewal..."></textarea>
+                        </div>
+                        <div class="flex justify-end space-x-3">
+                            <button type="button" onclick="closeApartmentRenewalModal()"
+                                    class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+                                Cancel
+                            </button>
+                            <button type="submit"
+                                    class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                                Set Renewal Date
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Complete Apartment Renewal Modal -->
+        <div id="completeApartmentRenewalModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                <div class="mt-3">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Complete Apartment Renewal</h3>
+                    <form id="completeApartmentRenewalForm">
+                        <input type="hidden" id="complete_apartment_lease_id" />
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Completion Notes</label>
+                            <textarea id="apartment_completion_notes" rows="3"
+                                      class="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+                                      placeholder="Add notes about the completed apartment renewal..."></textarea>
+                        </div>
+                        <div class="flex justify-end space-x-3">
+                            <button type="button" onclick="closeCompleteApartmentModal()"
+                                    class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+                                Cancel
+                            </button>
+                            <button type="submit"
+                                    class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
+                                Mark as Completed
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
         <!-- Modal for Apartment Lease List -->
         <div id="apartmentLeaseListModal" class="hidden fixed inset-0  bg-opacity-50 overflow-y-auto h-full w-full z-50" onclick="closeModal('apartmentLeaseListModal')">
             <div class="flex items-center justify-center min-h-screen">
                 <div class="bg-orange-50 rounded-lg shadow-lg p-6 w-full max-w-4xl max-h-[80vh] overflow-y-auto relative  flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0" onclick="event.stopPropagation()">
-{{--                    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">--}}
 
                     <div class="modal-content">
                         <div id="apartmentLeaseListContent" class="p-4">
@@ -446,6 +656,159 @@
                 </div>
             </div>
         </div>
+
+        <!-- Enhanced JavaScript with Apartment Renewal Functions -->
+        <script>
+            // NEW: Apartment Renewal Management Functions
+            function setApartmentRenewalDate(leaseId) {
+                document.getElementById('apartment_renewal_lease_id').value = leaseId;
+                document.getElementById('setApartmentRenewalModal').classList.remove('hidden');
+            }
+
+            function closeApartmentRenewalModal() {
+                document.getElementById('setApartmentRenewalModal').classList.add('hidden');
+                document.getElementById('setApartmentRenewalForm').reset();
+            }
+
+            function completeApartmentRenewal(leaseId) {
+                document.getElementById('complete_apartment_lease_id').value = leaseId;
+                document.getElementById('completeApartmentRenewalModal').classList.remove('hidden');
+            }
+
+            function closeCompleteApartmentModal() {
+                document.getElementById('completeApartmentRenewalModal').classList.add('hidden');
+                document.getElementById('completeApartmentRenewalForm').reset();
+            }
+
+            async function sendApartmentRenewalReminder(leaseId) {
+                try {
+                    const response = await fetch(`/apartment-leases/${leaseId}/send-renewal-reminder`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                        }
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        showApartmentNotification('✅ Renewal Reminder Sent', data.message, 'success');
+                    } else {
+                        showApartmentNotification('❌ Error', data.error, 'error');
+                    }
+                } catch (error) {
+                    showApartmentNotification('❌ Network Error', 'Failed to send apartment renewal reminder', 'error');
+                }
+            }
+
+            // NEW: Filter by apartment renewals function
+            function filterByApartmentRenewals() {
+                const currentUrl = new URL(window.location);
+                currentUrl.searchParams.set('lease_status', 'renewal_pending');
+                window.location.href = currentUrl.toString();
+            }
+
+            // Handle Set Apartment Renewal Date Form
+            document.getElementById('setApartmentRenewalForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+
+                const leaseId = document.getElementById('apartment_renewal_lease_id').value;
+                const renewalDate = document.getElementById('apartment_renewal_date_input').value;
+                const renewalNotes = document.getElementById('apartment_renewal_notes_input').value;
+
+                try {
+                    const response = await fetch(`/admin/apartment-leases/${leaseId}`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                        },
+                        body: JSON.stringify({
+                            renewal_date: renewalDate,
+                            renewal_notes: renewalNotes,
+                            renewal_status: 'pending'
+                        })
+                    });
+
+                    if (response.ok) {
+                        showApartmentNotification('✅ Apartment Renewal Date Set', 'Automatic reminders have been created', 'success');
+                        closeApartmentRenewalModal();
+                        setTimeout(() => location.reload(), 2000);
+                    } else {
+                        showApartmentNotification('❌ Error', 'Failed to set apartment renewal date', 'error');
+                    }
+                } catch (error) {
+                    showApartmentNotification('❌ Network Error', 'Failed to set apartment renewal date', 'error');
+                }
+            });
+
+            // Handle Complete Apartment Renewal Form
+            document.getElementById('completeApartmentRenewalForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+
+                const leaseId = document.getElementById('complete_apartment_lease_id').value;
+                const completionNotes = document.getElementById('apartment_completion_notes').value;
+
+                try {
+                    const response = await fetch(`/admin/apartment-leases/${leaseId}/complete-renewal`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                        },
+                        body: JSON.stringify({
+                            completion_notes: completionNotes
+                        })
+                    });
+
+                    if (response.ok) {
+                        showApartmentNotification('✅ Apartment Renewal Completed', 'Apartment lease renewal has been marked as completed', 'success');
+                        closeCompleteApartmentModal();
+                        setTimeout(() => location.reload(), 2000);
+                    } else {
+                        showApartmentNotification('❌ Error', 'Failed to complete apartment renewal', 'error');
+                    }
+                } catch (error) {
+                    showApartmentNotification('❌ Network Error', 'Failed to complete apartment renewal', 'error');
+                }
+            });
+
+            // Apartment notification function
+            function showApartmentNotification(title, message, type = 'info') {
+                // Remove existing notifications
+                const existing = document.querySelectorAll('.apartment-notification');
+                existing.forEach(n => n.remove());
+
+                const colors = {
+                    success: 'bg-green-100 border-green-500 text-green-800',
+                    error: 'bg-red-100 border-red-500 text-red-800',
+                    warning: 'bg-yellow-100 border-yellow-500 text-yellow-800',
+                    info: 'bg-blue-100 border-blue-500 text-blue-800'
+                };
+
+                const notification = document.createElement('div');
+                notification.className = `apartment-notification fixed top-4 right-4 max-w-sm ${colors[type]} border-l-4 p-4 rounded-lg shadow-lg z-50`;
+                notification.innerHTML = `
+        <div class="flex justify-between items-start">
+            <div>
+                <h4 class="font-semibold text-sm">${title}</h4>
+                <p class="text-sm mt-1">${message}</p>
+            </div>
+            <button onclick="this.parentElement.parentElement.remove()" class="text-lg font-bold ml-4">&times;</button>
+        </div>
+    `;
+
+                document.body.appendChild(notification);
+
+                // Auto remove after 5 seconds
+                setTimeout(() => {
+                    if (notification.parentElement) {
+                        notification.remove();
+                    }
+                }, 5000);
+            }
+        </script>
 
     </div>
 

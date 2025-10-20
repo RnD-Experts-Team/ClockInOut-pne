@@ -16,6 +16,7 @@ use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\LeaseController;
 use App\Http\Controllers\MaintenanceRequestController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\NotificationForCalenderController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReminderController;
@@ -108,6 +109,10 @@ Route::middleware(['auth'])->group(function () {
         ->name('leases.import');
     Route::get('leases/download-template', [App\Http\Controllers\LeaseController::class, 'downloadTemplate'])
         ->name('leases.download-template');
+    Route::get('/leases/landlord-contact', [LeaseController::class, 'landlordContact'])->name('leases.landlord-contact');
+    Route::get('/leases/cost-breakdown', [LeaseController::class, 'costBreakdown'])->name('leases.cost-breakdown');
+    Route::get('/leases/lease-tracker', [LeaseController::class, 'leaseTracker'])->name('leases.lease-tracker');
+
     Route::resource('leases', App\Http\Controllers\LeaseController::class);
     Route::get('leases-export', [App\Http\Controllers\LeaseController::class, 'export'])
         ->name('leases.export');
@@ -385,3 +390,140 @@ Route::prefix('workbooks')
                 Route::delete('/{row}', 'destroy')->name('destroy');
             });
     });
+
+// PRIORITY 5: Calendar System Routes (Core functionality)
+Route::middleware(['auth'])->group(function () {
+
+
+
+
+    // Main Calendar Routes
+    Route::prefix('calendar')->name('calendar.')->group(function () {
+        Route::get('/', [CalendarController::class, 'index'])->name('index');
+        Route::get('/events', [CalendarController::class, 'getEvents'])->name('events');
+        Route::get('/filters', [CalendarController::class, 'getFilters'])->name('filters');
+        Route::get('/month', [CalendarController::class, 'monthView'])->name('month');
+        Route::get('/week/{date?}', [CalendarController::class, 'weekView'])->name('week');
+        Route::get('/day/{date?}', [CalendarController::class, 'dayView'])->name('day'); // ➕ ADD THIS
+        Route::get('/list', [CalendarController::class, 'listView'])->name('list'); // ➕ ADD THIS
+        Route::get('/daily/{date?}', [CalendarController::class, 'dailyOverview'])->name('daily');
+        Route::get('/daily/{date}/events', [CalendarController::class, 'getDailyEvents'])->name('daily.events');
+
+        // ➕ ADD THESE NEW ROUTES
+        Route::get('/create', [CalendarController::class, 'create'])->name('create');
+        Route::get('/reminders', [CalendarController::class, 'reminders'])->name('reminders');
+        Route::get('/export', [CalendarController::class, 'export'])->name('export');
+        Route::get('/settings', [CalendarController::class, 'settings'])->name('settings');
+
+
+        // Calendar Event CRUD (Admin only)
+        Route::middleware([RoleMiddleware::class . ':admin'])->group(function () {
+            Route::post('/events', [CalendarController::class, 'store'])->name('events.store');
+            Route::put('/events/{event}', [CalendarController::class, 'update'])->name('events.update');
+            Route::delete('/events/{event}', [CalendarController::class, 'destroy'])->name('events.destroy');
+        });
+    });
+
+    Route::get('/admin/calendar/events', [CalendarController::class, 'getEvents'])->name('admin.calendar.events');
+
+    // ➕ ADD NOTIFICATION ROUTES FOR REAL-TIME SYSTEM
+    Route::prefix('admin/notifications')->name('admin.notifications.')->group(function () {
+        Route::get('/current', [NotificationForCalenderController::class, 'getCurrent'])->name('current');
+        Route::post('/mark-seen', [NotificationForCalenderController::class, 'markSeen'])->name('mark-seen');
+        Route::delete('/clear', [NotificationForCalenderController::class, 'clear'])->name('clear');
+    });
+});
+
+// PRIORITY 12: Calendar Extended Features (UPDATE THIS SECTION)
+Route::middleware(['auth'])->group(function () {
+
+    Route::get('/check-reminders', [ReminderController::class, 'checkPendingReminders']);
+    Route::post('/reminders/{id}/dismiss', [ReminderController::class, 'dismissReminder']);
+
+
+    // Reminders System - COMPLETE ROUTES
+    Route::prefix('reminders')->name('reminders.')->group(function () {
+        Route::get('/', [ReminderController::class, 'index'])->name('index');
+        Route::get('/create', [ReminderController::class, 'create'])->name('create');
+        Route::post('/', [ReminderController::class, 'store'])->name('store');
+        Route::get('/{reminder}', [ReminderController::class, 'show'])->name('show');
+        Route::get('/{reminder}/edit', [ReminderController::class, 'edit'])->name('edit');
+        Route::put('/{reminder}', [ReminderController::class, 'update'])->name('update');
+        Route::delete('/{reminder}', [ReminderController::class, 'destroy'])->name('destroy');
+
+        // AJAX Actions for the dashboard
+        Route::post('/{reminder}/dismiss', [ReminderController::class, 'dismiss'])->name('dismiss');
+        Route::post('/{reminder}/snooze', [ReminderController::class, 'snooze'])->name('snooze');
+        Route::post('/{reminder}/mark-read', [ReminderController::class, 'markAsRead'])->name('mark-read');
+
+        // API endpoints
+        Route::get('/api/due', [ReminderController::class, 'getDueReminders'])->name('due');
+        Route::post('/bulk-action', [ReminderController::class, 'bulkAction'])->name('bulk-action');
+        Route::get('/export', [ReminderController::class, 'export'])->name('export');
+
+            // Personal reminder notifications
+
+
+        // Statistics endpoint for AJAX
+        Route::get('/api/statistics', [ReminderController::class, 'getStatistics'])->name('statistics');
+    });
+
+    // Admin Activity Logs (KEEP YOUR EXISTING ROUTES - just showing for reference)
+    Route::prefix('admin-activity')->name('admin-activity.')->group(function () {
+        Route::get('/', [AdminActivityController::class, 'index'])->name('index');
+        Route::get('/{activity}', [AdminActivityController::class, 'show'])->name('show');
+        Route::get('/daily/{date}', [AdminActivityController::class, 'getDailyActivity'])->name('daily');
+        Route::get('/api/stats', [AdminActivityController::class, 'getStats'])->name('stats');
+        Route::post('/filter', [AdminActivityController::class, 'filter'])->name('filter');
+    });
+
+    // Expiration Tracking (KEEP YOUR EXISTING ROUTES)
+    Route::prefix('expiration')->name('expiration.')->group(function () {
+        Route::get('/', [ExpirationController::class, 'index'])->name('index');
+        Route::post('/', [ExpirationController::class, 'store'])->name('store');
+        Route::get('/{expiration}', [ExpirationController::class, 'show'])->name('show');
+        Route::put('/{expiration}', [ExpirationController::class, 'update'])->name('update');
+        Route::post('/{expiration}/renew', [ExpirationController::class, 'renew'])->name('renew');
+        Route::delete('/{expiration}', [ExpirationController::class, 'destroy'])->name('destroy');
+        Route::get('/api/expiring-items', [ExpirationController::class, 'getExpiringItems'])->name('expiring-items');
+        Route::post('/update-warning-settings', [ExpirationController::class, 'updateWarningSettings'])->name('update-warning-settings');
+    });
+
+    // Clock Events Management (KEEP YOUR EXISTING ROUTES)
+    Route::prefix('clock-events')->name('clock-events.')->group(function () {
+        Route::get('/', [ClockEventController::class, 'index'])->name('index');
+        Route::post('/', [ClockEventController::class, 'store'])->name('store');
+        Route::get('/{clockEvent}', [ClockEventController::class, 'show'])->name('show');
+        Route::put('/{clockEvent}', [ClockEventController::class, 'update'])->name('update');
+        Route::delete('/{clockEvent}', [ClockEventController::class, 'destroy'])->name('destroy');
+        Route::get('/api/events', [ClockEventController::class, 'getEvents'])->name('api.events');
+        Route::get('/api/work-hours-summary', [ClockEventController::class, 'getWorkHoursSummary'])->name('work-hours-summary');
+    });
+
+    // Maintenance Calendar (KEEP YOUR EXISTING ROUTES)
+    Route::prefix('maintenance-calendar')->name('maintenance-calendar.')->group(function () {
+        Route::get('/', [MaintenanceCalendarController::class, 'index'])->name('index');
+        Route::get('/events', [MaintenanceCalendarController::class, 'getMaintenanceEvents'])->name('events');
+        Route::get('/api/statistics', [MaintenanceCalendarController::class, 'getStatistics'])->name('statistics');
+
+        // Admin only routes for scheduling
+        Route::middleware([RoleMiddleware::class . ':admin'])->group(function () {
+            Route::post('/schedule', [MaintenanceCalendarController::class, 'scheduleMaintenance'])->name('schedule');
+            Route::put('/reschedule/{event}', [MaintenanceCalendarController::class, 'reschedule'])->name('reschedule');
+        });
+    });
+
+    // Task Calendar (KEEP YOUR EXISTING ROUTES)
+    Route::prefix('task-calendar')->name('task-calendar.')->group(function () {
+        Route::get('/', [TaskCalendarController::class, 'index'])->name('index');
+        Route::get('/events', [TaskCalendarController::class, 'getTaskEvents'])->name('events');
+        Route::get('/workload/{user}', [TaskCalendarController::class, 'getUserWorkload'])->name('workload');
+
+        // Admin only routes for task assignment
+        Route::middleware([RoleMiddleware::class . ':admin'])->group(function () {
+            Route::post('/assign', [TaskCalendarController::class, 'assignTask'])->name('assign');
+            Route::put('/update-schedule/{event}', [TaskCalendarController::class, 'updateTaskSchedule'])->name('update-schedule');
+        });
+    });
+});
+
