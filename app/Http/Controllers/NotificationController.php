@@ -176,4 +176,5 @@ class NotificationController extends Controller
 
         return redirect()->back()->with('success', "Cleared $deleted notification(s) older than $period days.");
     }
+
 }

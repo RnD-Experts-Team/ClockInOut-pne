@@ -170,6 +170,12 @@
                                         </svg>
                                         Scorecards
                                     </a>
+                                    <a href="{{ route('calendar.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-900 transition-colors duration-200" role="menuitem">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a4 4 0 01-4-4V5a4 4 0 014-4h10a4 4 0 014 4v10a4 4 0 01-4 4z"></path>
+                                        </svg>
+                                        calendar
+                                    </a>
                                 </div>
                             </div>
                         </div>

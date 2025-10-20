@@ -7,7 +7,7 @@
         <div class="flex justify-between items-center mb-6">
             <div>
                 <h1 class="text-3xl font-bold text-black-900">Edit Lease - {{ $lease->store_number }}</h1>
-                <p class="mt-2 text-sm text-black-700">Update lease information</p>
+                <p class="mt-2 text-sm text-black-700">Update lease information and renewal settings</p>
             </div>
             <div class="flex space-x-3">
                 <a href="{{ route('leases.show', $lease) }}"
@@ -27,6 +27,39 @@
                 </a>
             </div>
         </div>
+
+        <!-- NEW: Current Renewal Status Display -->
+        @if($lease->renewal_date)
+            @php $renewalStatusInfo = $lease->renewal_status_info; @endphp
+            <div class="mb-6 bg-blue-50 border-l-4 border-blue-400 p-4 rounded-lg shadow-sm">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-blue-700">
+                                <span class="font-medium">🔔 Renewal Status:</span>
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {{ $renewalStatusInfo['class'] }}">
+                                    {{ $renewalStatusInfo['message'] }}
+                                </span>
+                                - Due: {{ $lease->formatted_renewal_date }}
+                            </p>
+                        </div>
+                    </div>
+                    <div>
+                        @if($lease->renewal_status === 'pending')
+                            <button onclick="completeRenewal({{ $lease->id }})"
+                                    class="inline-flex items-center px-3 py-1 border border-green-300 text-xs font-medium rounded text-green-700 bg-green-100 hover:bg-green-200">
+                                ✅ Mark as Completed
+                            </button>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        @endif
 
         <form action="{{ route('leases.update', $lease) }}" method="POST" class="space-y-8">
             @csrf
@@ -334,7 +367,7 @@
                         <p class="form-error mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
                     </div>
-                    <!-- NEW: Current Term Override Field -->
+                    <!-- Current Term Override Field -->
                     <div>
                         <label for="current_term" class="form-label block text-sm font-medium text-black-700 mb-2">
                             <svg class="w-4 h-4 inline mr-1 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -373,6 +406,113 @@
                         @enderror
                     </div>
                 </div>
+            </div>
+
+            <!-- NEW: Renewal Management Section -->
+            <div class="bg-blue-50 shadow-sm ring-1 ring-blue-900/5 rounded-lg p-6">
+                <h2 class="text-lg font-semibold text-black-900 mb-4 flex items-center">
+                    <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Renewal Management
+                    <span class="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">UPDATED</span>
+                </h2>
+                <p class="text-sm text-gray-600 mb-6">
+                    Update renewal information. Changes to the renewal date will create/update automatic reminders.
+                    @if($lease->renewalCreatedBy)
+                        <br><span class="text-blue-600">Originally set by: {{ $lease->renewalCreatedBy->name }}</span>
+                    @endif
+                </p>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="renewal_date" class="form-label block text-sm font-medium text-black-700 mb-2">
+                            <svg class="w-4 h-4 inline mr-1 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            Renewal Date
+                        </label>
+                        <input type="date" name="renewal_date" id="renewal_date"
+                               class="form-field block w-full rounded-lg border-blue-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm @error('renewal_date') border-red-500 @enderror"
+                               value="{{ old('renewal_date', $lease->renewal_date?->format('Y-m-d')) }}">
+                        <p class="mt-1 text-xs text-blue-600">
+                            <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Automatic reminders: 90, 60, 30, 14, 7, and 1 days before
+                        </p>
+                        @error('renewal_date')
+                        <p class="form-error mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <label for="renewal_status" class="form-label block text-sm font-medium text-black-700 mb-2">
+                            <svg class="w-4 h-4 inline mr-1 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Renewal Status
+                        </label>
+                        <select name="renewal_status" id="renewal_status" class="form-select block w-full rounded-lg border-blue-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm @error('renewal_status') border-red-500 @enderror">
+                            <option value="">No Status Set</option>
+                            <option value="pending" {{ old('renewal_status', $lease->renewal_status) == 'pending' ? 'selected' : '' }}>
+                                📋 Pending - Not Started
+                            </option>
+                            <option value="in_progress" {{ old('renewal_status', $lease->renewal_status) == 'in_progress' ? 'selected' : '' }}>
+                                ⏳ In Progress - Under Review
+                            </option>
+                            <option value="completed" {{ old('renewal_status', $lease->renewal_status) == 'completed' ? 'selected' : '' }}>
+                                ✅ Completed - Renewal Done
+                            </option>
+                            <option value="declined" {{ old('renewal_status', $lease->renewal_status) == 'declined' ? 'selected' : '' }}>
+                                ❌ Declined - Not Renewing
+                            </option>
+                        </select>
+                        @error('renewal_status')
+                        <p class="form-error mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+                </div>
+
+                <div class="mt-6">
+                    <label for="renewal_notes" class="form-label block text-sm font-medium text-black-700 mb-2">
+                        <svg class="w-4 h-4 inline mr-1 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-1.586z" />
+                        </svg>
+                        Renewal Notes
+                    </label>
+                    <textarea name="renewal_notes" id="renewal_notes" rows="3"
+                              class="form-textarea block w-full rounded-lg border-blue-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm @error('renewal_notes') border-red-500 @enderror"
+                              placeholder="Add notes about the renewal process, terms to negotiate, deadlines, etc...">{{ old('renewal_notes', $lease->renewal_notes) }}</textarea>
+                    @error('renewal_notes')
+                    <p class="form-error mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <!-- Renewal Status Information -->
+                @if($lease->renewal_date)
+                    <div class="mt-6 p-4 bg-blue-100 rounded-lg border border-blue-200">
+                        <h4 class="text-sm font-semibold text-blue-900 mb-2">
+                            <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Current Renewal Information
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-blue-800">
+                            <div>
+                                <strong>Current Date:</strong> {{ $lease->formatted_renewal_date }}
+                            </div>
+                            <div>
+                                <strong>Days Until Renewal:</strong> {{ $lease->days_until_renewal ?? 'N/A' }}
+                            </div>
+                            @if($lease->renewal_reminder_sent_at)
+                                <div class="md:col-span-2">
+                                    <strong>Last Reminder Sent:</strong> {{ $lease->renewal_reminder_sent_at->format('M j, Y g:i A') }}
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                @endif
             </div>
 
             <!-- Landlord Information -->
@@ -470,7 +610,35 @@
         </form>
     </div>
 
-    <!-- JavaScript for store selection toggle -->
+    <!-- Complete Renewal Modal -->
+    <div id="completeRenewalModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Complete Renewal</h3>
+                <form id="completeRenewalForm">
+                    <input type="hidden" id="complete_lease_id" />
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Completion Notes</label>
+                        <textarea id="completion_notes" rows="3"
+                                  class="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+                                  placeholder="Add notes about the completed renewal..."></textarea>
+                    </div>
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" onclick="closeCompleteModal()"
+                                class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+                            Cancel
+                        </button>
+                        <button type="submit"
+                                class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
+                            Mark as Completed
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enhanced JavaScript with Renewal Functions -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const storeOptions = document.querySelectorAll('input[name="store_option"]');
@@ -478,6 +646,10 @@
             const newStoreSection = document.getElementById('new-store-section');
             const storeSelect = document.getElementById('store_id');
             const newStoreNumber = document.getElementById('new_store_number');
+
+            // NEW: Renewal functionality
+            const renewalDate = document.getElementById('renewal_date');
+            const renewalStatus = document.getElementById('renewal_status');
 
             function toggleStoreOptions() {
                 const selectedOption = document.querySelector('input[name="store_option"]:checked').value;
@@ -495,12 +667,110 @@
                 }
             }
 
+            // NEW: Auto-set status when renewal date is changed
+            function handleRenewalDateChange() {
+                if (renewalDate.value && !renewalStatus.value) {
+                    renewalStatus.value = 'pending';
+                }
+            }
+
             storeOptions.forEach(option => {
                 option.addEventListener('change', toggleStoreOptions);
             });
 
+            // NEW: Renewal date event listener
+            renewalDate.addEventListener('change', handleRenewalDateChange);
+
             // Initialize on page load
             toggleStoreOptions();
+
+            // NEW: Validate renewal date
+            renewalDate.addEventListener('change', function() {
+                const selectedDate = new Date(this.value);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                if (selectedDate <= today) {
+                    console.log('⚠️ Warning: Renewal date should typically be in the future');
+                }
+            });
         });
+
+        // NEW: Complete Renewal Functions
+        function completeRenewal(leaseId) {
+            document.getElementById('complete_lease_id').value = leaseId;
+            document.getElementById('completeRenewalModal').classList.remove('hidden');
+        }
+
+        function closeCompleteModal() {
+            document.getElementById('completeRenewalModal').classList.add('hidden');
+            document.getElementById('completeRenewalForm').reset();
+        }
+
+        // Handle Complete Renewal Form
+        document.getElementById('completeRenewalForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const leaseId = document.getElementById('complete_lease_id').value;
+            const completionNotes = document.getElementById('completion_notes').value;
+
+            try {
+                const response = await fetch(`/leases/${leaseId}/complete-renewal`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({
+                        completion_notes: completionNotes
+                    })
+                });
+
+                if (response.ok) {
+                    showNotification('✅ Renewal Completed', 'Lease renewal has been marked as completed', 'success');
+                    closeCompleteModal();
+                    setTimeout(() => location.reload(), 2000);
+                } else {
+                    showNotification('❌ Error', 'Failed to complete renewal', 'error');
+                }
+            } catch (error) {
+                showNotification('❌ Network Error', 'Failed to complete renewal', 'error');
+            }
+        });
+
+        // Notification Function
+        function showNotification(title, message, type = 'info') {
+            // Remove existing notifications
+            const existing = document.querySelectorAll('.lease-notification');
+            existing.forEach(n => n.remove());
+
+            const colors = {
+                success: 'bg-green-100 border-green-500 text-green-800',
+                error: 'bg-red-100 border-red-500 text-red-800',
+                warning: 'bg-yellow-100 border-yellow-500 text-yellow-800',
+                info: 'bg-blue-100 border-blue-500 text-blue-800'
+            };
+
+            const notification = document.createElement('div');
+            notification.className = `lease-notification fixed top-4 right-4 max-w-sm ${colors[type]} border-l-4 p-4 rounded-lg shadow-lg z-50`;
+            notification.innerHTML = `
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h4 class="font-semibold text-sm">${title}</h4>
+                        <p class="text-sm mt-1">${message}</p>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" class="text-lg font-bold ml-4">&times;</button>
+                </div>
+            `;
+
+            document.body.appendChild(notification);
+
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.remove();
+                }
+            }, 5000);
+        }
     </script>
 @endsection

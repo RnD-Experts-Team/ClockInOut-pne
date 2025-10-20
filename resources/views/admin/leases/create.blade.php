@@ -364,6 +364,100 @@
                 </div>
             </div>
 
+            <!-- NEW: Renewal Management Section -->
+            <div class="bg-blue-50 shadow-sm ring-1 ring-blue-900/5 rounded-lg p-6">
+                <h2 class="text-lg font-semibold text-black-900 mb-4 flex items-center">
+                    <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Renewal Management
+                    <span class="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">NEW</span>
+                </h2>
+                <p class="text-sm text-gray-600 mb-6">Set up automatic reminders for lease renewals. The system will notify you at 90, 60, 30, 14, 7, and 1 days before the renewal date.</p>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="renewal_date" class="form-label block text-sm font-medium text-black-700 mb-2">
+                            <svg class="w-4 h-4 inline mr-1 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            Renewal Date
+                        </label>
+                        <input type="date" name="renewal_date" id="renewal_date"
+                               class="form-field block w-full rounded-lg border-blue-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm @error('renewal_date') border-red-500 @enderror"
+                               value="{{ old('renewal_date') }}"
+                               min="{{ date('Y-m-d') }}">
+                        <p class="mt-1 text-xs text-blue-600">
+                            <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Optional: When set, automatic reminders will be created
+                        </p>
+                        @error('renewal_date')
+                        <p class="form-error mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <label for="renewal_status" class="form-label block text-sm font-medium text-black-700 mb-2">
+                            <svg class="w-4 h-4 inline mr-1 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Renewal Status
+                        </label>
+                        <select name="renewal_status" id="renewal_status" class="form-select block w-full rounded-lg border-blue-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm @error('renewal_status') border-red-500 @enderror">
+                            <option value="">Select Status</option>
+                            <option value="pending" {{ old('renewal_status') == 'pending' ? 'selected' : '' }}>
+                                📋 Pending - Not Started
+                            </option>
+                            <option value="in_progress" {{ old('renewal_status') == 'in_progress' ? 'selected' : '' }}>
+                                ⏳ In Progress - Under Review
+                            </option>
+                            <option value="completed" {{ old('renewal_status') == 'completed' ? 'selected' : '' }}>
+                                ✅ Completed - Renewal Done
+                            </option>
+                            <option value="declined" {{ old('renewal_status') == 'declined' ? 'selected' : '' }}>
+                                ❌ Declined - Not Renewing
+                            </option>
+                        </select>
+                        @error('renewal_status')
+                        <p class="form-error mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+                </div>
+
+                <div class="mt-6">
+                    <label for="renewal_notes" class="form-label block text-sm font-medium text-black-700 mb-2">
+                        <svg class="w-4 h-4 inline mr-1 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-1.586z" />
+                        </svg>
+                        Renewal Notes
+                    </label>
+                    <textarea name="renewal_notes" id="renewal_notes" rows="3"
+                              class="form-textarea block w-full rounded-lg border-blue-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm @error('renewal_notes') border-red-500 @enderror"
+                              placeholder="Add notes about the renewal process, terms to negotiate, deadlines, etc...">{{ old('renewal_notes') }}</textarea>
+                    @error('renewal_notes')
+                    <p class="form-error mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <!-- Renewal Preview -->
+                <div id="renewal-preview" class="hidden mt-6 p-4 bg-blue-100 rounded-lg border border-blue-200">
+                    <h4 class="text-sm font-semibold text-blue-900 mb-2">
+                        <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-5 5v-5z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7H4a2 2 0 00-2 2v9a2 2 0 002 2h9a2 2 0 002-2V8a2 2 0 00-2-2" />
+                        </svg>
+                        Automatic Reminders Preview
+                    </h4>
+                    <div class="text-xs text-blue-800">
+                        <p class="mb-1">✅ Reminders will be created for: <strong>90, 60, 30, 14, 7, and 1 days</strong> before renewal date</p>
+                        <p class="mb-1">📅 Calendar event will be created for the renewal date</p>
+                        <p>🔔 Browser notifications will alert you when reminders are due</p>
+                    </div>
+                </div>
+            </div>
+
             <!-- Landlord Information -->
             <div class="bg-orange-50 shadow-sm ring-1 ring-orange-900/5 rounded-lg p-6">
                 <h2 class="text-lg font-semibold text-black-900 mb-4 flex items-center">
@@ -459,7 +553,7 @@
         </form>
     </div>
 
-    <!-- JavaScript for store selection toggle -->
+    <!-- JavaScript for form interactions -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const storeOptions = document.querySelectorAll('input[name="store_option"]');
@@ -467,6 +561,11 @@
             const newStoreSection = document.getElementById('new-store-section');
             const storeSelect = document.getElementById('store_id');
             const newStoreNumber = document.getElementById('new_store_number');
+
+            // NEW: Renewal functionality
+            const renewalDate = document.getElementById('renewal_date');
+            const renewalPreview = document.getElementById('renewal-preview');
+            const renewalStatus = document.getElementById('renewal_status');
 
             function toggleStoreOptions() {
                 const selectedOption = document.querySelector('input[name="store_option"]:checked').value;
@@ -484,12 +583,39 @@
                 }
             }
 
+            // NEW: Toggle renewal preview
+            function toggleRenewalPreview() {
+                if (renewalDate.value) {
+                    renewalPreview.classList.remove('hidden');
+                    if (!renewalStatus.value) {
+                        renewalStatus.value = 'pending';
+                    }
+                } else {
+                    renewalPreview.classList.add('hidden');
+                }
+            }
+
             storeOptions.forEach(option => {
                 option.addEventListener('change', toggleStoreOptions);
             });
 
+            // NEW: Renewal date event listener
+            renewalDate.addEventListener('change', toggleRenewalPreview);
+
             // Initialize on page load
             toggleStoreOptions();
+            toggleRenewalPreview();
+
+            // NEW: Validate renewal date is in the future
+            renewalDate.addEventListener('change', function() {
+                const selectedDate = new Date(this.value);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                if (selectedDate <= today) {
+                    alert('⚠️ Warning: Renewal date should be in the future for automatic reminders to work properly.');
+                }
+            });
         });
     </script>
 @endsection
