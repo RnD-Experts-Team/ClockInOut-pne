@@ -16,6 +16,7 @@ class User extends Authenticatable
         'password',
         'role',
         'is_active',
+        'is_global_store_manager',
         'hourly_pay',
         'timezone',
     ];
@@ -23,6 +24,11 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+    ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
+        'is_global_store_manager' => 'boolean',
     ];
     public function taskAssignments()
     {
@@ -48,6 +54,15 @@ class User extends Authenticatable
         return $this->hasMany(StatusHistory::class, 'changed_by_user_id');
     }
 
+    /**
+     * Get the stores this user manages (for store_manager role).
+     */
+    public function managedStores()
+    {
+        return $this->belongsToMany(Store::class, 'store_manager', 'user_id', 'store_id')
+                    ->withTimestamps()
+                    ->withPivot('assigned_by', 'assigned_at');
+    }
 
 
 }

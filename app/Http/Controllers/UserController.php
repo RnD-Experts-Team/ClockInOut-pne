@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Store;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -25,7 +26,7 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8',
-            'role' => 'required|in:admin,user',
+            'role' => 'required|in:admin,user,store_manager',
             'hourly_pay' => 'required|numeric|min:0',
         ]);
 
@@ -39,16 +40,24 @@ class UserController extends Controller
 
     public function edit(User $user)
     {
-        return view('admin.users.edit', compact('user'));
+        // Get all stores for the managed stores multi-select
+        $stores = Store::orderBy('store_number')->get();
+        
+        // Get the IDs of stores this user manages
+        $userManagedStoreIds = $user->managedStores->pluck('id')->toArray();
+        
+        return view('admin.users.edit', compact('user', 'stores', 'userManagedStoreIds'));
     }
 
     public function update(Request $request, User $user)
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'role' => 'required|in:admin,user',
+            'role' => 'required|in:admin,user,store_manager',
             'hourly_pay' => 'required|numeric|min:0',
             'password' => 'nullable|string|min:8',
+            'managed_stores' => 'nullable|array',
+            'managed_stores.*' => 'exists:stores,id',
         ]);
 
         if (empty($validated['password'])) {
@@ -58,6 +67,22 @@ class UserController extends Controller
         }
 
         $user->update($validated);
+
+        // Sync managed stores if provided
+        if ($request->has('managed_stores')) {
+            // Prepare pivot data with assigned_by and assigned_at
+            $pivotData = [];
+            foreach ($request->managed_stores as $storeId) {
+                $pivotData[$storeId] = [
+                    'assigned_by' => auth()->id(),
+                    'assigned_at' => now(),
+                ];
+            }
+            $user->managedStores()->sync($pivotData);
+        } else {
+            // If no stores selected, detach all
+            $user->managedStores()->detach();
+        }
 
         return redirect()->route('users.index')
             ->with('success', 'User updated successfully.');

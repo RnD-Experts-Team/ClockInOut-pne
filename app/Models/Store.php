@@ -59,4 +59,14 @@ class Store extends Model
     {
         return $this->name ?: $this->store_number;
     }
+
+    /**
+     * Get the users (store managers) assigned to this store.
+     */
+    public function managers()
+    {
+        return $this->belongsToMany(User::class, 'store_manager', 'store_id', 'user_id')
+                    ->withTimestamps()
+                    ->withPivot('assigned_by', 'assigned_at');
+    }
 }

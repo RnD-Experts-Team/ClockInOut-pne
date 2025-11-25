@@ -33,9 +33,14 @@ class AuthenticatedSessionController extends Controller
         // Ensure the role column exists and redirect accordingly
         if ($user->role == 'admin') {
             return redirect()->route('admin.clocking');
+        } elseif ($user->role == 'store_manager') {
+            return redirect()->route('native.requests.index');
         } elseif ($user->role == 'user') {
             return redirect()->route('clocking.index');
         }
+        
+        // Fallback for any other role (or missing role)
+        return redirect()->route('dashboard');
     }
 
     /**

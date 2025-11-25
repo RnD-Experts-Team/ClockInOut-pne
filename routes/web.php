@@ -44,7 +44,8 @@ Route::post('/language/switch', [LanguageController::class, 'switch'])->name('la
 
 // PRIORITY 3: User Routes (High frequency - daily use)
 Route::middleware(['auth', RoleMiddleware::class . ':user'])->group(function () {
-    Route::get('/', [PaymentController::class, 'dashboard']);
+    // Route for authenticated users' dashboard is defined later as '/dashboard'.
+    // Avoid registering another '/' route here which would override the public login route.
     Route::get('/clocking', [ClockingController::class, 'index'])->name('clocking.index');
     Route::post('/clock-in', [ClockingController::class, 'clockIn'])->name('clocking.clockIn');
     Route::post('/clock-out', [ClockingController::class, 'clockOut'])->name('clocking.clockOut');
@@ -154,6 +155,17 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/leases/export/lease-tracker-image', [LeaseController::class, 'exportLeaseTrackerImage'])->name('leases.export.lease-tracker-image');
 });
 
+// PRIORITY 6B: Native Maintenance Requests - Store Manager
+Route::prefix('requests')
+    ->middleware(['auth', RoleMiddleware::class . ':store_manager'])
+    ->name('native.requests.')
+    ->group(function () {
+        Route::get('/create', [App\Http\Controllers\NativeRequestController::class, 'create'])->name('create');
+        Route::post('/', [App\Http\Controllers\NativeRequestController::class, 'store'])->name('store');
+        Route::get('/', [App\Http\Controllers\NativeRequestController::class, 'index'])->name('index');
+        Route::get('/{request}', [App\Http\Controllers\NativeRequestController::class, 'show'])->name('show');
+    });
+
 // PRIORITY 7: Admin Dashboard Routes
 Route::get('/dashboard', function () {
     return view('dashboard');
@@ -223,6 +235,16 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', RoleMiddleware::clas
     // API endpoints for AJAX
     Route::get('api/tasks/available', [ScheduleController::class, 'getAvailableTasks'])
         ->name('api.tasks.available');
+
+    // Native Maintenance Requests - Admin
+    Route::prefix('requests')
+        ->name('native.')
+        ->group(function () {
+            Route::get('/', [App\Http\Controllers\Admin\AdminNativeRequestController::class, 'index'])->name('index');
+            Route::get('/ticket-report', [App\Http\Controllers\Admin\AdminNativeRequestController::class, 'ticketReport'])->name('ticketReport');
+            Route::get('/{request}', [App\Http\Controllers\Admin\AdminNativeRequestController::class, 'show'])->name('show');
+            Route::patch('/{request}/status', [App\Http\Controllers\Admin\AdminNativeRequestController::class, 'updateStatus'])->name('updateStatus');
+        });
 });
 
 // PRIORITY 11: Workbook System
