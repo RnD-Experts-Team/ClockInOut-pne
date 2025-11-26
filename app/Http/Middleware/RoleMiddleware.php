@@ -26,7 +26,7 @@ class RoleMiddleware
             if (Auth::user()->role === 'admin') {
                 return redirect()->route('dashboard');
             } elseif (Auth::user()->role === 'user') {
-                return redirect('/clocking');
+                return redirect()->route('clocking.index');
             } else {
                 // For any other role, you can choose to abort or handle it as needed.
                 abort(403, 'Unauthorized access.');

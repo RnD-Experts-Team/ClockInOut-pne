@@ -66,7 +66,7 @@
                     </div>
                 </div>
             </div>
-
+ 
             <!-- Received -->
             <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl shadow-sm border border-purple-200 p-6 hover:shadow-md transition-shadow h-full flex flex-col">
                 <div class="flex items-center flex-1">
