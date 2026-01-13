@@ -124,14 +124,20 @@ Route::middleware(['auth'])->group(function () {
 
     Route::resource('companies', CompanyController::class);
     Route::get('dashboard', [PaymentController::class, 'dashboard'])->name('dashboard');
-    Route::resource('payments', PaymentController::class);
+    
+    // Payment custom routes BEFORE resource routes to prevent conflicts
+    Route::get('payments/dashboard', [PaymentController::class, 'dashboard'])->name('payments.dashboard');
+    Route::get('payments/export', [PaymentController::class, 'export'])->name('payments.export');
+    Route::get('payments/store-image/{store}', [PaymentController::class, 'storeImageView'])->name('payments.store-image');
     Route::post('payments/portfolio-stats', [PaymentController::class, 'portfolioStats'])->name('payments.portfolio-stats');
-
     Route::get('payments/reports/cost-by-company', [PaymentController::class, 'costByCompanyReport'])->name('payments.cost-by-company');
     Route::get('payments/reports/monthly-report', [PaymentController::class, 'monthlyReport'])->name('payments.monthly-report');
     Route::get('payments/reports/weekly-maintenance', [PaymentController::class, 'weeklyMaintenanceReport'])->name('payments.weekly-maintenance');
     Route::get('payments/reports/cost-per-store-yearly', [PaymentController::class, 'costPerStoreYearlyReport'])->name('payments.cost-per-store-yearly');
     Route::get('payments/reports/pending-projects', [PaymentController::class, 'pendingProjectsReport'])->name('payments.pending-projects');
+    
+    // Payment resource routes AFTER custom routes
+    Route::resource('payments', PaymentController::class);
 
     // === USER SCHEDULE & TASK VIEWS - ALL AUTHENTICATED USERS ===
     Route::get('my-schedule', [UserScheduleController::class, 'index'])->name('user.schedule.index');
@@ -139,10 +145,7 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('my-tasks/{taskAssignment}/status', [UserTaskController::class, 'updateStatus'])
         ->name('user.tasks.update-status');
 
-    Route::get('payments/dashboard', [PaymentController::class, 'dashboard'])->name('payments.dashboard');
     Route::get('companies/export', [CompanyController::class, 'export'])->name('companies.export');
-    Route::get('payments/export', [PaymentController::class, 'export'])->name('payments.export');
-    Route::get('payments/store-image/{store}', [PaymentController::class, 'storeImageView'])->name('payments.store-image');
 
     // Optional: API routes for AJAX calls
     Route::prefix('api')->group(function () {
