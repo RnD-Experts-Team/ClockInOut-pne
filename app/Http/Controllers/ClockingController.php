@@ -30,7 +30,33 @@ class ClockingController extends Controller
         // Get the using_car value from the current clocking record
         $using_car = $clocking ? $clocking->using_car : false;
 
-        return view('clocking', compact('clocking', 'using_car'));
+        // Get invoice cards for current session
+        $invoiceCards = collect();
+        $stores = collect();
+        $assignedStores = collect();
+        if ($clocking) {
+            $invoiceCards = \Modules\Invoice\Models\InvoiceCard::with(['store', 'materials', 'maintenanceRequests'])
+                ->where('clocking_id', $clocking->id)
+                ->orderBy('start_time', 'desc')
+                ->get();
+            
+            // Get stores with assigned maintenance requests for current user
+            $assignedStores = \App\Models\Store::active()
+                ->whereHas('maintenanceRequests', function($query) {
+                    $query->where('assigned_to', Auth::id())
+                        ->whereIn('status', ['on_hold', 'in_progress', 'pending']);
+                })
+                ->withCount(['maintenanceRequests as pending_tasks_count' => function($query) {
+                    $query->where('assigned_to', Auth::id())
+                        ->whereIn('status', ['on_hold', 'in_progress', 'pending']);
+                }])
+                ->orderBy('store_number')
+                ->get();
+            
+            $stores = \App\Models\Store::active()->orderBy('store_number')->get();
+        }
+
+        return view('clocking', compact('clocking', 'using_car', 'invoiceCards', 'stores', 'assignedStores'));
     }
 
     public function ClockingTable(Request $request)
@@ -252,7 +278,7 @@ class ClockingController extends Controller
 
         $request->validate([
             'using_car' => 'required|boolean',
-            'miles_in' => 'required_if:using_car,1|nullable|integer',
+            'miles_in' => 'required_if:using_car,1|nullable|integer|min:0',
             'image_in' => 'required_if:using_car,1|nullable|image|mimes:jpg,png,jpeg',
         ]);
 
@@ -262,15 +288,16 @@ class ClockingController extends Controller
             $imagePath = $request->file('image_in')->store('clocking_images', 'public');
         }
 
-        // Create a new clocking record with or without an image
+        // Create a new clocking record
         Clocking::create([
-            'user_id'       => Auth::id(),
-            'clock_in'      => now(),
-            'miles_in'      => $request->miles_in,
-            'image_in'      => $imagePath,
-            'is_clocked_in' => true,
-            'using_car'     => $request->using_car,
+            'user_id'           => Auth::id(),
+            'clock_in'          => now(),
+            'miles_in'          => $request->miles_in,
+            'image_in'          => $imagePath,
+            'is_clocked_in'     => true,
+            'using_car'         => $request->using_car,
         ]);
+        
         return back()->with('success', 'تم تسجيل الحضور بنجاح');
     }
 
@@ -278,66 +305,16 @@ class ClockingController extends Controller
     {
         date_default_timezone_set(config('app.timezone'));
 
-        // Log all incoming request data for debugging
-        Log::info('Clock-out request received', [
-            'user_id' => Auth::id(),
-            'all_request_data' => $request->all(),
-            'files' => $request->allFiles(),
-            'has_image_out' => $request->hasFile('image_out'),
-            'has_purchase_receipt' => $request->hasFile('purchase_receipt'),
-            'has_fix_images' => $request->hasFile('fix_images'), // Updated for multiple
-            'fix_images_count' => $request->hasFile('fix_images') ? count($request->file('fix_images')) : 0,
-            'bought_something_value' => $request->input('bought_something'),
-            'fixed_something_value' => $request->input('fixed_something'),
+        $request->validate([
+            'miles_out' => 'nullable|integer|min:0',
+            'image_out' => 'nullable|image|mimes:jpg,png,jpeg',
         ]);
-
-        try {
-            // Updated validation rules for multiple fix images
-            $request->validate([
-                'miles_out'         => 'nullable|integer',
-                'image_out'         => 'nullable|image|mimes:jpg,png,jpeg',
-                'bought_something'  => 'required|boolean',
-                'purchase_cost'     => 'required_if:bought_something,1|nullable|numeric',
-                'purchase_receipt'  => 'required_if:bought_something,1|nullable|image|mimes:jpg,png,jpeg',
-                'fixed_something'   => 'required|boolean',
-                'fix_description'   => 'nullable|string|max:1000',
-                'fix_images'        => 'required_if:fixed_something,1|nullable|array|max:10', // Allow up to 10 images
-                'fix_images.*'      => 'image|mimes:jpg,png,jpeg|max:5120', // Max 5MB per image
-            ]);
-
-            Log::info('Clock-out validation passed');
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::error('Clock-out validation failed', [
-                'errors' => $e->errors(),
-                'request_data' => $request->all(),
-            ]);
-            throw $e;
-        }
 
         // Handle clock-out image
         $imagePath = null;
         if ($request->hasFile('image_out')) {
             $imagePath = $request->file('image_out')->store('clocking_images', 'public');
         }
-
-        // Handle purchase receipt image
-        $receiptPath = null;
-        if ($request->hasFile('purchase_receipt')) {
-            $receiptPath = $request->file('purchase_receipt')->store('purchase_receipts', 'public');
-        }
-
-        // Handle multiple fix images
-        $fixImagePaths = [];
-        if ($request->hasFile('fix_images')) {
-            foreach ($request->file('fix_images') as $fixImage) {
-                $path = $fixImage->store('fix_images', 'public');
-                $fixImagePaths[] = $path;
-            }
-            Log::info('Fix images uploaded', ['paths' => $fixImagePaths, 'count' => count($fixImagePaths)]);
-        }
-
-        // Convert fix image paths array to JSON for storage
-        $fixImagesJson = !empty($fixImagePaths) ? json_encode($fixImagePaths) : null;
 
         // Retrieve the existing clocking record for clock out
         $clocking = Clocking::where('user_id', Auth::id())
@@ -350,24 +327,37 @@ class ClockingController extends Controller
             return back()->withErrors(['error' => 'No active clock-in record found. Please clock in first.']);
         }
 
-        // Prepare update data with multiple fix images
-        $updateData = [
-            'clock_out'        => now(),
-            'miles_out'        => $request->miles_out,
-            'image_out'        => $imagePath,
-            'is_clocked_in'    => false,
-            'bought_something' => $request->bought_something,
-            'purchase_cost'    => $request->purchase_cost,
-            'purchase_receipt' => $receiptPath,
-            'fixed_something'  => $request->fixed_something,
-            'fix_description'  => $request->fix_description,
-            'fix_images'       => $fixImagesJson, // Store as JSON
-        ];
+        // Validate miles_out >= miles_in if using car
+        if ($clocking->using_car && $request->miles_out && $clocking->miles_in) {
+            if ($request->miles_out < $clocking->miles_in) {
+                return back()->withErrors(['miles_out' => 'Clock-out odometer must be greater than or equal to clock-in odometer.']);
+            }
+        }
 
-        Log::info('Updating clocking record with multiple fix images', $updateData);
-        $clocking->update($updateData);
+        // Update clocking record
+        $clocking->update([
+            'clock_out'     => now(),
+            'miles_out'     => $request->miles_out,
+            'image_out'     => $imagePath,
+            'is_clocked_in' => false,
+        ]);
 
-        Log::info('Clock-out completed successfully with multiple fix images', ['clocking_id' => $clocking->id]);
+        // Distribute final segment miles across invoice cards
+        if ($clocking->using_car && $request->miles_out) {
+            try {
+                $mileageService = new \Modules\Invoice\Services\MileageDistributionService();
+                $mileageService->distributeReturnMiles($clocking->id);
+                Log::info('Final segment miles distributed successfully', ['clocking_id' => $clocking->id]);
+            } catch (\Exception $e) {
+                Log::error('Failed to distribute final segment miles', [
+                    'clocking_id' => $clocking->id,
+                    'error' => $e->getMessage()
+                ]);
+                // Don't fail the clock-out if mileage distribution fails
+            }
+        }
+
+        Log::info('Clock-out completed successfully', ['clocking_id' => $clocking->id]);
 
         return back()->with('success', 'تم تسجيل الإنصراف بنجاح');
     }

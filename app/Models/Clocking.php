@@ -15,30 +15,28 @@ class Clocking extends Model
         'clock_out',
         'miles_in',
         'miles_out',
+        'total_session_miles',
         'image_in',
         'image_out',
         'is_clocked_in',
         'using_car',
+        'gas_payment',
+        'total_salary',
+        // Purchase fields
         'bought_something',
         'purchase_cost',
         'purchase_receipt',
-        'fixed_something',
-        'fix_description',
-        'fix_image',
-        'gas_payment',
-        'total_salary'
     ];
 
     protected $casts = [
-        'using_car'        => 'boolean',
-        'is_clocked_in'    => 'boolean',
-        'bought_something' => 'boolean',
-        'purchase_cost'    => 'decimal:2',
-        'gas_payment'      => 'decimal:2',  // Add this new field
-        'total_salary'     => 'decimal:2',  // Add this new field
-        'clock_in'         => 'datetime',
-        'clock_out'        => 'datetime',
-        'fixed_something'  => 'boolean',  // New cast
+        'using_car'           => 'boolean',
+        'is_clocked_in'       => 'boolean',
+        'gas_payment'         => 'decimal:2',
+        'total_salary'        => 'decimal:2',
+        'clock_in'            => 'datetime',
+        'clock_out'           => 'datetime',
+        'bought_something'    => 'boolean',
+        'purchase_cost'       => 'decimal:2',
     ];
 
     /**
@@ -47,5 +45,21 @@ class Clocking extends Model
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /**
+     * Get the invoice cards for this clocking session.
+     */
+    public function invoiceCards()
+    {
+        return $this->hasMany(\Modules\Invoice\Models\InvoiceCard::class);
+    }
+
+    /**
+     * Payments linked to this clocking (purchases via clocking system)
+     */
+    public function payments()
+    {
+        return $this->hasMany(Payment::class, 'clocking_id');
     }
 }

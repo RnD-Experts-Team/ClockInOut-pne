@@ -115,6 +115,40 @@
                     </div>
                 </div>
 
+                <!-- Maintenance Request Linking Section -->
+                <div class="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                    <div class="flex items-center gap-2 mb-3">
+                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                        <h3 class="text-sm font-medium text-black-900">Link to Maintenance Request (Optional)</h3>
+                    </div>
+
+                    <div>
+                        <label for="maintenance_request_id" class="form-label block text-sm font-medium text-black-700 mb-2">
+                            Select Maintenance Task
+                        </label>
+                        <select name="maintenance_request_id" id="maintenance_request_id"
+                                class="form-select block w-full border-blue-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm @error('maintenance_request_id') border-red-500 @enderror">
+                            <option value="">{{ $payment->store_id ? 'Select a maintenance request...' : 'Please select a store first' }}</option>
+                            @if($payment->maintenance_request_id && $payment->maintenanceRequest)
+                                <option value="{{ $payment->maintenanceRequest->id }}" selected>
+                                    #{{ $payment->maintenanceRequest->id }} - {{ $payment->maintenanceRequest->equipment_with_issue }}
+                                </option>
+                            @endif
+                        </select>
+                        <p class="mt-1 text-xs text-black-500">
+                            <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            Select a store above to load available maintenance requests
+                        </p>
+                        @error('maintenance_request_id')
+                        <p class="form-error mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+                </div>
+
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- Date -->
                     <div>
@@ -235,6 +269,53 @@
                     </select>
                 </div>
 
+                <!-- Equipment Purchases Section -->
+                <div class="bg-white rounded-lg p-5 shadow-md ring-1 ring-purple-900/10 border-2 border-purple-200">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="bg-purple-600 rounded-lg p-2">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-bold text-black-900">Admin Equipment Purchases</h3>
+                                <div class="flex items-center gap-2">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-purple-100 text-purple-800">
+                                        Admin Purchase
+                                    </span>
+                                    <span class="text-xs text-black-500">• Equipment, Parts & Supplies</span>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" id="add-equipment-item" class="inline-flex items-center px-3 py-1.5 border-2 border-dashed border-purple-300 rounded-lg text-xs font-medium text-purple-700 bg-purple-50 hover:bg-purple-100 transition-all">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                            Add Item
+                        </button>
+                    </div>
+
+                    <div id="equipment-items-container" class="space-y-3">
+                        <!-- Equipment items will be added here dynamically -->
+                    </div>
+
+                    <div class="mt-4 bg-gradient-to-r from-purple-100 to-purple-50 rounded-lg p-4 border border-purple-200">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                                </svg>
+                                <span class="text-sm font-medium text-black-700">Optional: Add equipment items purchased by admin</span>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-sm text-black-600 mb-1">Equipment Total</p>
+                                <p id="equipment-total" class="text-2xl font-bold text-purple-600">$0.00</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Notes -->
                 <div>
                     <label for="notes" class="form-label block text-sm font-medium text-black-700 mb-2">Notes</label>
@@ -317,6 +398,76 @@
             });
 
             toggleStoreOptions();
+
+            // Maintenance Request Dynamic Loading
+            const maintenanceRequestSelect = document.getElementById('maintenance_request_id');
+            let currentStoreId = null;
+
+            async function loadMaintenanceRequests(storeId) {
+                if (!storeId) {
+                    maintenanceRequestSelect.innerHTML = '<option value="">Please select a store first</option>';
+                    return;
+                }
+
+                // Show loading state
+                maintenanceRequestSelect.innerHTML = '<option value="">Loading maintenance requests...</option>';
+                maintenanceRequestSelect.disabled = true;
+
+                try {
+                    const response = await fetch(`/api/maintenance-requests/by-store/${storeId}`);
+                    
+                    if (!response.ok) {
+                        throw new Error('Failed to load maintenance requests');
+                    }
+
+                    const requests = await response.json();
+                    
+                    // Clear and rebuild options
+                    maintenanceRequestSelect.innerHTML = '<option value="">Select a maintenance request...</option>';
+                    
+                    if (requests.length === 0) {
+                        const noDataOption = document.createElement('option');
+                        noDataOption.value = '';
+                        noDataOption.textContent = 'No active maintenance requests for this store';
+                        noDataOption.disabled = true;
+                        maintenanceRequestSelect.appendChild(noDataOption);
+                    } else {
+                        requests.forEach(request => {
+                            const option = document.createElement('option');
+                            option.value = request.id;
+                            option.textContent = `#${request.id} - ${request.equipment_with_issue}`;
+                            
+                            // Preserve selected value if it matches
+                            if ({{ $payment->maintenance_request_id ?? 'null' }} == request.id) {
+                                option.selected = true;
+                            }
+                            
+                            maintenanceRequestSelect.appendChild(option);
+                        });
+                    }
+                    
+                    maintenanceRequestSelect.disabled = false;
+                } catch (error) {
+                    console.error('Error loading maintenance requests:', error);
+                    maintenanceRequestSelect.innerHTML = '<option value="">Error loading requests</option>';
+                    maintenanceRequestSelect.disabled = false;
+                }
+            }
+
+            // Load maintenance requests when store is selected
+            if (storeSelect) {
+                storeSelect.addEventListener('change', function() {
+                    const selectedStoreId = this.value;
+                    currentStoreId = selectedStoreId;
+                    loadMaintenanceRequests(selectedStoreId);
+                });
+
+                // Load initial data if store is already selected
+                if (storeSelect.value) {
+                    currentStoreId = storeSelect.value;
+                    loadMaintenanceRequests(storeSelect.value);
+                }
+            }
 
             // CUSTOM TOMSELECT-STYLE DROPDOWN FOR "WHAT GOT FIXED"
             console.log('Setting up custom dropdown...');
@@ -543,6 +694,105 @@
                     }
                 });
             }
+
+            // Equipment Items Management
+            let equipmentItemCount = 0;
+
+            function addEquipmentItem(itemData = null) {
+                equipmentItemCount++;
+                const container = document.getElementById('equipment-items-container');
+                
+                const itemName = itemData ? itemData.item_name : '';
+                const quantity = itemData ? itemData.quantity : 1;
+                const unitCost = itemData ? itemData.unit_cost : 0;
+                
+                const itemHTML = `
+                    <div class="equipment-item bg-gradient-to-br from-purple-50 to-white p-4 rounded-lg border border-purple-200" data-item-id="${equipmentItemCount}">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-xs font-bold text-purple-700 bg-purple-200 px-2 py-1 rounded">Item #${equipmentItemCount}</span>
+                            <button type="button" class="remove-equipment-item text-red-600 hover:text-red-800 text-xs font-medium">Remove</button>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+                            <div class="md:col-span-5">
+                                <label class="block text-xs font-medium text-black-700 mb-1">Item Name</label>
+                                <input type="text" name="equipment_items[${equipmentItemCount}][name]" value="${itemName}" class="form-field block w-full rounded-lg border-purple-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 text-sm" placeholder="Equipment name">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-medium text-black-700 mb-1">Qty</label>
+                                <input type="number" name="equipment_items[${equipmentItemCount}][quantity]" value="${quantity}" min="1" class="equipment-qty form-field block w-full rounded-lg border-purple-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 text-sm">
+                            </div>
+                            <div class="md:col-span-3">
+                                <label class="block text-xs font-medium text-black-700 mb-1">Unit Cost</label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
+                                        <span class="text-black-500 text-sm">$</span>
+                                    </div>
+                                    <input type="number" name="equipment_items[${equipmentItemCount}][unit_cost]" value="${unitCost}" step="0.01" class="equipment-unit-cost form-field block w-full pl-7 rounded-lg border-purple-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 text-sm">
+                                </div>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-medium text-black-700 mb-1">Total</label>
+                                <div class="equipment-item-total px-3 py-2 bg-purple-100 rounded-lg text-sm font-bold text-purple-900">$0.00</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                container.insertAdjacentHTML('beforeend', itemHTML);
+                updateEquipmentTotal();
+            }
+
+            function removeEquipmentItem(button) {
+                const item = button.closest('.equipment-item');
+                item.remove();
+                updateEquipmentTotal();
+            }
+
+            function calculateItemTotal(item) {
+                const qty = parseFloat(item.querySelector('.equipment-qty').value) || 0;
+                const unitCost = parseFloat(item.querySelector('.equipment-unit-cost').value) || 0;
+                return qty * unitCost;
+            }
+
+            function updateEquipmentTotal() {
+                const items = document.querySelectorAll('.equipment-item');
+                let total = 0;
+
+                items.forEach(item => {
+                    const itemTotal = calculateItemTotal(item);
+                    const totalDisplay = item.querySelector('.equipment-item-total');
+                    totalDisplay.textContent = '$' + itemTotal.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                    total += itemTotal;
+                });
+
+                document.getElementById('equipment-total').textContent = '$' + total.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            }
+
+            // Event listeners for equipment section
+            document.getElementById('add-equipment-item').addEventListener('click', () => addEquipmentItem());
+
+            document.getElementById('equipment-items-container').addEventListener('click', function(e) {
+                if (e.target.classList.contains('remove-equipment-item')) {
+                    removeEquipmentItem(e.target);
+                }
+            });
+
+            document.getElementById('equipment-items-container').addEventListener('input', function(e) {
+                if (e.target.classList.contains('equipment-qty') || e.target.classList.contains('equipment-unit-cost')) {
+                    updateEquipmentTotal();
+                }
+            });
+
+            // Load existing equipment items
+            @if($payment->equipmentItems && $payment->equipmentItems->count() > 0)
+                @foreach($payment->equipmentItems as $item)
+                    addEquipmentItem({
+                        item_name: "{{ $item->item_name }}",
+                        quantity: {{ $item->quantity }},
+                        unit_cost: {{ $item->unit_cost }}
+                    });
+                @endforeach
+            @endif
 
             console.log('=== EDIT FORM JAVASCRIPT COMPLETE ===');
         });

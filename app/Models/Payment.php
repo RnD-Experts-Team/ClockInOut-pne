@@ -13,20 +13,34 @@ class Payment extends Model
 
     protected $fillable = [
         'store_id',
+        'maintenance_request_id',
         'date',
         'what_got_fixed',
         'company_id',
         'cost',
         'notes',
         'paid',
+        'is_admin_equipment',
+        'equipment_photos',
         'payment_method',
         'maintenance_type',
+        // Purchase sync
+        'clocking_id',
+        'invoice_card_id',
+        'source_system',
+        'sync_status',
     ];
 
     protected $casts = [
         'date' => 'date',
         'cost' => 'decimal:2',
-        'paid' => 'boolean'
+        'paid' => 'boolean',
+        'is_admin_equipment' => 'boolean',
+        'equipment_photos' => 'array',
+        'clocking_id' => 'integer',
+        'invoice_card_id' => 'integer',
+        'source_system' => 'string',
+        'sync_status' => 'string',
     ];
 
     protected $appends = [
@@ -48,6 +62,64 @@ class Payment extends Model
     public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class);
+    }
+
+    /**
+     * Get the maintenance request (ticket) this payment is linked to.
+     */
+    public function maintenanceRequest(): BelongsTo
+    {
+        return $this->belongsTo(MaintenanceRequest::class);
+    }
+
+    /**
+     * Get the equipment items for the payment.
+     */
+    public function equipmentItems()
+    {
+        return $this->hasMany(PaymentEquipmentItem::class);
+    }
+
+    /**
+     * Relationship to Clocking (if payment was created from clocking session)
+     */
+    public function clocking()
+    {
+        return $this->belongsTo(Clocking::class, 'clocking_id');
+    }
+
+    /**
+     * Relationship to InvoiceCard (if payment was created from invoice system)
+     */
+    public function invoiceCard()
+    {
+        return $this->belongsTo(\Modules\Invoice\Models\InvoiceCard::class, 'invoice_card_id');
+    }
+
+    public function isFromClockingSystem(): bool
+    {
+        return $this->source_system === 'clocking_system';
+    }
+
+    public function needsSync(): bool
+    {
+        return $this->sync_status !== 'synced';
+    }
+
+    /**
+     * Check if payment has equipment items.
+     */
+    public function hasEquipment(): bool
+    {
+        return $this->equipmentItems()->exists();
+    }
+
+    /**
+     * Get total cost of all equipment items.
+     */
+    public function equipmentTotal(): float
+    {
+        return (float) $this->equipmentItems()->sum('total_cost');
     }
 
     // Scopes
@@ -161,4 +233,19 @@ class Payment extends Model
         return $query->where('date', '>=', now()->subYear());
     }
 
+    /**
+     * Scope for admin equipment purchases only
+     */
+    public function scopeAdminEquipment($query)
+    {
+        return $query->where('is_admin_equipment', true);
+    }
+
+    /**
+     * Scope for regular payments (not admin equipment)
+     */
+    public function scopeRegularPayments($query)
+    {
+        return $query->where('is_admin_equipment', false);
+    }
 }

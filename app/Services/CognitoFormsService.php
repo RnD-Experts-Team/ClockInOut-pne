@@ -32,12 +32,15 @@ class CognitoFormsService
         $retryDelay = 1000; // ms
 
         for ($attempt = 1; $attempt <= $maxRetries; $attempt++) {
-            $response = Http::withHeaders([
-                'Content-Type' => 'application/json',
-                'Authorization' => 'Bearer ' . $this->apiToken,
-            ])->patch($this->baseUrl . $formId . '/entries/' . $entryId,
-                $data ,
-            );
+            $response = Http::timeout(30)
+                ->connectTimeout(10)
+                ->retry(2, 100)
+                ->withHeaders([
+                    'Content-Type' => 'application/json',
+                    'Authorization' => 'Bearer ' . $this->apiToken,
+                ])->patch($this->baseUrl . $formId . '/entries/' . $entryId,
+                    $data ,
+                );
             // Log the request and response
             Log::debug('Cognito Forms API Request', [
                 'url' => $this->baseUrl . $formId . '/entries/' . $entryId,

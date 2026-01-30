@@ -7,8 +7,229 @@
                 <h1 class="text-3xl font-bold text-black-900">{{ __('messages.attendance') }}</h1>
             </div>
 
-            {{-- Clock-Out Form --}}
+            {{-- Invoice Cards Section (After Clock-In) --}}
             @if($clocking)
+                {{-- Session Info Banner --}}
+                <div class="animate-fade-in mb-6 rounded-xl bg-gradient-to-r from-blue-50 to-blue-100 border-2 border-blue-200 p-4 shadow-sm">
+                    <div class="flex items-start gap-3">
+                        <div class="flex-shrink-0">
+                            <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-sm font-bold text-blue-900">Work Session Active</h3>
+                            <p class="mt-1 text-xs leading-relaxed text-blue-800">
+                                Create cards for each store you visit. Add materials, track work, then clock out when done.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Assigned Stores Section (Quick Access) --}}
+                @if($assignedStores->count() > 0)
+                <div class="animate-fade-in mb-6 rounded-xl bg-gradient-to-r from-green-50 to-green-100 border-2 border-green-200 p-5 shadow-sm">
+                    <div class="mb-3 flex items-center justify-between">
+                        <h3 class="text-sm font-bold text-green-900">Your Assigned Stores</h3>
+                        <span class="rounded-full bg-green-600 px-2.5 py-0.5 text-xs font-bold text-white">
+                            {{ $assignedStores->count() }}
+                        </span>
+                    </div>
+                    <div class="space-y-2">
+                        @foreach($assignedStores as $assignedStore)
+                        <div class="rounded-lg bg-white border border-green-200 p-3 shadow-sm">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-2">
+                                        <svg class="h-4 w-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                        </svg>
+                                        <p class="text-sm font-bold text-black-800">{{ $assignedStore->store_number }} - {{ $assignedStore->name }}</p>
+                                    </div>
+                                    @if($assignedStore->address)
+                                    <p class="mt-1 text-xs text-black-600">{{ $assignedStore->address }}</p>
+                                    @endif
+                                    <div class="mt-2 flex items-center gap-2">
+                                        <span class="rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-800">
+                                            {{ $assignedStore->pending_tasks_count }} {{ $assignedStore->pending_tasks_count == 1 ? 'Task' : 'Tasks' }}
+                                        </span>
+                                    </div>
+                                </div>
+                                <button type="button" 
+                                        onclick="createCardForStore({{ $assignedStore->id }})"
+                                        class="flex-shrink-0 rounded-lg bg-green-600 px-3 py-2 text-xs font-bold text-white hover:bg-green-700 transition-colors">
+                                    Visit Store
+                                </button>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                    <p class="mt-3 text-xs text-center text-green-700 italic">
+                        Or use "Add Store Visit" below to visit any store
+                    </p>
+                </div>
+                @endif
+
+                {{-- Invoice Cards (Clickable) --}}
+                <div id="invoice-cards-container">
+                    @foreach($invoiceCards->where('status', 'in_progress') as $index => $card)
+                    <a href="{{ route('invoice.cards.show', $card->id) }}" class="block animate-fade-in mb-6 rounded-2xl bg-white p-5 shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-[1.02] cursor-pointer" id="card-{{ $card->id }}">
+                        
+                        <!-- Store Header with Arrow and Location Icon -->
+                        <div class="mb-4 rounded-xl bg-gradient-to-r from-orange-50 to-orange-100 p-4">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-3 flex-1">
+                                    <svg class="h-6 w-6 text-orange-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                    </svg>
+                                    <div class="flex-1 text-center">
+                                        <h3 class="text-lg font-bold text-gray-800">{{ $card->store->name }} - {{ $card->store->store_number }}</h3>
+                                        @if($card->store->address)
+                                        <p class="text-sm text-gray-600 mt-1">{{ $card->store->address }}</p>
+                                        @endif
+                                    </div>
+                                </div>
+                                <svg class="h-6 w-6 text-orange-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                </svg>
+                            </div>
+                        </div>
+
+                        <!-- Tasks Section -->
+                        @php
+                            // Get all maintenance requests for this store assigned to current user
+                            $storeMRs = \App\Models\MaintenanceRequest::where('store_id', $card->store_id)
+                                ->where('assigned_to', Auth::id())
+                                ->whereIn('status', ['on_hold', 'in_progress', 'pending'])
+                                ->orderBy('urgency_level_id', 'asc')
+                                ->get();
+                            
+                            // Get native requests for this store assigned to current user
+                            $storeNRs = \App\Models\Native\NativeRequest::where('store_id', $card->store_id)
+                                ->where('assigned_to', Auth::id())
+                                ->whereIn('status', ['pending', 'in_progress', 'received'])
+                                ->orderBy('urgency_level_id', 'asc')
+                                ->get();
+                            
+                            // Combine both
+                            $allStoreTasks = $storeMRs->concat($storeNRs);
+                        @endphp
+                        <div class="mb-4 rounded-xl border-2 border-dashed border-orange-200 bg-orange-50/30 p-4">
+                            @if($allStoreTasks->count() > 0)
+                                <div class="space-y-2">
+                                    @foreach($allStoreTasks->take(3) as $task)
+                                    <div class="text-sm text-gray-700">
+                                        <span class="font-medium">•</span> {{ Str::limit($task->description_of_issue ?? $task->equipment_with_issue, 50) }}
+                                    </div>
+                                    @endforeach
+                                    @if($allStoreTasks->count() > 3)
+                                    <p class="text-xs text-gray-500 text-center mt-2">
+                                        +{{ $allStoreTasks->count() - 3 }} more tasks
+                                    </p>
+                                    @endif
+                                </div>
+                            @else
+                                <p class="text-center text-sm font-medium text-gray-500">No tasks assigned yet</p>
+                            @endif
+                        </div>
+
+                        <!-- Admin Equipment Purchases (Read-only) -->
+                        @php
+                            $adminEquipment = \App\Models\Payment::where('store_id', $card->store_id)
+                                ->where('is_admin_equipment', true)
+                                ->latest()
+                                ->take(3)
+                                ->get();
+                        @endphp
+                        @if($adminEquipment->count() > 0)
+                        <div class="mb-4 rounded-xl bg-purple-50 border-2 border-purple-200 p-4">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="flex items-center gap-2">
+                                    <svg class="h-5 w-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                                    </svg>
+                                    <span class="text-sm font-bold text-purple-900">Admin Equipment</span>
+                                </div>
+                                <span class="text-xs font-medium text-purple-600">{{ $adminEquipment->count() }} items</span>
+                            </div>
+                            <div class="space-y-1">
+                                @foreach($adminEquipment as $equipment)
+                                <div class="text-xs text-purple-800">
+                                    • {{ Str::limit($equipment->what_got_fixed ?? 'Equipment', 35) }} - ${{ number_format($equipment->cost, 2) }}
+                                </div>
+                                @endforeach
+                            </div>
+                            <p class="mt-2 text-xs text-purple-600 italic text-center">For your information only</p>
+                        </div>
+                        @endif
+
+                        <!-- Bought Items Section -->
+                        <div class="mb-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm font-medium text-gray-600">items {{ $card->materials->count() }}</span>
+                                <span class="text-lg font-bold text-gray-800">{{ __('invoice.bought_items') }}</span>
+                            </div>
+                            @if($card->materials->count() > 0)
+                                <p class="text-center text-sm text-gray-700 py-2">
+                                    {{ $card->materials->count() }} {{ $card->materials->count() == 1 ? 'item' : 'items' }} added
+                                </p>
+                            @else
+                                <p class="text-center text-sm text-gray-500 py-2">No items added yet</p>
+                            @endif
+                        </div>
+
+                        <!-- Click to Open Button -->
+                        <div class="rounded-xl bg-blue-50 border border-blue-200 p-3 text-center">
+                            <p class="text-sm font-medium text-blue-700 flex items-center justify-center gap-2">
+                                Click to open and manage this card
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"></path>
+                                </svg>
+                            </p>
+                        </div>
+                    </a>
+                    @endforeach
+
+                    {{-- Completed Cards (Collapsed) --}}
+                    @foreach($invoiceCards->whereIn('status', ['completed', 'not_done']) as $card)
+                    <div class="animate-fade-in mb-6 overflow-hidden rounded-2xl bg-white shadow-md ring-1 ring-green-900/10 transition-all duration-300 hover:shadow-lg">
+                        <div class="cursor-pointer p-5" onclick="this.parentElement.querySelector('.card-details').classList.toggle('hidden')">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-green-100">
+                                        <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-bold text-black-800">{{ $card->store->store_number }} - {{ $card->store->name }}</p>
+                                        <p class="text-xs text-black-500">Completed • {{ $card->maintenanceRequests->count() }} requests • {{ $card->materials->count() }} items</p>
+                                    </div>
+                                </div>
+                                <svg class="h-5 w-5 text-black-400 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="card-details hidden border-t border-green-100 bg-green-50/30 p-5">
+                            <p class="text-xs text-black-600">Completed at {{ $card->end_time->format('g:i A') }}</p>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+
+                {{-- Add New Store Card Button --}}
+                <button type="button" onclick="document.getElementById('createCardModal').classList.remove('hidden')"
+                        class="animate-fade-in mb-6 w-full rounded-xl border-2 border-dashed border-orange-300 bg-white py-4 text-center shadow-sm transition-all duration-300 hover:border-orange-400 hover:bg-orange-50 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2">
+                    <svg class="mx-auto mb-1 h-6 w-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                    <span class="text-sm font-semibold text-orange-700">Add Store Visit</span>
+                </button>
+
+                {{-- Clock-Out Section --}}
                 <div class="mb-6 rounded-lg bg-orange-100 p-4 text-center">
                     <h2 class="text-xl font-semibold text-black-800">{{ __('messages.clock_out_registration') }}</h2>
                     <p class="text-black-600">{{ __('messages.record_end_shift_details') }}</p>
@@ -37,9 +258,12 @@
                                 </div>
                             </div>
 
+                        
                             <!-- Clock Out Image -->
                             <div class="rounded-lg transition-all duration-300 hover:shadow-md">
-                                <label class="mb-1 block text-sm font-medium text-black-700" for="image_out">{{ __('messages.upload_image') }}</label>
+                                <label class="mb-1 block text-sm font-medium text-black-700" for="image_out">
+                                    📸 Take Photo of Odometer
+                                </label>
                                 <div class="mt-1">
                                     <div
                                         class="flex justify-center rounded-lg border-2 border-dashed border-orange-200 px-6 pb-6 pt-5 transition-all duration-300 hover:border-orange-500">
@@ -47,131 +271,18 @@
                                             <label
                                                 class="relative cursor-pointer rounded-md font-medium text-black-600 transition-colors duration-300 focus-within:outline-none focus-within:ring-2 focus-within:ring-orange-500 focus-within:ring-offset-2 hover:text-black-500"
                                                 for="image_out">
-                                                <span>{{ __('messages.upload_file') }}</span>
+                                                <span>📷 Open Camera</span>
                                                 <input class="sr-only" id="image_out" name="image_out" type="file"
                                                        accept="image/*" capture="environment" required>
                                             </label>
-                                            <p class="mt-1 {{ isRtl() ? 'pr-1' : 'pl-1' }}">{{ __('messages.or_drag_drop') }}</p>
-                                            <p class="mt-2 text-xs text-black-500">{{ __('messages.camera_gallery_instruction') }}</p>
+                                            <p class="mt-2 text-xs text-black-500">Take a clear photo of your car's odometer at end of shift</p>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         @endif
 
-                        <!-- Purchase Question -->
-                        <div class="mb-4">
-                            <label class="mb-2 block text-sm font-medium text-black-700">{{ __('messages.purchase_question') }}</label>
-                            <div class="flex items-center {{ isRtl() ? 'space-x-reverse' : '' }} space-x-4">
-                                <div class="flex items-center">
-                                    <input class="h-4 w-4 border-orange-200 text-black-600 focus:ring-orange-500"
-                                           id="didBuyYes" name="bought_something" type="radio" value="1">
-                                    <label class="{{ isRtl() ? 'mr-2' : 'ml-2' }}" for="didBuyYes">{{ __('messages.yes') }}</label>
-                                </div>
-                                <div class="flex items-center">
-                                    <input class="h-4 w-4 border-orange-200 text-black-600 focus:ring-orange-500"
-                                           id="didBuyNo" name="bought_something" type="radio" value="0" checked>
-                                    <label class="{{ isRtl() ? 'mr-2' : 'ml-2' }}" for="didBuyNo">{{ __('messages.no') }}</label>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Purchase Cost (hidden by default) -->
-                        <div class="hidden rounded-lg transition-all duration-300 hover:shadow-md"
-                             id="purchase_cost_container">
-                            <label class="mb-1 block text-sm font-medium text-black-700" for="purchase_cost">
-                                {{ __('messages.purchase_cost') }}
-                            </label>
-                            <div class="relative rounded-md ring-1 ring-orange-900/5">
-                                <input
-                                    class="block w-full rounded-lg border border-orange-200 py-3 {{ isRtl() ? 'pr-10 pl-3' : 'pl-10 pr-3' }} transition-all duration-300 focus:border-orange-500 focus:ring-orange-500"
-                                    id="purchase_cost" name="purchase_cost" type="number" step="0.01"
-                                    placeholder="{{ __('messages.purchase_cost_example') }}">
-                            </div>
-                        </div>
-
-                        <!-- NEW: Purchase receipt container -->
-                        <div class="hidden rounded-lg transition-all duration-300 hover:shadow-md"
-                             id="purchase_receipt_container">
-                            <label class="mb-1 block text-sm font-medium text-black-700" for="purchase_receipt">
-                                {{ __('messages.receipt_image') }}
-                            </label>
-                            <div class="mt-1">
-                                <div
-                                    class="flex justify-center rounded-lg border-2 border-dashed border-orange-200 px-6 pb-6 pt-5 transition-all duration-300 hover:border-orange-500">
-                                    <div class="text-center">
-                                        <label
-                                            class="relative cursor-pointer rounded-md font-medium text-black-600 transition-colors duration-300 focus-within:outline-none focus-within:ring-2 focus-within:ring-orange-500 focus-within:ring-offset-2 hover:text-black-500"
-                                            for="purchase_receipt">
-                                            <span>{{ __('messages.upload_file') }}</span>
-                                            <input class="sr-only" id="purchase_receipt" name="purchase_receipt" type="file"
-                                                   accept="image/*" capture="environment">
-                                        </label>
-                                        <p class="mt-1 {{ isRtl() ? 'pr-1' : 'pl-1' }}">{{ __('messages.or_drag_drop') }}</p>
-                                        <p class="mt-2 text-xs text-black-500">{{ __('messages.camera_gallery_instruction') }}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                            <div class="mb-4">
-                                <label class="mb-2 block text-sm font-medium text-black-700">{{ __('messages.fix_question') }}</label>
-                                <div class="flex items-center {{ isRtl() ? 'space-x-reverse' : '' }} space-x-4">
-                                    <div class="flex items-center">
-                                        <input class="h-4 w-4 border-orange-200 text-black-600 focus:ring-orange-500"
-                                               id="didFixYes" name="fixed_something" type="radio" value="1">
-                                        <label class="{{ isRtl() ? 'mr-2' : 'ml-2' }}" for="didFixYes">{{ __('messages.yes') }}</label>
-                                    </div>
-                                    <div class="flex items-center">
-                                        <input class="h-4 w-4 border-orange-200 text-black-600 focus:ring-orange-500"
-                                               id="didFixNo" name="fixed_something" type="radio" value="0" checked>
-                                        <label class="{{ isRtl() ? 'mr-2' : 'ml-2' }}" for="didFixNo">{{ __('messages.no') }}</label>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Fix Description (hidden by default) -->
-                            <div class="hidden rounded-lg transition-all duration-300 hover:shadow-md"
-                                 id="fix_description_container">
-                                <label class="mb-1 block text-sm font-medium text-black-700" for="fix_description">
-                                    {{ __('messages.fix_description') }}
-                                </label>
-                                <div class="relative rounded-md ring-1 ring-orange-900/5">
-        <textarea
-            class="block w-full rounded-lg border border-orange-200 py-3 {{ isRtl() ? 'pr-10 pl-3' : 'pl-10 pr-3' }} transition-all duration-300 focus:border-orange-500 focus:ring-orange-500"
-            id="fix_description" name="fix_description" rows="3"
-            placeholder="{{ __('messages.fix_description_placeholder') }}"></textarea>
-                                </div>
-                            </div>
-
-                            <!-- Fix Image (hidden by default) - UPDATED for multiple images from gallery only -->
-                            <div class="hidden rounded-lg transition-all duration-300 hover:shadow-md" id="fix_image_container">
-                                <label class="mb-1 block text-sm font-medium text-black-700" for="fix_images">
-                                    {{ __('messages.fix_image') }}
-                                </label>
-                                <div class="mt-1">
-                                    <div class="flex justify-center rounded-lg border-2 border-dashed border-orange-200 px-6 pb-6 pt-5 transition-all duration-300 hover:border-orange-500">
-                                        <div class="text-center">
-                                            <label class="relative cursor-pointer rounded-md font-medium text-black-600 transition-colors duration-300 focus-within:outline-none focus-within:ring-2 focus-within:ring-orange-500 focus-within:ring-offset-2 hover:text-black-500" for="fix_images">
-                                                <span>{{ __('messages.upload_file') }}</span>
-                                                <!-- REMOVED: capture="environment" attribute -->
-                                                <input class="sr-only" id="fix_images" name="fix_images[]" type="file"
-                                                       accept="image/*" multiple>
-                                            </label>
-                                            <p class="mt-1 {{ isRtl() ? 'pr-1' : 'pl-1' }}">{{ __('messages.or_drag_drop') }}</p>
-                                            <!-- UPDATED: Remove camera instruction -->
-                                            <p class="mt-2 text-xs text-black-500">{{ __('messages.camera_gallery_instruction') }}</p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Preview area for selected images -->
-                                <div id="fix_images_preview" class="mt-3 hidden">
-                                    <label class="block text-sm font-medium text-black-700 mb-2">Selected Images:</label>
-                                    <div id="fix_images_list" class="grid grid-cols-2 gap-2"></div>
-                                </div>
-                            </div>
-
+                    
                         <button
                             class="flex w-full transform items-center justify-center rounded-lg border border-transparent bg-orange-600 px-4 py-3 text-base font-medium text-white transition-all duration-300 hover:scale-105 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
                             type="button" onclick="handleClockOutClicked()">
@@ -230,12 +341,20 @@
                                     class="block w-full rounded-lg border border-orange-200 py-3 {{ isRtl() ? 'pr-10 pl-3' : 'pl-10 pr-3' }} transition-all duration-300 focus:border-orange-500 focus:ring-orange-500"
                                     id="miles_in" name="miles_in" type="number" placeholder="{{ __('messages.enter_miles_placeholder') }}">
                             </div>
+                            <p class="mt-1 text-xs text-orange-600 flex items-center">
+                                <svg class="h-4 w-4 {{ isRtl() ? 'ml-1' : 'mr-1' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                Enter the exact number shown on your car's odometer
+                            </p>
                         </div>
 
                         <!-- Clock In Image -->
                         <div class="rounded-lg transition-all duration-300 hover:shadow-md" id="image_in_container"
                              style="display: none;">
-                            <label class="mb-1 block text-sm font-medium text-black-700" for="image_in">{{ __('messages.upload_image') }}</label>
+                            <label class="mb-1 block text-sm font-medium text-black-700" for="image_in">
+                                📸 Take Photo of Odometer
+                            </label>
                             <div class="mt-1">
                                 <div
                                     class="flex justify-center rounded-lg border-2 border-dashed border-orange-200 px-6 pb-6 pt-5 transition-all duration-300 hover:border-orange-500">
@@ -243,12 +362,11 @@
                                         <label
                                             class="relative cursor-pointer rounded-md font-medium text-black-600 transition-colors duration-300 focus-within:outline-none focus-within:ring-2 focus-within:ring-orange-500 focus-within:ring-offset-2 hover:text-black-500"
                                             for="image_in">
-                                            <span>{{ __('messages.upload_file') }}</span>
+                                            <span>📷 Open Camera</span>
                                             <input class="sr-only" id="image_in" name="image_in" type="file"
                                                    accept="image/*" capture="environment">
                                         </label>
-                                        <p class="mt-1 {{ isRtl() ? 'pr-1' : 'pl-1' }}">{{ __('messages.or_drag_drop') }}</p>
-                                        <p class="mt-2 text-xs text-black-500">{{ __('messages.camera_gallery_instruction') }}</p>
+                                        <p class="mt-2 text-xs text-black-500">Take a clear photo of your car's odometer reading</p>
                                     </div>
                                 </div>
                             </div>
@@ -339,28 +457,20 @@
         }
 
         // -----------------------------------------
-        // CLOCK OUT: Show/Hide purchase fields if user bought something
+        // Create Card for Assigned Store (Quick Action)
         // -----------------------------------------
-        function togglePurchaseFields(didBuy) {
-            const costContainer = document.getElementById('purchase_cost_container');
-            const receiptContainer = document.getElementById('purchase_receipt_container');
-            const costInput = document.getElementById('purchase_cost');
-            const receiptInput = document.getElementById('purchase_receipt');
-
-            // Add null checks to prevent errors
-            if (costContainer && receiptContainer && costInput && receiptInput) {
-                if (didBuy) {
-                    costContainer.classList.remove('hidden');
-                    receiptContainer.classList.remove('hidden');
-                    costInput.setAttribute('required', 'required');
-                    receiptInput.setAttribute('required', 'required');
-                } else {
-                    costContainer.classList.add('hidden');
-                    receiptContainer.classList.add('hidden');
-                    costInput.removeAttribute('required');
-                    receiptInput.removeAttribute('required');
-                }
+        function createCardForStore(storeId) {
+            // Open the create card modal and pre-select the store
+            const modal = document.getElementById('createCardModal');
+            const storeSelect = modal.querySelector('select[name="store_id"]');
+            
+            // Pre-select the store
+            if (storeSelect) {
+                storeSelect.value = storeId;
             }
+            
+            // Show the modal
+            modal.classList.remove('hidden');
         }
 
         // -----------------------------------------
@@ -424,8 +534,17 @@
                 const milesIn = document.getElementById('miles_in').value.trim();
                 const imageIn = document.getElementById('image_in').value; // the file path
 
+                // Validate all required fields
                 if (!milesIn || !imageIn) {
                     clockInErrorBox.innerText = '{{ __('messages.car_usage_validation') }}';
+                    clockInErrorBox.classList.remove('hidden');
+                    return;
+                }
+
+                // Validate odometer is a positive number
+                const odometerValue = parseFloat(milesIn);
+                if (isNaN(odometerValue) || odometerValue < 0) {
+                    clockInErrorBox.innerText = 'Please enter a valid odometer reading (must be a positive number)';
                     clockInErrorBox.classList.remove('hidden');
                     return;
                 }
@@ -517,115 +636,9 @@
             } else {
                 toggleCarFields(false);
             }
-
-            // Existing purchase event listeners...
-            const didBuyYes = document.getElementById('didBuyYes');
-            const didBuyNo = document.getElementById('didBuyNo');
-
-            if (didBuyYes) {
-                didBuyYes.addEventListener('change', () => togglePurchaseFields(true));
-            }
-            if (didBuyNo) {
-                didBuyNo.addEventListener('change', () => togglePurchaseFields(false));
-            }
-
-            // NEW: Fix event listeners
-            const didFixYes = document.getElementById('didFixYes');
-            const didFixNo = document.getElementById('didFixNo');
-
-            if (didFixYes) {
-                didFixYes.addEventListener('change', () => {
-                    console.log('Fix Yes selected');
-                    toggleFixFields(true);
-                });
-            }
-            if (didFixNo) {
-                didFixNo.addEventListener('change', () => {
-                    console.log('Fix No selected');
-                    toggleFixFields(false);
-                });
-            }
-
-            // Set initial states
-            if (didBuyYes && didBuyYes.checked) {
-                togglePurchaseFields(true);
-            } else {
-                togglePurchaseFields(false);
-            }
-
-            // NEW: Set initial state for fix fields
-            if (didFixYes && didFixYes.checked) {
-                toggleFixFields(true);
-            } else {
-                toggleFixFields(false);
-            }
-        });
-        // -----------------------------------------
-        // CLOCK OUT: Show/Hide fix fields if user fixed something
-        // -----------------------------------------
-        // Updated fix fields toggle function
-        function toggleFixFields(didFix) {
-            const descriptionContainer = document.getElementById('fix_description_container');
-            const imageContainer = document.getElementById('fix_image_container');
-            const descriptionInput = document.getElementById('fix_description');
-            const imageInput = document.getElementById('fix_images');
-            const previewContainer = document.getElementById('fix_images_preview');
-
-            console.log('Toggle fix fields called with:', didFix);
-
-            if (descriptionContainer && imageContainer && descriptionInput && imageInput) {
-                if (didFix) {
-                    descriptionContainer.classList.remove('hidden');
-                    imageContainer.classList.remove('hidden');
-                    imageInput.setAttribute('required', 'required');
-                } else {
-                    descriptionContainer.classList.add('hidden');
-                    imageContainer.classList.add('hidden');
-                    previewContainer.classList.add('hidden');
-                    imageInput.removeAttribute('required');
-                    descriptionInput.value = '';
-                    imageInput.value = '';
-                    // Clear preview
-                    document.getElementById('fix_images_list').innerHTML = '';
-                }
-            }
-        }
-
-        // Add image preview functionality
-        document.addEventListener('DOMContentLoaded', function() {
-            const fixImagesInput = document.getElementById('fix_images');
-
-            if (fixImagesInput) {
-                fixImagesInput.addEventListener('change', function(e) {
-                    const files = e.target.files;
-                    const previewContainer = document.getElementById('fix_images_preview');
-                    const previewList = document.getElementById('fix_images_list');
-
-                    if (files.length > 0) {
-                        previewContainer.classList.remove('hidden');
-                        previewList.innerHTML = '';
-
-                        Array.from(files).forEach((file, index) => {
-                            const reader = new FileReader();
-                            reader.onload = function(e) {
-                                const imageDiv = document.createElement('div');
-                                imageDiv.className = 'relative';
-                                imageDiv.innerHTML = `
-                            <img src="${e.target.result}" class="w-full h-20 object-cover rounded border" alt="Fix image ${index + 1}">
-                            <div class="absolute top-1 right-1 bg-black bg-opacity-50 text-white text-xs px-1 rounded">${index + 1}</div>
-                        `;
-                                previewList.appendChild(imageDiv);
-                            };
-                            reader.readAsDataURL(file);
-                        });
-                    } else {
-                        previewContainer.classList.add('hidden');
-                    }
-                });
-            }
         });
 
-        // Updated clock-out validation to handle multiple fix images
+        // Updated clock-out validation - simplified
         function handleClockOutClicked() {
             const usingCar = {{ $using_car ? 'true' : 'false' }};
             const clockOutErrorBox = document.getElementById('clockOutError');
@@ -637,13 +650,6 @@
             clockOutErrorBox.innerText = '';
             clockOutErrorBox.classList.add('hidden');
 
-            // Get all form data for logging
-            const formData = new FormData(document.getElementById('clockOutForm'));
-
-            // Check radio button states
-            const didBuyYes = document.getElementById('didBuyYes');
-            const didFixYes = document.getElementById('didFixYes');
-
             // If using car => check miles_out + image_out
             if (usingCar) {
                 const milesOut = document.getElementById('miles_out').value.trim();
@@ -653,34 +659,6 @@
                 if (!milesOut || !imageOut) {
                     console.log('Car validation failed');
                     clockOutErrorBox.innerText = '{{ __('messages.car_clock_out_validation') }}';
-                    clockOutErrorBox.classList.remove('hidden');
-                    return;
-                }
-            }
-
-            // Validate purchase fields
-            if (didBuyYes && didBuyYes.checked) {
-                const costVal = document.getElementById('purchase_cost').value.trim();
-                const receiptVal = document.getElementById('purchase_receipt').value;
-                console.log('Purchase validation - cost:', costVal, 'receipt:', receiptVal);
-
-                if (!costVal || !receiptVal) {
-                    console.log('Purchase validation failed');
-                    clockOutErrorBox.innerText = '{{ __('messages.purchase_validation') }}';
-                    clockOutErrorBox.classList.remove('hidden');
-                    return;
-                }
-            }
-
-            // Validate fix fields (updated for multiple images)
-            if (didFixYes && didFixYes.checked) {
-                const fixImagesInput = document.getElementById('fix_images');
-                const hasFixImages = fixImagesInput && fixImagesInput.files.length > 0;
-                console.log('Fix validation - images count:', fixImagesInput ? fixImagesInput.files.length : 0);
-
-                if (!hasFixImages) {
-                    console.log('Fix validation failed - no images selected');
-                    clockOutErrorBox.innerText = '{{ __('messages.fix_images_required') }}';
                     clockOutErrorBox.classList.remove('hidden');
                     return;
                 }
@@ -708,4 +686,217 @@
             animation: fadeIn 0.3s ease-out;
         }
     </style>
+
+    <script>
+        function markNotDone(cardId) {
+            const reason = prompt('Please provide a reason for not completing this card:');
+            if (!reason) return;
+            
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/invoice/cards/' + cardId + '/complete';
+            
+            const csrf = document.createElement('input');
+            csrf.type = 'hidden';
+            csrf.name = '_token';
+            csrf.value = '{{ csrf_token() }}';
+            form.appendChild(csrf);
+            
+            const status = document.createElement('input');
+            status.type = 'hidden';
+            status.name = 'status';
+            status.value = 'not_done';
+            form.appendChild(status);
+            
+            const reasonInput = document.createElement('input');
+            reasonInput.type = 'hidden';
+            reasonInput.name = 'not_done_reason';
+            reasonInput.value = reason;
+            form.appendChild(reasonInput);
+            
+            const notes = document.getElementById('notes-' + cardId).value;
+            const notesInput = document.createElement('input');
+            notesInput.type = 'hidden';
+            notesInput.name = 'notes';
+            notesInput.value = notes;
+            form.appendChild(notesInput);
+            
+            document.body.appendChild(form);
+            form.submit();
+        }
+
+        function showAddMaterialModal(cardId) {
+            alert('Material addition will be implemented. Card ID: ' + cardId);
+            // TODO: Implement material addition modal
+        }
+
+        // Fetch maintenance requests for a store and populate the multi-select when creating a card
+        async function fetchStoreTasks(storeId) {
+            const select = document.getElementById('createTaskSelector');
+            select.innerHTML = '';
+
+            if (!storeId) return;
+
+            try {
+                const res = await fetch('/api/maintenance-requests/by-store/' + storeId);
+                const json = await res.json();
+
+                if (res.ok) {
+                    json.forEach(function(mr) {
+                        const opt = document.createElement('option');
+                        opt.value = mr.id;
+                        opt.textContent = `#${mr.id} - ${mr.equipment_with_issue}`;
+                        select.appendChild(opt);
+                    });
+                } else {
+                    console.error('Failed to load maintenance requests for store', json);
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+    </script>
+
+    {{-- Create Invoice Card Modal --}}
+    <div id="createCardModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-2xl p-6 max-w-md w-full mx-4">
+            <h3 class="text-xl font-bold text-black-900 mb-4">{{ __('invoice.create_store_visit_card') }}</h3>
+            
+            <form action="{{ route('invoice.cards.store') }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                
+                <!-- Store Selection -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-black-700 mb-2">{{ __('invoice.select_store') ?? __('Select Store') }}</label>
+                    <select id="createCardStoreSelector" name="store_id" required class="block w-full rounded-lg border-orange-300 shadow-sm focus:border-orange-500 focus:ring-orange-500" onchange="fetchStoreTasks(this.value)">
+                        <option value="">Choose a store...</option>
+                        @if(isset($stores))
+                            @foreach($stores as $store)
+                                <option value="{{ $store->id }}">{{ $store->store_number }} - {{ $store->name }}</option>
+                            @endforeach
+                        @endif
+                    </select>
+                </div>
+
+                <!-- Incomplete Cards Notification -->
+                @php
+                    $incompleteCards = \Modules\Invoice\Models\InvoiceCard::where('user_id', Auth::id())
+                        ->where('status', 'not_done')
+                        ->whereNotNull('end_time')
+                        ->with('store')
+                        ->get();
+                @endphp
+                
+                @if($incompleteCards->count() > 0)
+                <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div class="flex items-start gap-2">
+                        <svg class="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <div>
+                            <p class="text-sm font-semibold text-blue-800">You have {{ $incompleteCards->count() }} incomplete work card(s)</p>
+                            <p class="text-xs text-blue-600 mt-1">If you select a store where you have incomplete work, your previous progress will be automatically restored!</p>
+                            <div class="mt-2 space-y-1">
+                                @foreach($incompleteCards as $incompleteCard)
+                                <p class="text-xs text-blue-700">• {{ $incompleteCard->store->store_number }} - {{ $incompleteCard->store->name }}</p>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @endif
+                <!-- Arrival Odometer (Only if using car) -->
+                @if($clocking && $clocking->using_car)
+                <div class="mb-4">
+                    @php
+                        // Get previous odometer reading
+                        $previousOdometer = null;
+                        $lastCard = \Modules\Invoice\Models\InvoiceCard::where('clocking_id', $clocking->id)
+                            ->whereNotNull('arrival_odometer')
+                            ->orderBy('start_time', 'desc')
+                            ->first();
+                        
+                        if ($lastCard) {
+                            $previousOdometer = $lastCard->arrival_odometer;
+                        } else {
+                            $previousOdometer = $clocking->miles_in;
+                        }
+                    @endphp
+                    
+                    <label class="block text-sm font-medium text-black-700 mb-2">
+                        Arrival Odometer
+                        <span class="text-red-500">*</span>
+                    </label>
+                    
+                    <!-- Previous Odometer Display -->
+                    @if($previousOdometer)
+                    <div class="mb-2 rounded-lg bg-blue-50 border border-blue-200 p-3">
+                        <p class="text-xs text-blue-800">
+                            <span class="font-semibold">Previous Reading:</span>
+                            <span class="font-mono">{{ number_format($previousOdometer, 1) }}</span> miles
+                        </p>
+                    </div>
+                    @endif
+                    
+                    <input type="number" 
+                           name="arrival_odometer" 
+                           step="0.1" 
+                           min="{{ $previousOdometer ?? 0 }}" 
+                           required
+                           class="block w-full rounded-lg border-orange-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                           placeholder="Enter current odometer reading">
+                    <p class="mt-1 text-xs text-black-500">
+                        Enter your current odometer reading. Distance will be calculated automatically.
+                    </p>
+                </div>
+                
+                <!-- Odometer Photo -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-black-700 mb-2">
+                        <svg class="inline h-4 w-4 text-orange-600 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                        📸 Take Photo of Odometer
+                        <span class="text-red-500">*</span>
+                    </label>
+                    <div class="border-2 border-dashed border-orange-300 rounded-lg p-4 text-center hover:border-orange-400 transition-all bg-orange-50">
+                        <div class="mb-2">
+                            <svg class="mx-auto h-12 w-12 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                        </div>
+                        <label for="arrival_odometer_image" class="cursor-pointer">
+                            <span class="inline-block px-4 py-2 bg-orange-600 text-white rounded-lg font-semibold hover:bg-orange-700 transition-all">
+                                📷 Open Camera
+                            </span>
+                            <input type="file" 
+                                   id="arrival_odometer_image"
+                                   name="arrival_odometer_image" 
+                                   accept="image/*" 
+                                   capture="environment" 
+                                   required
+                                   class="hidden">
+                        </label>
+                    </div>
+                    <p class="mt-2 text-xs text-orange-700 text-center font-medium">
+                        📸 Take a clear photo of your car's odometer reading
+                    </p>
+                </div>
+                @endif
+                
+                <!-- Buttons -->
+                <div class="flex gap-3">
+                    <button type="button" onclick="document.getElementById('createCardModal').classList.add('hidden')"
+                            class="flex-1 px-4 py-2 border-2 border-orange-200 rounded-lg text-orange-700 font-medium hover:bg-orange-50">
+                        Cancel
+                    </button>
+                    <button type="submit" class="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg font-medium hover:bg-orange-700">
+                        Create Card
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 @endsection

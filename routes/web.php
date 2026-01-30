@@ -37,6 +37,26 @@ Route::get('/', function () {
     return view('auth.login');
 });
 
+Route::get('/welcome', function () {
+    return view('Welcome');
+});
+
+Route::get('/testpage2', function () {
+    return view('testpage2');
+});
+
+Route::get('/indextest', function () {
+    return view('indextest');
+});
+
+Route::get('/invoicetest', function () {
+    return view('invoicetest');
+});
+
+Route::get('/invoice-modal-test', function () {
+    return view('invoice-test');
+});
+
 require __DIR__.'/auth.php';
 
 // PRIORITY 2: Language switching route (Global)
@@ -124,20 +144,14 @@ Route::middleware(['auth'])->group(function () {
 
     Route::resource('companies', CompanyController::class);
     Route::get('dashboard', [PaymentController::class, 'dashboard'])->name('dashboard');
-    
-    // Payment custom routes BEFORE resource routes to prevent conflicts
-    Route::get('payments/dashboard', [PaymentController::class, 'dashboard'])->name('payments.dashboard');
-    Route::get('payments/export', [PaymentController::class, 'export'])->name('payments.export');
-    Route::get('payments/store-image/{store}', [PaymentController::class, 'storeImageView'])->name('payments.store-image');
+    Route::resource('payments', PaymentController::class);
     Route::post('payments/portfolio-stats', [PaymentController::class, 'portfolioStats'])->name('payments.portfolio-stats');
+
     Route::get('payments/reports/cost-by-company', [PaymentController::class, 'costByCompanyReport'])->name('payments.cost-by-company');
     Route::get('payments/reports/monthly-report', [PaymentController::class, 'monthlyReport'])->name('payments.monthly-report');
     Route::get('payments/reports/weekly-maintenance', [PaymentController::class, 'weeklyMaintenanceReport'])->name('payments.weekly-maintenance');
     Route::get('payments/reports/cost-per-store-yearly', [PaymentController::class, 'costPerStoreYearlyReport'])->name('payments.cost-per-store-yearly');
     Route::get('payments/reports/pending-projects', [PaymentController::class, 'pendingProjectsReport'])->name('payments.pending-projects');
-    
-    // Payment resource routes AFTER custom routes
-    Route::resource('payments', PaymentController::class);
 
     // === USER SCHEDULE & TASK VIEWS - ALL AUTHENTICATED USERS ===
     Route::get('my-schedule', [UserScheduleController::class, 'index'])->name('user.schedule.index');
@@ -145,7 +159,10 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('my-tasks/{taskAssignment}/status', [UserTaskController::class, 'updateStatus'])
         ->name('user.tasks.update-status');
 
+    Route::get('payments/dashboard', [PaymentController::class, 'dashboard'])->name('payments.dashboard');
     Route::get('companies/export', [CompanyController::class, 'export'])->name('companies.export');
+    Route::get('payments/export', [PaymentController::class, 'export'])->name('payments.export');
+    Route::get('payments/store-image/{store}', [PaymentController::class, 'storeImageView'])->name('payments.store-image');
 
     // Optional: API routes for AJAX calls
     Route::prefix('api')->group(function () {
@@ -205,6 +222,11 @@ Route::middleware(['auth', RoleMiddleware::class . ':admin'])->prefix('notificat
 // PRIORITY 10: Admin Prefix Routes
 Route::prefix('admin')->name('admin.')->middleware(['auth', RoleMiddleware::class . ':admin'])->group(function () {
     Route::get('scorecards', [\App\Http\Controllers\Admin\ScorecardController::class, 'index'])->name('scorecards.index');
+    
+    // Clocking Integration Utilities
+    Route::get('clocking-sync', function () {
+        return view('admin.clocking-sync');
+    })->name('clocking-sync');
     Route::get('scorecards/export', [\App\Http\Controllers\Admin\ScorecardController::class, 'export'])->name('scorecards.export');
 
     // Custom routes BEFORE resource routes to prevent conflicts

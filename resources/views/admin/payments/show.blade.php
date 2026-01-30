@@ -131,6 +131,64 @@
                     </div>
                 </div>
 
+                <!-- Equipment Items Section -->
+                @if($payment->hasEquipment())
+                    <div class="bg-gradient-to-br from-purple-50 to-white rounded-lg p-6 border-2 border-purple-200 shadow-md">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center gap-3">
+                                <div class="bg-purple-600 rounded-lg p-2">
+                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 class="text-lg font-bold text-black-900">Admin Equipment Purchases</h3>
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-purple-100 text-purple-800">
+                                            Admin Purchase
+                                        </span>
+                                        <span class="text-xs text-black-600">• Equipment, Parts & Supplies</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-sm text-black-600">Equipment Total</p>
+                                <p class="text-2xl font-bold text-purple-600">${{ number_format($payment->equipmentTotal(), 2) }}</p>
+                            </div>
+                        </div>
+
+                        <!-- Equipment Items Table -->
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-purple-200">
+                                <thead class="bg-purple-100">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-xs font-bold text-purple-900 uppercase tracking-wider">Item Name</th>
+                                        <th class="px-4 py-3 text-left text-xs font-bold text-purple-900 uppercase tracking-wider">Quantity</th>
+                                        <th class="px-4 py-3 text-left text-xs font-bold text-purple-900 uppercase tracking-wider">Unit Cost</th>
+                                        <th class="px-4 py-3 text-left text-xs font-bold text-purple-900 uppercase tracking-wider">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-purple-100">
+                                    @foreach($payment->equipmentItems as $item)
+                                        <tr class="hover:bg-purple-50 transition-colors">
+                                            <td class="px-4 py-3 text-sm font-medium text-black-900">{{ $item->item_name }}</td>
+                                            <td class="px-4 py-3 text-sm text-black-700">{{ $item->quantity }}</td>
+                                            <td class="px-4 py-3 text-sm text-black-700">${{ number_format($item->unit_cost, 2) }}</td>
+                                            <td class="px-4 py-3 text-sm font-bold text-purple-900">${{ number_format($item->total_cost, 2) }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                                <tfoot class="bg-purple-50">
+                                    <tr>
+                                        <td colspan="3" class="px-4 py-3 text-sm font-bold text-right text-black-900">Equipment Total:</td>
+                                        <td class="px-4 py-3 text-sm font-bold text-purple-900">${{ number_format($payment->equipmentTotal(), 2) }}</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                @endif
+
                 <!-- Notes -->
                 @if($payment->notes)
                     <div class="bg-orange-100 rounded-lg p-6">

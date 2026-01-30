@@ -432,32 +432,53 @@ class MaintenanceRequestController extends Controller
             $entryId = $maintenanceRequest->entry_number;
 
             // Only update Cognito if we have a form ID
+            $cognitoSuccess = false;
             if ($formId) {
-                $cognitoService = app(CognitoFormsService::class);
+                try {
+                    $cognitoService = app(CognitoFormsService::class);
 
-                $cognitoStatusMap = [
-                    'on_hold' => 'On Hold',
-                    'received' => 'Received',
-                    'in_progress' => 'In Progress',
-                    'done' => 'Done',
-                    'canceled' => 'Canceled'
-                ];
+                    $cognitoStatusMap = [
+                        'on_hold' => 'On Hold',
+                        'received' => 'Received',
+                        'in_progress' => 'In Progress',
+                        'done' => 'Done',
+                        'canceled' => 'Canceled'
+                    ];
 
-                $cognitoData = [
-                    'CorrespondenceInternalUseOnly' => [
-                        'Status' => $cognitoStatusMap[$newStatus] ?? $newStatus,
-                        'NotesFromMaintenanceTeam' => $howWeFixedIt,
-                    ],
-                    'Entry' => [
-                        'Action' => 'Update',
-                        'Role' => 'Internal',
-                    ]
-                ];
+                    $cognitoData = [
+                        'CorrespondenceInternalUseOnly' => [
+                            'Status' => $cognitoStatusMap[$newStatus] ?? $newStatus,
+                            'NotesFromMaintenanceTeam' => $howWeFixedIt,
+                        ],
+                        'Entry' => [
+                            'Action' => 'Update',
+                            'Role' => 'Internal',
+                        ]
+                    ];
 
-                $cognitoService->updateEntry($formId, $entryId, $cognitoData);
+                    $cognitoService->updateEntry($formId, $entryId, $cognitoData);
+                    $cognitoSuccess = true;
+                } catch (\Exception $e) {
+                    // Log the error but don't fail the entire operation
+                    Log::error('Failed to update Cognito Forms', [
+                        'maintenance_request_id' => $maintenanceRequest->id,
+                        'form_id' => $formId,
+                        'entry_id' => $entryId,
+                        'error' => $e->getMessage()
+                    ]);
+                }
             }
+            
             DB::commit();
-            return back()->with('success', 'Status updated successfully in both local database and Cognito Forms.');
+            
+            $message = 'Status updated successfully in local database.';
+            if ($cognitoSuccess) {
+                $message = 'Status updated successfully in both local database and Cognito Forms.';
+            } elseif ($formId) {
+                $message = 'Status updated in local database. Warning: Could not sync with Cognito Forms.';
+            }
+            
+            return back()->with('success', $message);
 
         } catch (\Exception $e) {
             DB::rollback();
@@ -882,6 +903,25 @@ class MaintenanceRequestController extends Controller
         } catch (\Exception $e) {
             \Log::error('Ticket Report Error: ' . $e->getMessage());
             return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Get active maintenance requests for a specific store (API endpoint)
+     */
+    public function getByStore($storeId)
+    {
+        try {
+            $maintenanceRequests = MaintenanceRequest::where('store_id', $storeId)
+                ->whereNotIn('status', ['done', 'completed', 'canceled'])
+                ->select('id', 'equipment_with_issue', 'status')
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            return response()->json($maintenanceRequests);
+        } catch (\Exception $e) {
+            Log::error('Error fetching maintenance requests by store: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to load maintenance requests'], 500);
         }
     }
 

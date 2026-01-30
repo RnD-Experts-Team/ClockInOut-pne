@@ -64,5 +64,11 @@ class User extends Authenticatable
                     ->withPivot('assigned_by', 'assigned_at');
     }
 
-
+    /**
+     * Get the invoice cards for this user.
+     */
+    public function invoiceCards()
+    {
+        return $this->hasMany(\Modules\Invoice\Models\InvoiceCard::class);
+    }
 }
