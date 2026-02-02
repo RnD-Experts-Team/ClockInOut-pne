@@ -144,7 +144,6 @@ Route::middleware(['auth'])->group(function () {
 
     Route::resource('companies', CompanyController::class);
     Route::get('dashboard', [PaymentController::class, 'dashboard'])->name('dashboard');
-    Route::resource('payments', PaymentController::class);
     Route::post('payments/portfolio-stats', [PaymentController::class, 'portfolioStats'])->name('payments.portfolio-stats');
 
     Route::get('payments/reports/cost-by-company', [PaymentController::class, 'costByCompanyReport'])->name('payments.cost-by-company');
@@ -163,6 +162,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('companies/export', [CompanyController::class, 'export'])->name('companies.export');
     Route::get('payments/export', [PaymentController::class, 'export'])->name('payments.export');
     Route::get('payments/store-image/{store}', [PaymentController::class, 'storeImageView'])->name('payments.store-image');
+    Route::resource('payments', PaymentController::class);
+
 
     // Optional: API routes for AJAX calls
     Route::prefix('api')->group(function () {

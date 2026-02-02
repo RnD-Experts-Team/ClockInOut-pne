@@ -225,6 +225,7 @@ class PaymentController extends Controller
 
             // Handle equipment items if provided
             if ($request->has('equipment_items') && is_array($request->equipment_items)) {
+                $hasEquipment = false;
                 foreach ($request->equipment_items as $item) {
                     // Only create if item has a name
                     if (!empty($item['name'])) {
@@ -237,7 +238,14 @@ class PaymentController extends Controller
                             'unit_cost' => $unitCost,
                             'total_cost' => $quantity * $unitCost,
                         ]);
+                        $hasEquipment = true;
                     }
+                }
+                
+                // If equipment items were added, mark as admin equipment
+                if ($hasEquipment) {
+                    $payment->is_admin_equipment = true;
+                    $payment->save();
                 }
             }
 
@@ -335,6 +343,7 @@ class PaymentController extends Controller
             $payment->equipmentItems()->delete();
             
             // Re-create equipment items from request
+            $hasEquipment = false;
             if ($request->has('equipment_items') && is_array($request->equipment_items)) {
                 foreach ($request->equipment_items as $item) {
                     // Only create if item has a name
@@ -348,9 +357,14 @@ class PaymentController extends Controller
                             'unit_cost' => $unitCost,
                             'total_cost' => $quantity * $unitCost,
                         ]);
+                        $hasEquipment = true;
                     }
                 }
             }
+            
+            // Update is_admin_equipment flag based on whether equipment items exist
+            $payment->is_admin_equipment = $hasEquipment;
+            $payment->save();
 
             DB::commit();
 
