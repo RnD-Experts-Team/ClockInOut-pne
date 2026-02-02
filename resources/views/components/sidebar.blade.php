@@ -103,6 +103,24 @@
                     </div>
 
                     <div x-data="{ open: false }">
+                        <button @click="open = !open" class="flex items-center justify-between w-full px-3 py-3 text-sm font-medium text-orange-900 rounded-lg hover:bg-orange-200 focus:outline-none focus:bg-orange-200 transition-colors" :class="sidebarCollapsed ? 'justify-center' : ''" title="Invoices">
+                            <div class="flex items-center" :class="sidebarCollapsed ? 'justify-center w-full' : ''">
+                                <svg class="w-6 h-6 text-orange-600" :class="sidebarCollapsed ? '' : 'mr-3'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                <span x-show="!sidebarCollapsed">Invoices</span>
+                            </div>
+                            <svg x-show="!sidebarCollapsed" :class="open ? 'rotate-180' : ''" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <div x-show="open && !sidebarCollapsed" class="px-4 mt-2 space-y-1">
+                            <a href="{{ route('invoice.cards.index') }}" class="block px-4 py-2 text-sm text-gray-700 rounded-lg hover:bg-orange-100 hover:text-orange-900">Invoice Cards</a>
+                            <a href="{{ route('invoice.invoices.index') }}" class="block px-4 py-2 text-sm text-gray-700 rounded-lg hover:bg-orange-100 hover:text-orange-900">Invoices</a>
+                        </div>
+                    </div>
+
+                    <div x-data="{ open: false }">
                         <button @click="open = !open" class="flex items-center justify-between w-full px-3 py-3 text-sm font-medium text-orange-900 rounded-lg hover:bg-orange-200 focus:outline-none focus:bg-orange-200 transition-colors" :class="sidebarCollapsed ? 'justify-center' : ''" title="Leases">
                             <div class="flex items-center" :class="sidebarCollapsed ? 'justify-center w-full' : ''">
                                 <svg class="w-6 h-6 text-orange-600" :class="sidebarCollapsed ? '' : 'mr-3'" fill="none" stroke="currentColor" viewBox="0 0 24 24">

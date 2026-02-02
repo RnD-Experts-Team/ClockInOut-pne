@@ -195,6 +195,35 @@
             </div>
         </div>
 
+        <!-- Equipment Statistics -->
+        @if(isset($stats['equipment_purchases']) && $stats['equipment_purchases'] > 0)
+            <div class="bg-gradient-to-br from-purple-50 to-white rounded-lg shadow-md p-6 mb-8 border-2 border-purple-200">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="bg-purple-600 rounded-lg p-3">
+                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-black-900">Equipment Purchases Summary</h3>
+                            <p class="text-sm text-black-600">Admin equipment, parts & supplies tracking</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-6">
+                        <div class="text-center">
+                            <p class="text-sm font-medium text-black-700">Equipment Purchases</p>
+                            <p class="text-3xl font-bold text-purple-600">{{ $stats['equipment_purchases'] }}</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-sm font-medium text-black-700">Equipment Total</p>
+                            <p class="text-3xl font-bold text-purple-600">${{ number_format($stats['equipment_total'], 2) }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         <!-- Filters Section -->
         <div class="bg-orange-50 shadow-lg rounded-xl p-6 mb-8 transition-all duration-300 hover:shadow-xl border border-orange-200">
             <div class="flex justify-between items-center mb-4">
@@ -244,7 +273,7 @@
                         </select>
                     </div>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-6">
                     <div>
                         <label for="maintenance_type" class="block text-sm font-semibold text-black-700 mb-2">Maintenance Type</label>
                         <select name="maintenance_type" id="maintenance_type" class="block w-full rounded-xl border-orange-300 shadow-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 sm:text-sm transition-all duration-200 hover:bg-orange-100 py-3 px-4">
@@ -252,6 +281,14 @@
                             @foreach($maintenanceTypes as $type)
                                 <option value="{{ $type }}" {{ request('maintenance_type') === $type ? 'selected' : '' }}>{{ $type }}</option>
                             @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label for="has_equipment" class="block text-sm font-semibold text-black-700 mb-2">Equipment Filter</label>
+                        <select name="has_equipment" id="has_equipment" class="block w-full rounded-xl border-orange-300 shadow-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 sm:text-sm transition-all duration-200 hover:bg-orange-100 py-3 px-4">
+                            <option value="all" {{ request('has_equipment') === 'all' || !request('has_equipment') ? 'selected' : '' }}>All Payments</option>
+                            <option value="1" {{ request('has_equipment') === '1' ? 'selected' : '' }}>Has Equipment</option>
+                            <option value="0" {{ request('has_equipment') === '0' ? 'selected' : '' }}>No Equipment</option>
                         </select>
                     </div>
                     <div>
@@ -368,11 +405,21 @@
                                         @if($payment->what_got_fixed)
                                             <div class="text-xs text-black-700">{{ $payment->what_got_fixed }}</div>
                                         @endif
-                                        @if($payment->maintenance_type)
-                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-orange-100 text-black-800">
-                                                {{ $payment->maintenance_type }}
-                                            </span>
-                                        @endif
+                                        <div class="flex flex-wrap gap-1">
+                                            @if($payment->maintenance_type)
+                                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-orange-100 text-black-800">
+                                                    {{ $payment->maintenance_type }}
+                                                </span>
+                                            @endif
+                                            @if($payment->hasEquipment())
+                                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold bg-purple-100 text-purple-800 border border-purple-300">
+                                                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                                                    </svg>
+                                                    Equipment
+                                                </span>
+                                            @endif
+                                        </div>
                                     </div>
                                 </td>
 

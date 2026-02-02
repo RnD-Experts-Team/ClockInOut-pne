@@ -83,6 +83,76 @@
                     </div>
                 </div>
 
+                <!-- Link to Maintenance Request (Optional) -->
+                <div class="bg-blue-50 rounded-lg p-4 border-2 border-blue-200">
+                    <h3 class="text-lg font-medium text-black-900 mb-4 flex items-center gap-2">
+                        <svg class="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
+                        </svg>
+                        Link to Maintenance Request (Optional)
+                    </h3>
+                    
+                    <div>
+                        <label for="maintenance_request_id" class="form-label block text-sm font-medium text-black-700 mb-2">
+                            Select Maintenance Request
+                            <span class="text-xs text-black-500 font-normal">(Link this purchase to a specific task)</span>
+                        </label>
+                        <select name="maintenance_request_id" id="maintenance_request_id" class="form-select block w-full rounded-lg border-blue-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm @error('maintenance_request_id') border-red-500 @enderror">
+                            <option value="">No linked request - General purchase</option>
+                            <!-- Options will be loaded dynamically based on selected store -->
+                        </select>
+                        <p class="mt-1 text-xs text-black-500">
+                            <svg class="inline h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                            </svg>
+                            Select a store first to see available maintenance requests
+                        </p>
+                        @error('maintenance_request_id')
+                        <p class="form-error mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+                </div>
+
+                <!-- NEW: Equipment Purchases Section -->
+                <div class="bg-white rounded-lg p-5 shadow-md ring-1 ring-purple-900/10 border-2 border-purple-200">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-purple-600 shadow-lg">
+                                <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-bold text-black-900">Admin Equipment Purchases</h3>
+                                <div class="flex items-center gap-2">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-purple-100 text-purple-800">
+                                        Admin Purchase
+                                    </span>
+                                    <span class="text-xs text-black-500">• Equipment, Parts & Supplies</span>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" id="add-equipment-item" class="inline-flex items-center px-3 py-1.5 border-2 border-dashed border-purple-300 rounded-lg text-xs font-medium text-purple-700 bg-purple-50 hover:bg-purple-100 transition-all">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                            Add Item
+                        </button>
+                    </div>
+
+                    <div id="equipment-items-container" class="space-y-3">
+                        <!-- Equipment items will be added here dynamically -->
+                    </div>
+
+                    <!-- Total -->
+                    <div class="flex items-center justify-end pt-3 border-t-2 border-purple-200 mt-3">
+                        <div class="text-right">
+                            <p class="text-sm text-black-600 mb-1">Equipment Total</p>
+                            <p id="equipment-total" class="text-2xl font-bold text-purple-600">$0.00</p>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- Date -->
                     <div>
@@ -267,6 +337,57 @@
             });
 
             toggleStoreOptions();
+
+            // Load Maintenance Requests when store is selected
+            const maintenanceRequestSelect = document.getElementById('maintenance_request_id');
+            
+            async function loadMaintenanceRequests(storeId) {
+                if (!storeId) {
+                    maintenanceRequestSelect.innerHTML = '<option value="">No linked request - General purchase</option>';
+                    return;
+                }
+                
+                try {
+                    maintenanceRequestSelect.innerHTML = '<option value="">Loading...</option>';
+                    maintenanceRequestSelect.disabled = true;
+                    
+                    const response = await fetch(`/api/maintenance-requests/by-store/${storeId}`);
+                    const requests = await response.json();
+                    
+                    maintenanceRequestSelect.innerHTML = '<option value="">No linked request - General purchase</option>';
+                    
+                    if (requests.length > 0) {
+                        requests.forEach(request => {
+                            const option = document.createElement('option');
+                            option.value = request.id;
+                            option.textContent = `#${request.id} - ${request.equipment_with_issue}`;
+                            maintenanceRequestSelect.appendChild(option);
+                        });
+                    } else {
+                        const option = document.createElement('option');
+                        option.value = '';
+                        option.textContent = 'No active requests for this store';
+                        option.disabled = true;
+                        maintenanceRequestSelect.appendChild(option);
+                    }
+                    
+                    maintenanceRequestSelect.disabled = false;
+                } catch (error) {
+                    console.error('Error loading maintenance requests:', error);
+                    maintenanceRequestSelect.innerHTML = '<option value="">Error loading requests</option>';
+                    maintenanceRequestSelect.disabled = false;
+                }
+            }
+            
+            // Listen for store selection changes
+            storeSelect.addEventListener('change', function() {
+                loadMaintenanceRequests(this.value);
+            });
+            
+            // Load on page load if store is already selected
+            if (storeSelect.value) {
+                loadMaintenanceRequests(storeSelect.value);
+            }
 
             // CUSTOM TOMSELECT-STYLE DROPDOWN
             console.log('Setting up custom dropdown...');
@@ -488,6 +609,90 @@
                     }
                 });
             }
+
+            // Equipment Items Management
+            let equipmentItemCount = 0;
+
+            function addEquipmentItem() {
+                equipmentItemCount++;
+                const container = document.getElementById('equipment-items-container');
+                
+                const itemHTML = `
+                    <div class="equipment-item bg-gradient-to-br from-purple-50 to-white p-4 rounded-lg border border-purple-200" data-item-id="${equipmentItemCount}">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-xs font-bold text-purple-700 bg-purple-200 px-2 py-1 rounded">Item #${equipmentItemCount}</span>
+                            <button type="button" class="remove-equipment-item text-red-600 hover:text-red-800 text-xs font-medium">Remove</button>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+                            <div class="md:col-span-5">
+                                <label class="block text-xs font-medium text-black-700 mb-1">Item Name</label>
+                                <input type="text" name="equipment_items[${equipmentItemCount}][name]" class="form-field block w-full rounded-lg border-purple-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 text-sm" placeholder="Equipment name">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-medium text-black-700 mb-1">Qty</label>
+                                <input type="number" name="equipment_items[${equipmentItemCount}][quantity]" value="1" min="1" class="equipment-qty form-field block w-full rounded-lg border-purple-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 text-sm">
+                            </div>
+                            <div class="md:col-span-3">
+                                <label class="block text-xs font-medium text-black-700 mb-1">Unit Cost</label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <span class="text-black-500 text-sm">$</span>
+                                    </div>
+                                    <input type="number" name="equipment_items[${equipmentItemCount}][unit_cost]" value="0" step="0.01" class="equipment-unit-cost form-field block w-full pl-7 rounded-lg border-purple-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 text-sm">
+                                </div>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-medium text-black-700 mb-1">Total</label>
+                                <div class="equipment-item-total px-3 py-2 bg-purple-100 rounded-lg text-sm font-bold text-purple-900">$0.00</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                container.insertAdjacentHTML('beforeend', itemHTML);
+                updateEquipmentTotal();
+            }
+
+            function removeEquipmentItem(button) {
+                const item = button.closest('.equipment-item');
+                item.remove();
+                updateEquipmentTotal();
+            }
+
+            function calculateItemTotal(item) {
+                const qty = parseFloat(item.querySelector('.equipment-qty').value) || 0;
+                const unitCost = parseFloat(item.querySelector('.equipment-unit-cost').value) || 0;
+                return qty * unitCost;
+            }
+
+            function updateEquipmentTotal() {
+                const items = document.querySelectorAll('.equipment-item');
+                let total = 0;
+
+                items.forEach(item => {
+                    const itemTotal = calculateItemTotal(item);
+                    const totalDisplay = item.querySelector('.equipment-item-total');
+                    totalDisplay.textContent = '$' + itemTotal.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                    total += itemTotal;
+                });
+
+                document.getElementById('equipment-total').textContent = '$' + total.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            }
+
+            // Event listeners for equipment section
+            document.getElementById('add-equipment-item').addEventListener('click', addEquipmentItem);
+
+            document.getElementById('equipment-items-container').addEventListener('click', function(e) {
+                if (e.target.classList.contains('remove-equipment-item')) {
+                    removeEquipmentItem(e.target);
+                }
+            });
+
+            document.getElementById('equipment-items-container').addEventListener('input', function(e) {
+                if (e.target.classList.contains('equipment-qty') || e.target.classList.contains('equipment-unit-cost')) {
+                    updateEquipmentTotal();
+                }
+            });
 
             console.log('=== FORM JAVASCRIPT COMPLETE ===');
         });
