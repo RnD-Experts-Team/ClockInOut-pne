@@ -41,10 +41,22 @@ class AuthTokenStoreScopeMiddleware
         $storeContext = $this->buildStoreContext($request);
 
         // 4) Redis cache: key includes token+route+method+store_context signature
-        $cache = Cache::store('redis');
-        $cacheKey = $this->verifyCacheKey($serviceName, $userToken, $request, $storeContext);
+        // $cache = Cache::store('redis');
+        // $cacheKey = $this->verifyCacheKey($serviceName, $userToken, $request, $storeContext);
 
-        $verify = $cache->remember($cacheKey, $cacheTtl, function () use (
+        // $verify = $cache->remember($cacheKey, $cacheTtl, function () use (
+        //     $baseUrl,
+        //     $verifyPath,
+        //     $serviceName,
+        //     $callToken,
+        //     $timeout,
+        //     $retries,
+        //     $retryMs,
+        //     $userToken,
+        //     $request,
+        //     $storeContext
+        // ) {
+        $verify = $this->verifyWithAuthServer(
             $baseUrl,
             $verifyPath,
             $serviceName,
@@ -55,20 +67,8 @@ class AuthTokenStoreScopeMiddleware
             $userToken,
             $request,
             $storeContext
-        ) {
-            return $this->verifyWithAuthServer(
-                $baseUrl,
-                $verifyPath,
-                $serviceName,
-                $callToken,
-                $timeout,
-                $retries,
-                $retryMs,
-                $userToken,
-                $request,
-                $storeContext
-            );
-        });
+        );
+        // });
 
         // 5) Enforce BOTH token validity + authorization decision
         $active = (bool) ($verify['active'] ?? false);
