@@ -37,6 +37,8 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'role' => RoleMiddleware::class,
+            'auth.token.store' => \App\Http\Middleware\AuthTokenStoreScopeMiddleware::class, // Add this
+    
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
