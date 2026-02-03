@@ -935,16 +935,6 @@ class MaintenanceRequestController extends Controller
             ], 400);
         }
 
-        // Get limit from query parameter, default to 3, max 100
-        $limit = $request->query('limit', 3);
-        
-        // Validate limit is a positive integer between 1 and 100
-        if (!is_numeric($limit) || $limit < 1 || $limit > 100) {
-            return response()->json([
-                'error' => 'Invalid limit. Must be between 1 and 100.'
-            ], 400);
-        }
-
         // Subtask 2: Extract last 2 digits from store_id
         // Example: "03759-0001" → "01"
         $lastTwoDigits = substr($storeId, -2);
@@ -964,30 +954,80 @@ class MaintenanceRequestController extends Controller
             ], 200);
         }
 
-        // Subtask 3: Query maintenance requests using the store's ID with dynamic limit
-        $requests = MaintenanceRequest::where('store_id', $store->id)
-            ->orderBy('date_submitted', 'desc')
-            ->limit($limit)
-            ->get(['id', 'entry_number', 'status', 'equipment_with_issue', 'date_submitted']);
+        // Check if limit parameter is provided
+        $limit = $request->query('limit');
 
-        // Subtask 4: Map response to required fields only
-        $response = $requests->map(function($request) {
-            return [
-                'id' => $request->id,
-                'entry_number' => $request->entry_number,
-                'status' => $request->status,
-                'broken_item' => $request->equipment_with_issue,
-                'submitted_at' => $request->date_submitted
-            ];
-        });
+        // Subtask 3: Query maintenance requests
+        $query = MaintenanceRequest::where('store_id', $store->id)
+            ->orderBy('date_submitted', 'desc');
 
-        return response()->json([
-            'store_number' => $store->store_number,
-            'store_name' => $store->name,
-            'limit' => (int) $limit,
-            'count' => $response->count(),
-            'data' => $response
-        ], 200);
+        // If limit is provided, use it (with validation)
+        if ($limit !== null) {
+            // Validate limit is a positive integer between 1 and 100
+            if (!is_numeric($limit) || $limit < 1 || $limit > 100) {
+                return response()->json([
+                    'error' => 'Invalid limit. Must be between 1 and 100.'
+                ], 400);
+            }
+
+            // Get limited results without pagination
+            $requests = $query->limit($limit)
+                ->get(['id', 'entry_number', 'status', 'equipment_with_issue', 'date_submitted']);
+
+            // Subtask 4: Map response to required fields only
+            $response = $requests->map(function($request) {
+                return [
+                    'id' => $request->id,
+                    'entry_number' => $request->entry_number,
+                    'status' => $request->status,
+                    'broken_item' => $request->equipment_with_issue,
+                    'submitted_at' => $request->date_submitted
+                ];
+            });
+
+            return response()->json([
+                'store_number' => $store->store_number,
+                'store_name' => $store->name,
+                'limit' => (int) $limit,
+                'count' => $response->count(),
+                'data' => $response
+            ], 200);
+
+        } else {
+            // No limit provided - return all with pagination (15 per page)
+            $paginatedRequests = $query->paginate(15, ['id', 'entry_number', 'status', 'equipment_with_issue', 'date_submitted']);
+
+            // Map the paginated data
+            $mappedData = $paginatedRequests->map(function($request) {
+                return [
+                    'id' => $request->id,
+                    'entry_number' => $request->entry_number,
+                    'status' => $request->status,
+                    'broken_item' => $request->equipment_with_issue,
+                    'submitted_at' => $request->date_submitted
+                ];
+            });
+
+            return response()->json([
+                'store_number' => $store->store_number,
+                'store_name' => $store->name,
+                'pagination' => [
+                    'current_page' => $paginatedRequests->currentPage(),
+                    'per_page' => $paginatedRequests->perPage(),
+                    'total' => $paginatedRequests->total(),
+                    'last_page' => $paginatedRequests->lastPage(),
+                    'from' => $paginatedRequests->firstItem(),
+                    'to' => $paginatedRequests->lastItem(),
+                ],
+                'links' => [
+                    'first' => $paginatedRequests->url(1),
+                    'last' => $paginatedRequests->url($paginatedRequests->lastPage()),
+                    'prev' => $paginatedRequests->previousPageUrl(),
+                    'next' => $paginatedRequests->nextPageUrl(),
+                ],
+                'data' => $mappedData
+            ], 200);
+        }
 
     } catch (\Exception $e) {
         Log::error('Error fetching latest maintenance requests by store', [
@@ -1003,7 +1043,7 @@ class MaintenanceRequestController extends Controller
     }
 }
 
-
-
-
 }
+
+
+
