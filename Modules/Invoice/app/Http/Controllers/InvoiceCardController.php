@@ -311,16 +311,16 @@ class InvoiceCardController extends Controller
             ->get();
 
         // 2. Native Requests assigned to target user
-        $nativeRequests = \App\Models\Native\NativeRequest::where('store_id', $card->store_id)
-            ->where('assigned_to', $targetUserId)
-            ->whereIn('status', ['pending', 'in_progress', 'received'])
-            ->with(['urgencyLevel', 'requester', 'assignedTo'])
-            ->orderBy('urgency_level_id', 'asc')
-            ->orderBy('request_date', 'asc')
-            ->get();
+        // $nativeRequests = \App\Models\Native\NativeRequest::where('store_id', $card->store_id)
+        //     ->where('assigned_to', $targetUserId)
+        //     ->whereIn('status', ['pending', 'in_progress', 'received'])
+        //     ->with(['urgencyLevel', 'requester', 'assignedTo'])
+        //     ->orderBy('urgency_level_id', 'asc')
+        //     ->orderBy('request_date', 'asc')
+        //     ->get();
 
         // Combine both types into one collection
-        $allRequests = $maintenanceRequests->concat($nativeRequests);
+        $allRequests = $maintenanceRequests;
         
         // Get all available request IDs (for equipment query)
         $availableRequestIds = $allRequests->pluck('id')->toArray();
