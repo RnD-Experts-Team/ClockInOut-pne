@@ -138,7 +138,7 @@ class InvoiceTestDataSeeder extends Seeder
         $mileageCost = $invoiceCard->mileage_payment;
         
         $subtotal = $laborCost + $materialsCost + $equipmentCost + $mileageCost;
-        $taxRate = 5.00;
+        $taxRate = 0;
         $taxAmount = $subtotal * ($taxRate / 100);
         $grandTotal = $subtotal + $taxAmount;
 
@@ -207,7 +207,7 @@ class InvoiceTestDataSeeder extends Seeder
         ]);
 
         $subtotal2 = $invoiceCard2->labor_cost + $invoiceCard2->materials_cost + $invoiceCard2->mileage_payment;
-        $taxAmount2 = $subtotal2 * 0.05;
+        $taxAmount2 = $subtotal2 * 0;
         $grandTotal2 = $subtotal2 + $taxAmount2;
 
         Invoice::create([

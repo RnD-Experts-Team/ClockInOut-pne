@@ -101,10 +101,10 @@ class InvoiceGenerationService
         $subtotal = $laborTotal + $materialsTotal + $equipmentTotal + $mileageTotal;
         
         // Calculate tax (5% - you can make this configurable)
-        $taxRate = 0.05;
-        $tax = $subtotal * $taxRate;
+        $taxRate = 0;
+        // $tax = $subtotal * $taxRate;
         
-        $grandTotal = $subtotal + $tax;
+        $grandTotal = $subtotal ;
         
         return [
             'store' => [
@@ -137,7 +137,7 @@ class InvoiceGenerationService
             'totals' => [
                 'subtotal' => $subtotal,
                 'tax_rate' => $taxRate * 100,
-                'tax' => $tax,
+                'tax' => 0,
                 'grand_total' => $grandTotal,
             ],
             'invoice_cards_count' => $invoiceCards->count(),

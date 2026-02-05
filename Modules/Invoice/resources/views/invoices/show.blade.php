@@ -202,10 +202,10 @@
                         <span class="text-black-700">Subtotal</span>
                         <span class="font-semibold text-black-900">${{ number_format($invoice->subtotal, 2) }}</span>
                     </div>
-                    <div class="flex justify-between text-lg">
+                    <!-- <div class="flex justify-between text-lg">
                         <span class="text-black-700">Tax ({{ $invoice->tax_rate }}%)</span>
                         <span class="font-semibold text-black-900">${{ number_format($invoice->tax_amount, 2) }}</span>
-                    </div>
+                    </div> -->
                     <div class="flex justify-between text-2xl pt-3 border-t-2 border-orange-400">
                         <span class="font-bold text-black-900">Grand Total</span>
                         <span class="font-bold text-orange-600">${{ number_format($invoice->grand_total, 2) }}</span>
