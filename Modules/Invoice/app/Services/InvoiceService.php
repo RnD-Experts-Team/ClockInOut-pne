@@ -31,7 +31,7 @@ class InvoiceService
         
         // Calculate totals
         $subtotal = $card->labor_cost + $card->materials_cost + $equipmentCost + $card->mileage_payment + ($card->driving_time_payment ?? 0);
-        $taxRate = 5.00; // 5%
+        $taxRate = 0; // 5%
         $taxAmount = $subtotal * ($taxRate / 100);
         $grandTotal = $subtotal + $taxAmount;
         

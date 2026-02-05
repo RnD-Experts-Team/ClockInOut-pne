@@ -133,32 +133,14 @@
                                 </td>
                             </tr>
                             <!-- Gas Mileage -->
-                            <tr>
-                                <td style="padding: 10px; text-align: center; font-weight: 600; border-bottom: 1px solid #e2e8f0;">1</td>
-                                <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">Gas Mileage Payment - {{ number_format($invoice->total_miles, 2) }} miles (allocated to this store)</td>
-                                <td style="padding: 10px; text-align: right; border-bottom: 1px solid #e2e8f0;">{{ number_format($invoice->mileage_cost, 2) }}</td>
-                                <td style="padding: 10px; text-align: right; border-bottom: 1px solid #e2e8f0;">{{ number_format($invoice->mileage_cost, 2) }}</td>
-                            </tr>
-                            
-                            <!-- Distance Traveled (if available) -->
-                            @if($invoice->total_distance_miles > 0)
-                            <tr>
-                                <td style="padding: 10px; text-align: center; font-weight: 600; border-bottom: 1px solid #e2e8f0;">-</td>
-                                <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; color: #718096; font-style: italic;">Distance Traveled to Store - {{ number_format($invoice->total_distance_miles, 2) }} miles (odometer reading)</td>
-                                <td style="padding: 10px; text-align: right; border-bottom: 1px solid #e2e8f0; color: #718096;">Calculated</td>
-                                <td style="padding: 10px; text-align: right; border-bottom: 1px solid #e2e8f0; color: #718096;">-</td>
-                            </tr>
-                            @endif
-                            
-                            <!-- Driving Time (if available) -->
-                            @if($invoice->driving_time_hours > 0)
-                            <tr>
-                                <td style="padding: 10px; text-align: center; font-weight: 600; border-bottom: 1px solid #e2e8f0;">1</td>
-                                <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">Driving Time - {{ number_format($invoice->driving_time_hours, 2) }} hours total @ ${{ number_format($invoice->driving_time_payment / $invoice->driving_time_hours, 2) }}/hr</td>
-                                <td style="padding: 10px; text-align: right; border-bottom: 1px solid #e2e8f0;">{{ number_format($invoice->driving_time_payment / $invoice->driving_time_hours, 2) }}</td>
-                                <td style="padding: 10px; text-align: right; border-bottom: 1px solid #e2e8f0;">{{ number_format($invoice->driving_time_payment, 2) }}</td>
-                            </tr>
-                            @endif
+<!-- Mileage & Driving Time Combined -->
+<tr>
+    <td style="padding: 10px; text-align: center; font-weight: 600; border-bottom: 1px solid #e2e8f0;">1</td>
+    <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">Mileage & Driving Time</td>
+    <td style="padding: 10px; text-align: right; border-bottom: 1px solid #e2e8f0;">-</td>
+    <td style="padding: 10px; text-align: right; border-bottom: 1px solid #e2e8f0;">{{ number_format($invoice->mileage_cost + $invoice->driving_time_payment, 2) }}</td>
+</tr>
+
                         </tbody>
                     </table>
 
@@ -168,10 +150,10 @@
                             <span style="color: #4a5568;">Subtotal</span>
                             <span style="font-weight: 600; color: #2d3748;">{{ number_format($invoice->subtotal, 2) }}</span>
                         </div>
-                        <div style="display: flex; justify-content: space-between; padding: 8px 0; font-size: 13px;">
+                        <!-- <div style="display: flex; justify-content: space-between; padding: 8px 0; font-size: 13px;">
                             <span style="color: #4a5568;">Sales Tax {{ $invoice->tax_rate }}%</span>
                             <span style="font-weight: 600; color: #2d3748;">{{ number_format($invoice->tax_amount, 2) }}</span>
-                        </div>
+                        </div> -->
                         <div style="display: flex; justify-content: space-between; padding: 12px 0; font-size: 18px; font-weight: 700; border-top: 2px solid #2d3748; margin-top: 10px;">
                             <span>TOTAL</span>
                             <span style="font-size: 24px; color: #2d3748;">${{ number_format($invoice->grand_total, 2) }}</span>
