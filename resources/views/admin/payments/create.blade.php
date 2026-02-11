@@ -351,8 +351,20 @@
                     maintenanceRequestSelect.innerHTML = '<option value="">Loading...</option>';
                     maintenanceRequestSelect.disabled = true;
                     
-                    const response = await fetch(`/api/maintenance-requests/by-store/${storeId}`);
-                    const requests = await response.json();
+
+
+const response = await fetch(`/api/maintenance-requests/by-store/${storeId}`, {
+    method: 'GET',
+    credentials: 'same-origin', // 🔥 THIS IS THE FIX
+    headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+        'Accept': 'application/json'
+    }
+});           
+
+
+
+const requests = await response.json();
                     
                     maintenanceRequestSelect.innerHTML = '<option value="">No linked request - General purchase</option>';
                     

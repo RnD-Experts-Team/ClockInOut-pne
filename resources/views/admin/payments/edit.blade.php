@@ -414,7 +414,14 @@
                 maintenanceRequestSelect.disabled = true;
 
                 try {
-                    const response = await fetch(`/api/maintenance-requests/by-store/${storeId}`);
+                   const response = await fetch(`/api/maintenance-requests/by-store/${storeId}`, {
+    method: 'GET',
+    credentials: 'same-origin', // 🔥 THIS IS THE FIX
+    headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+        'Accept': 'application/json'
+    }
+});        
                     
                     if (!response.ok) {
                         throw new Error('Failed to load maintenance requests');

@@ -961,6 +961,8 @@ class MaintenanceRequestController extends Controller
         $query = MaintenanceRequest::where('store_id', $store->id)
             ->orderBy('date_submitted', 'desc');
 
+            $perPage = $request->integer('per_page', 15); // default 15 if not provided
+
         // If limit is provided, use it (with validation)
         if ($limit !== null) {
             // Validate limit is a positive integer between 1 and 100
@@ -994,9 +996,16 @@ class MaintenanceRequestController extends Controller
             ], 200);
 
         } else {
+            if ($perPage < 1 || $perPage > 100) {
+    return response()->json([
+        'error' => 'Invalid per_page. Must be between 1 and 100.'
+    ], 400);
+}
             // No limit provided - return all with pagination (15 per page)
-            $paginatedRequests = $query->paginate(15, ['id', 'entry_number', 'status', 'equipment_with_issue', 'date_submitted']);
-
+$paginatedRequests = $query->paginate(
+    $perPage,
+    ['id', 'entry_number', 'status', 'equipment_with_issue', 'date_submitted']
+);
             // Map the paginated data
             $mappedData = $paginatedRequests->map(function($request) {
                 return [
