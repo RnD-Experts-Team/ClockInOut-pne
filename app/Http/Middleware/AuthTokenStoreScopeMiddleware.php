@@ -23,14 +23,14 @@ class AuthTokenStoreScopeMiddleware
         // 2) Read auth server config from config/services.php
         $cfg = (array) config('services.auth_server', []);
 
-        $baseUrl     = (string) ($cfg['base_url'] ?? '');
-        $verifyPath  = (string) ($cfg['verify_path'] ?? '');
+        $baseUrl = (string) ($cfg['base_url'] ?? '');
+        $verifyPath = (string) ($cfg['verify_path'] ?? '');
         $serviceName = (string) ($cfg['service_name'] ?? '');
-        $callToken   = (string) ($cfg['call_token'] ?? '');
+        $callToken = (string) ($cfg['call_token'] ?? '');
 
-        $timeout  = (int) ($cfg['timeout'] ?? 3);
-        $retries  = (int) ($cfg['retries'] ?? 1);
-        $retryMs  = (int) ($cfg['retry_ms'] ?? 100);
+        $timeout = (int) ($cfg['timeout'] ?? 3);
+        $retries = (int) ($cfg['retries'] ?? 1);
+        $retryMs = (int) ($cfg['retry_ms'] ?? 100);
         $cacheTtl = (int) ($cfg['cache_ttl'] ?? 30);
 
         if ($baseUrl === '' || $verifyPath === '' || $serviceName === '' || $callToken === '') {
@@ -89,14 +89,15 @@ class AuthTokenStoreScopeMiddleware
             abort(401, 'Unauthorized: missing user id');
         }
 
-        // 6) DO NOT REPLICATE USERS HERE.
-        $user = User::query()->find($userId);
-        if (!$user) {
-            abort(401, 'Unauthorized: user not synced yet');
-        }
+        // 6) DO NOT REPLICATE USERS HERE. 
+        // Commented out until it is merged with the rest of the systems
+        // $user = User::query()->find($userId);
+        // if (!$user) {
+        //     abort(401, 'Unauthorized: user not synced yet');
+        // }
 
-        // 7) Login for session-based parts of this app
-        Auth::login($user);
+        // // 7) Login for session-based parts of this app
+        // Auth::login($user);
 
         // 8) Expose roles/perms/ext to downstream middlewares/controllers
         $request->attributes->set('authz_roles', (array) ($verify['roles'] ?? []));
@@ -109,7 +110,8 @@ class AuthTokenStoreScopeMiddleware
     private function extractBearerToken(Request $request): string
     {
         $h = (string) $request->header('Authorization', '');
-        if ($h === '') return '';
+        if ($h === '')
+            return '';
 
         if (stripos($h, 'Bearer ') === 0) {
             return trim(substr($h, 7));
@@ -141,9 +143,9 @@ class AuthTokenStoreScopeMiddleware
         }
 
         $ctx = [
-            'path'  => $path,
+            'path' => $path,
             'query' => $query,
-            'body'  => $body,
+            'body' => $body,
         ];
 
         // stabilize ordering for hashing
@@ -182,7 +184,7 @@ class AuthTokenStoreScopeMiddleware
         $tokenHash = hash('sha256', $userToken);
 
         $method = strtoupper((string) $request->method());
-        $path   = '/' . ltrim((string) $request->path(), '/');
+        $path = '/' . ltrim((string) $request->path(), '/');
         $routeName = (string) ($request->route()?->getName() ?? '');
 
         $ctxJson = json_encode($storeContext, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '';
@@ -211,11 +213,11 @@ class AuthTokenStoreScopeMiddleware
         $endpoint = rtrim($baseUrl, '/') . '/' . ltrim($verifyPath, '/');
 
         $payload = [
-            'service'       => $serviceName,
-            'token'         => $userToken,
-            'method'        => strtoupper((string) $request->method()),
-            'path'          => '/' . ltrim((string) $request->path(), '/'),
-            'route_name'    => (string) ($request->route()?->getName() ?? null),
+            'service' => $serviceName,
+            'token' => $userToken,
+            'method' => strtoupper((string) $request->method()),
+            'path' => '/' . ltrim((string) $request->path(), '/'),
+            'route_name' => (string) ($request->route()?->getName() ?? null),
             'store_context' => $storeContext,
         ];
 
