@@ -21,3 +21,9 @@ Route::get(
 // 
 
 Route::get('/maintenance-requests/{maintenanceRequest}', [MaintenanceRequestController::class, 'showAPI'])->middleware(['auth.token.store']);
+
+
+require __DIR__ . '/api/Language.php';
+require __DIR__ . '/api/auth.php';
+require __DIR__ . '/api/attendance.php';
+require __DIR__ . '/api/clocking.php';

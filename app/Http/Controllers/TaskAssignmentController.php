@@ -80,9 +80,6 @@ class TaskAssignmentController extends Controller
 
     // Other methods (show, updateStatus, edit, update) remain unchanged
 
-
-
-
     public function show(TaskAssignment $taskAssignment)
     {
         $taskAssignment->load([

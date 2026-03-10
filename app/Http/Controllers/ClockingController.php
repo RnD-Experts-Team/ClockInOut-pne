@@ -20,8 +20,7 @@ class ClockingController extends Controller
     {
 
         date_default_timezone_set(config('app.timezone'));
-//dd(now());
-        // Retrieve the latest clocking record for the authenticated user
+         // Retrieve the latest clocking record for the authenticated user
         $clocking = Clocking::where('user_id', Auth::id())
             ->whereNull('clock_out')
             ->where('is_clocked_in', true)

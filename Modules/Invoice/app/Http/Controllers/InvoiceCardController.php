@@ -52,7 +52,7 @@ class InvoiceCardController extends Controller
 
         if (!$clocking) {
             return redirect()->route('clocking.index')
-                ->with('error', 'Please clock in first to create invoice cards.');
+            ->with('error', 'Please clock in first to create invoice cards.');
         }
 
         $invoiceCards = InvoiceCard::with(['store', 'materials', 'maintenanceRequests'])

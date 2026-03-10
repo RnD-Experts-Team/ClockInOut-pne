@@ -94,15 +94,15 @@ class WorkbookController extends Controller
         $rows = $query->get()->unique('id');
 
         $rowsData = $rows->map(function ($row) use ($workbook) {
-    return [
+     return [
         'id'         => $row->id,
         'created_at' => $row->created_at->diffForHumans(),
         'updated_at' => $row->updated_at->diffForHumans(),
         'cells'      => $workbook->columns->mapWithKeys(function ($column) use ($row) {
             return [$column->id => $row->getCellValue($column->id)];
         })->toArray(),
-    ];
-})->toArray();
+        ];
+        })->toArray();
 
         return view('workbooks.show', [
             'folder'  => $folder,

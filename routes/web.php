@@ -75,6 +75,43 @@ Route::middleware(['auth', RoleMiddleware::class . ':user'])->group(function () 
     Route::post('/admin/leases/screenshot/lease-tracker', [LeaseController::class, 'generateLeaseTrackerScreenshot'])->name('leases.screenshot.lease-tracker');
     Route::get('/download/screenshot/{filename}', [LeaseController::class, 'downloadScreenshot'])->name('download.screenshot');
 });
+//||||done الي فوق
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // PRIORITY 4: Profile Routes (All authenticated users)
 Route::middleware('auth')->group(function () {
@@ -223,7 +260,6 @@ Route::middleware(['auth', RoleMiddleware::class . ':admin'])->prefix('notificat
 // PRIORITY 10: Admin Prefix Routes
 Route::prefix('admin')->name('admin.')->middleware(['auth', RoleMiddleware::class . ':admin'])->group(function () {
     Route::get('scorecards', [\App\Http\Controllers\Admin\ScorecardController::class, 'index'])->name('scorecards.index');
-    
     // Clocking Integration Utilities
     Route::get('clocking-sync', function () {
         return view('admin.clocking-sync');
@@ -441,10 +477,6 @@ Route::prefix('workbooks')
 
 // PRIORITY 5: Calendar System Routes (Core functionality)
 Route::middleware(['auth'])->group(function () {
-
-
-
-
     // Main Calendar Routes
     Route::prefix('calendar')->name('calendar.')->group(function () {
         Route::get('/', [CalendarController::class, 'index'])->name('index');
@@ -495,9 +527,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/create', [ReminderController::class, 'create'])->name('create');
         Route::post('/', [ReminderController::class, 'store'])->name('store');
         Route::get('/{reminder}', [ReminderController::class, 'show'])->name('show');
-        Route::get('/{reminder}/edit', [ReminderController::class, 'edit'])->name('edit');
+        Route::get('/{reminder}/edit', [ReminderController::class, 'edit'])->name('edit');//
         Route::put('/{reminder}', [ReminderController::class, 'update'])->name('update');
-        Route::delete('/{reminder}', [ReminderController::class, 'destroy'])->name('destroy');
 
         // AJAX Actions for the dashboard
         Route::post('/{reminder}/dismiss', [ReminderController::class, 'dismiss'])->name('dismiss');
@@ -507,13 +538,13 @@ Route::middleware(['auth'])->group(function () {
         // API endpoints
         Route::get('/api/due', [ReminderController::class, 'getDueReminders'])->name('due');
         Route::post('/bulk-action', [ReminderController::class, 'bulkAction'])->name('bulk-action');
-        Route::get('/export', [ReminderController::class, 'export'])->name('export');
+        Route::get('/export', [ReminderController::class, 'export'])->name('export');//
 
             // Personal reminder notifications
 
 
         // Statistics endpoint for AJAX
-        Route::get('/api/statistics', [ReminderController::class, 'getStatistics'])->name('statistics');
+        Route::get('/api/statistics', [ReminderController::class, 'getStatistics'])->name('statistics');//
     });
 
     // Admin Activity Logs (KEEP YOUR EXISTING ROUTES - just showing for reference)

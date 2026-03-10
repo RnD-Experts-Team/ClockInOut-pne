@@ -25,6 +25,7 @@ class MaintenanceWebhookController extends Controller
     public function handleWebhook(Request $request): JsonResponse
     {
         try {
+        
             DB::beginTransaction();
 
             $payload = $request->all();

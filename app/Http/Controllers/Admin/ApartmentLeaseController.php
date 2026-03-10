@@ -271,7 +271,7 @@ class ApartmentLeaseController extends Controller
 
             $apartmentLease = ApartmentLease::create($validated);
 
-//             NEW: Create renewal calendar event and reminders
+             //NEW: Create renewal calendar event and reminders
             if ($apartmentLease->renewal_date) {
                 $this->createRenewalCalendarEvent($apartmentLease);
                 $this->createRenewalReminders($apartmentLease);

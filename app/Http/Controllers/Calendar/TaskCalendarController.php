@@ -180,7 +180,7 @@ class TaskCalendarController extends Controller
         $validated = $request->validate([
             'new_date' => 'required|date',
             'new_time' => 'nullable|date_format:H:i',
-            'estimated_hours' => 'nullable|numeric|min:0.5|max:12',
+            'estimated_hours' => 'nullable|numeric|min:0.5|max:12',z
         ]);
 
         // Check for conflicts with new schedule

@@ -1007,7 +1007,7 @@ class PaymentController extends Controller
                 return strtolower($payment->maintenance_type) === 'equipment/parts';
             })->sum('cost');
             $serviceCost = $filteredPeriodPayments->where('maintenance_type', 'Service')->sum('cost');
-//dd($equipmentCost);
+        //dd($equipmentCost);
             // Use model scopes for time period calculations
             $thisMonthCost = (clone $storeQuery)->thisMonth()->sum('cost');
             $fourWeeksCost = (clone $storeQuery)->within4Weeks()->sum('cost');

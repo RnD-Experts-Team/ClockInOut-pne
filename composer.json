@@ -13,7 +13,7 @@
         "image-charts/image-charts": "^6.1",
         "intervention/image": "^3.11",
         "laravel/framework": "^11.31",
-        "laravel/sanctum": "^4.0",
+        "laravel/sanctum": "^4.3",
         "laravel/tinker": "^2.9",
         "maatwebsite/excel": "^3.1",
         "mohsen-mhm/laravel-image-charts": "^1.5",
