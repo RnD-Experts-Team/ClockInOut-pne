@@ -77,41 +77,10 @@ Route::middleware(['auth', RoleMiddleware::class . ':user'])->group(function () 
 });
 //||||done الي فوق
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+Route::middleware(['role:admin'])->group(function () {
+    Route::resource('users', UserController::class);
+});
+//done users
 
 // PRIORITY 4: Profile Routes (All authenticated users)
 Route::middleware('auth')->group(function () {
@@ -120,12 +89,16 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
+//ماعم نستخددم هذه ال endpoints لهيك ما ضفتهن
+
+
+
 // PRIORITY 5: Calendar System Routes (Core functionality)
 Route::middleware(['auth'])->group(function () {
     // Main Calendar Routes
     Route::prefix('calendar')->name('calendar.')->group(function () {
         Route::get('/', [CalendarController::class, 'index'])->name('index');
-        Route::get('/events', [CalendarController::class, 'getEvents'])->name('events');
+        Route::get('/events', [CalendarController::class,  'getEvents'])->name('events');
         Route::get('/filters', [CalendarController::class, 'getFilters'])->name('filters');
         Route::get('/month', [CalendarController::class, 'monthView'])->name('month');
         Route::get('/week/{date?}', [CalendarController::class, 'weekView'])->name('week');
@@ -229,9 +202,33 @@ Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth', RoleMiddleware::class . ':admin'])->name('dashboard');
 
-Route::middleware(['role:admin'])->group(function () {
-    Route::resource('users', UserController::class);
-});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // PRIORITY 8: Admin Clocking Management
 Route::middleware(['auth', RoleMiddleware::class . ':admin'])->group(function () {

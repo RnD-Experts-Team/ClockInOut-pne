@@ -27,3 +27,5 @@ require __DIR__ . '/api/Language.php';
 require __DIR__ . '/api/auth.php';
 require __DIR__ . '/api/attendance.php';
 require __DIR__ . '/api/clocking.php';
+require __DIR__ . '/api/users.php';
+require __DIR__ . '/api/calendar.php';
