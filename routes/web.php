@@ -91,8 +91,6 @@ Route::middleware('auth')->group(function () {
 
 //ماعم نستخددم هذه ال endpoints لهيك ما ضفتهن
 
-
-
 // PRIORITY 5: Calendar System Routes (Core functionality)
 Route::middleware(['auth'])->group(function () {
     // Main Calendar Routes
@@ -113,6 +111,10 @@ Route::middleware(['auth'])->group(function () {
         });
     });
 });
+
+//all done || calendar
+
+
 
 // PRIORITY 6: Business Operations (Frequent use)
 Route::middleware(['auth'])->group(function () {

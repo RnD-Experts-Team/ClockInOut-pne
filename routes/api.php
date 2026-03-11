@@ -8,19 +8,19 @@ use App\Http\Controllers\MaintenanceRequestController;
 use App\Http\Middleware\RoleMiddleware;
 
 
-Route::post('/webhook/maintenance', [MaintenanceWebhookController::class, 'handleWebhook']);
+// Route::post('/webhook/maintenance', [MaintenanceWebhookController::class, 'handleWebhook']);
 
-// API endpoint to get maintenance requests by store
-Route::get('/maintenance-requests/by-store/{storeId}', [MaintenanceRequestController::class, 'getByStore'])->middleware(['web', 'auth', RoleMiddleware::class . ':admin']);
+// // API endpoint to get maintenance requests by store
+// Route::get('/maintenance-requests/by-store/{storeId}', [MaintenanceRequestController::class, 'getByStore'])->middleware(['web', 'auth', RoleMiddleware::class . ':admin']);
 
-Route::get(
-    '/stores/{store_id}/maintenance-requests',
-    [MaintenanceRequestController::class, 'getLatestByStore']
-)
-    ->middleware(['auth.token.store']);
-// 
+// Route::get(
+//     '/stores/{store_id}/maintenance-requests',
+//     [MaintenanceRequestController::class, 'getLatestByStore']
+// )
+//     ->middleware(['auth.token.store']);
+// // 
 
-Route::get('/maintenance-requests/{maintenanceRequest}', [MaintenanceRequestController::class, 'showAPI'])->middleware(['auth.token.store']);
+// Route::get('/maintenance-requests/{maintenanceRequest}', [MaintenanceRequestController::class, 'showAPI'])->middleware(['auth.token.store']);
 
 
 require __DIR__ . '/api/Language.php';
@@ -29,3 +29,4 @@ require __DIR__ . '/api/attendance.php';
 require __DIR__ . '/api/clocking.php';
 require __DIR__ . '/api/users.php';
 require __DIR__ . '/api/calendar.php';
+require __DIR__ . '/api/maintenanceRequests.php';

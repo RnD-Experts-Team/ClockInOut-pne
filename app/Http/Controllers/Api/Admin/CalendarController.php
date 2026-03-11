@@ -1,11 +1,13 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Services\Api\CalendarEventFormatterService;
+use App\Services\Api\Admin\CalendarEventFormatterService;
 use Illuminate\Http\Request;
-use App\Services\Api\CalendarService;
+use App\Services\Api\Admin\CalendarService;
+use App\Services\Api\Admin\DailyEventsService;
+use App\Services\Api\Admin\DailyOverviewService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\JsonResponse;
@@ -15,16 +17,20 @@ class CalendarController extends Controller
 
     protected $calendarService;
     protected $formatterService;
-
-    public function __construct(CalendarService $calendarService, CalendarEventFormatterService $formatterService)
+    protected $dailyOverviewService;
+    protected $dailyEventsService;
+    public function __construct(CalendarService $calendarService,
+                                CalendarEventFormatterService $formatterService,
+                                DailyOverviewService $dailyOverviewService,
+                                DailyEventsService $dailyEventsService)
     {
         $this->calendarService = $calendarService;
         $this->formatterService = $formatterService;
+        $this->dailyOverviewService = $dailyOverviewService;
+        $this->dailyEventsService = $dailyEventsService;
 
     }
- 
-   
-
+    
     public function index(Request $request)
     {
         try {
@@ -85,7 +91,7 @@ class CalendarController extends Controller
             ], 500);
         }
     }
-      public function getEvents(Request $request): JsonResponse
+    public function getEvents(Request $request): JsonResponse
     {
         try {
 
@@ -126,6 +132,59 @@ class CalendarController extends Controller
             return response()->json([]);
         }
     }
+    public function getFilters(Request $request): JsonResponse
+    {
+        return response()->json([
+            'event_types' => [
+                'expiration' => 'Lease Expirations',
+                'maintenance_request' => 'Maintenance Requests',
+                'clock_event' => 'Clock Events',
+                'admin_action' => 'Admin Actions',
+                'reminder' => 'Reminders'
+            ]
+        ]);
+    }
+    public function monthView(Request $request): JsonResponse
+    {
+        return $this->index($request);
+    }
+    public function weekView(Request $request, ?string $date = null): JsonResponse
+    {
+        try {
+
+            $selectedDate = $this->calendarService->weekView($date);
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'selectedDate' => $selectedDate->format('Y-m-d')
+                ]
+            ]);
+
+        } catch (\Throwable $e) {
+
+            Log::error("Error in weekView: " . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to load week view',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+    public function dailyOverview(Request $request, ?string $date = null): JsonResponse
+    {
+        $data = $this->dailyOverviewService->handle($date);
+        return response()->json($data);
+    }
+
+    public function getDailyEvents(Request $request, string $date): JsonResponse
+    {
+        return response()->json(
+            $this->dailyEventsService->handle($date)
+        );
+    }
+  
 
 
 }

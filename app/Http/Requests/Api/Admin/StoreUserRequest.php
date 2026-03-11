@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Http\Requests\Api;
+namespace App\Http\Requests\Api\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class UpdateUserRequest extends FormRequest
+class StoreUserRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -15,11 +15,10 @@ class UpdateUserRequest extends FormRequest
     {
         return [
             'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:8',
             'role' => 'required|in:admin,user,store_manager',
             'hourly_pay' => 'required|numeric|min:0',
-            'password' => 'nullable|string|min:8',
-            'managed_stores' => 'nullable|array',
-            'managed_stores.*' => 'exists:stores,id',
         ];
     }
 }

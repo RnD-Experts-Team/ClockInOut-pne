@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Api;
+namespace App\Services\Api\Admin;
 use App\Models\CalendarEvent;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -12,6 +12,7 @@ use App\Models\MaintenanceRequest;
 use App\Models\Clocking;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+
 class CalendarService
 {
     
@@ -650,6 +651,33 @@ class CalendarService
 
             return [];
         }
+    }
+    public function weekView(?string $date)
+    {
+        try {
+
+            $selectedDate = $date ? Carbon::parse($date) : Carbon::today();
+
+            return $selectedDate;
+
+        } catch (\Throwable $e) {
+            throw $e;
+        }
+    }
+    public function getDailyEventsGrouped(Carbon $date): array
+    {
+        $nextDay = $date->copy()->addDay();
+        $events = $this->getEventsForDateRange($date, $nextDay);
+
+        return [
+            'lease_expirations' => $events->where('event_type', 'expiration')->values(),
+            'lease_renewals' => $events->whereIn('event_type', ['apartment_lease_renewal', 'lease_renewal'])->values(), // ➕ NEW
+            'maintenance_requests' => $events->where('event_type', 'maintenance_request')->values(),
+            'clock_events' => $events->where('event_type', 'clock_event')->values(),
+            'admin_actions' => $events->where('event_type', 'admin_action')->values(),
+            'reminders' => $events->where('event_type', 'reminder')->values(),
+            'custom_events' => $events->where('event_type', 'custom')->values(),
+        ];
     }
 
 

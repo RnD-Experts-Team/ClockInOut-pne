@@ -355,7 +355,6 @@ class MaintenanceRequestController extends Controller
 
         try {
             DB::beginTransaction();
-
             $newStatus = $request->input('status');
             $reason = $request->input('reason');
             $costs = $request->input('costs');
@@ -415,7 +414,6 @@ class MaintenanceRequestController extends Controller
                 $updateData['current_task_assignment_id'] = null;
             }
             $maintenanceRequest->update($updateData);
-
             // Record status change
             $maintenanceRequest->statusHistories()->create([
                 'old_status' => $maintenanceRequest->getOriginal('status'),

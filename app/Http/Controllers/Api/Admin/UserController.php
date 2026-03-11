@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Services\Api\UserService;
-use App\Http\Requests\Api\StoreUserRequest;
-use App\Http\Requests\Api\UpdateUserRequest;
+use App\Services\Api\Admin\UserService;
+use App\Http\Requests\Api\Admin\StoreUserRequest;
+use App\Http\Requests\Api\Admin\UpdateUserRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 

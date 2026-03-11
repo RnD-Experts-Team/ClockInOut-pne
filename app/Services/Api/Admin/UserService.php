@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Api;
+namespace App\Services\Api\Admin;
 
 use App\Models\User;
 use App\Models\Store;
