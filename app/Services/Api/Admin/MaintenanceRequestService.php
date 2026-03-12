@@ -397,4 +397,401 @@ class MaintenanceRequestService
             ]);
         }
     }
+    public function export($request)
+    {
+        try {
+
+            $query = MaintenanceRequest::with([
+                'requester',
+                'reviewedByManager',
+                'urgencyLevel',
+                'store',
+                'assignedTo'
+            ])->select([
+                'id',
+                'entry_number',
+                'store_id',
+                'equipment_with_issue',
+                'description_of_issue',
+                'status',
+                'costs',
+                'how_we_fixed_it',
+                'urgency_level_id',
+                'assigned_to',
+                'due_date',
+                'task_end_date', // ADD THIS
+                'request_date',
+                'date_submitted',
+                'created_at',
+                'requester_id',
+                'reviewed_by_manager_id'
+            ]);
+
+            if ($request->has('status') && $request->status !== 'all') {
+                $query->where('status', $request->status);
+            }
+
+            if ($request->has('urgency') && $request->urgency !== 'all') {
+                $query->where('urgency_level_id', $request->urgency);
+            }
+
+            if ($request->has('store_id') && $request->store_id !== 'all') {
+                $query->where('store_id', $request->store_id);
+            }
+
+            if ($request->has('date_range') && $request->date_range !== 'all') {
+
+                switch ($request->date_range) {
+
+                    case 'this_week':
+                        $query->whereBetween('created_at', [
+                            Carbon::now()->startOfWeek(),
+                            Carbon::now()->endOfWeek()
+                        ]);
+                        break;
+
+                    case 'this_month':
+                        $query->whereBetween('created_at', [
+                            Carbon::now()->startOfMonth(),
+                            Carbon::now()->endOfMonth()
+                        ]);
+                        break;
+
+                    case 'this_year':
+                        $query->whereBetween('created_at', [
+                            Carbon::now()->startOfYear(),
+                            Carbon::now()->endOfYear()
+                        ]);
+                        break;
+
+                    case 'custom':
+                        if ($request->has('start_date') && $request->has('end_date')) {
+                            $query->whereBetween('created_at', [
+                                Carbon::parse($request->start_date)->startOfDay(),
+                                Carbon::parse($request->end_date)->endOfDay()
+                            ]);
+                        }
+                        break;
+                }
+            }
+
+            $requests = $query->get();
+
+            $csvData = [];
+        // UPDATED: Add Task End Date to CSV headers
+
+            $csvData[] = [
+                'ID',
+                'Entry Number',
+                'Store Number',
+                'Store Name',
+                'Requester',
+                'Manager',
+                'Equipment',
+                'Description',
+                'Urgency',
+                'Status',
+                'Assigned To',
+                'Due Date',
+                'Task End Date', // NEW COLUMN
+                'Request Date',
+                'Submitted Date',
+                'Costs',
+                'How We Fixed It',
+                'Created At'
+            ];
+
+             foreach ($requests as $request) {
+            $csvData[] = [
+                $request->id,
+                $request->entry_number,
+                $request->store ? $request->store->store_number : $request->store,
+                $request->store ? $request->store->name : 'N/A',
+                $request->requester ? $request->requester->name : 'N/A',
+                $request->reviewedByManager ? $request->reviewedByManager->name : 'N/A',
+                $request->equipment_with_issue,
+                substr($request->description_of_issue, 0, 100) . (strlen($request->description_of_issue) > 100 ? '...' : ''),
+                $request->urgencyLevel ? $request->urgencyLevel->name : 'N/A',
+                ucfirst(str_replace('_', ' ', $request->status)),
+                $request->assignedTo ? $request->assignedTo->name : 'N/A',
+                $request->due_date ? $request->due_date->format('Y-m-d H:i') : 'N/A',
+                $request->task_end_date ? $request->task_end_date->format('Y-m-d H:i') : 'N/A', // NEW DATA
+                $request->request_date ? $request->request_date->format('Y-m-d') : 'N/A',
+                $request->date_submitted ? $request->date_submitted->format('Y-m-d H:i:s') : 'N/A',
+                $request->costs ?? '',
+                $request->how_we_fixed_it ?? '',
+                $request->created_at->format('Y-m-d H:i:s')
+            ];
+        }
+
+            return $csvData;
+
+        } catch (\Exception $e) {
+
+            throw $e;
+
+        }
+    }
+    public function index($request)
+    {
+
+        $query = MaintenanceRequest::with([
+            'requester',
+            'reviewedByManager',
+            'urgencyLevel',
+            'attachments',
+            'links',
+            'store',
+            'assignedTo',
+            'taskAssignments' => function ($q) {
+                $q->orderBy('assigned_at', 'desc')->with('assignedUser');
+            }
+        ])->select([
+            'id',
+            'entry_number',
+            'form_id',
+            'store_id',
+            'description_of_issue',
+            'urgency_level_id',
+            'equipment_with_issue',
+            'basic_troubleshoot_done',
+            'request_date',
+            'date_submitted',
+            'status',
+            'costs',
+            'how_we_fixed_it',
+            'requester_id',
+            'reviewed_by_manager_id',
+            'webhook_id',
+            'not_in_cognito',
+            'assigned_to',
+            'due_date',
+            'assignment_source',
+            'current_task_assignment_id',
+            'task_end_date',
+            'created_at',
+            'updated_at'
+        ]);
+        // Create a base query for status counts
+
+        $baseQuery = clone $query;
+        // Filter by urgency if provided
+
+        if ($request->has('urgency') && $request->urgency !== 'all') {
+            $query->where('urgency_level_id', $request->urgency);
+            $baseQuery->where('urgency_level_id', $request->urgency);
+        }
+        // Filter by store if provided
+
+        if ($request->has('store') && $request->store !== 'all') {
+
+            if ($request->store) {
+
+                $storeValue = $request->store;
+
+                if (is_string($storeValue) && str_starts_with($storeValue, '{')) {
+                    $storeData = json_decode($storeValue, true);
+                    $storeId = $storeData['id'] ?? null;
+                } else {
+                    $storeId = is_numeric($storeValue) ? $storeValue : null;
+                }
+
+                if ($storeId) {
+
+                    $storeFilter = function ($q) use ($storeId) {
+                        $q->where('store_id', $storeId);
+                    };
+
+                } else {
+
+                    $storeFilter = function ($q) use ($storeValue) {
+                        $q->whereHas('store', function ($subQ) use ($storeValue) {
+                            $subQ->where('store_number', $storeValue)
+                                ->orWhere('name', $storeValue)
+                                ->orWhere(function ($partialQ) use ($storeValue) {
+                                    $partialQ->where('store_number', 'LIKE', '%' . $storeValue . '%')
+                                        ->orWhere('name', 'LIKE', '%' . $storeValue . '%');
+                                });
+                        });
+                    };
+
+                }
+
+                $query->where($storeFilter);
+                $baseQuery->where($storeFilter);
+            }
+        }
+        // Date range filter
+
+        if ($request->has('date_range') && $request->date_range !== 'all') {
+            $dateFilter = function ($q) use ($request) {
+                switch ($request->date_range) {
+                    case 'this_week':
+                        $q->whereBetween('created_at', [
+                            Carbon::now()->startOfWeek(),
+                            Carbon::now()->endOfWeek()
+                        ]);
+                        break;
+                    case 'this_month':
+                        $q->whereBetween('created_at', [
+                            Carbon::now()->startOfMonth(),
+                            Carbon::now()->endOfMonth()
+                        ]);
+                        break;
+                    case 'this_year':
+                        $q->whereBetween('created_at', [
+                            Carbon::now()->startOfYear(),
+                            Carbon::now()->endOfYear()
+                        ]);
+                        break;
+                    case 'custom':
+                        if ($request->has('start_date') && $request->has('end_date')) {
+                            $q->whereBetween('created_at', [
+                                Carbon::parse($request->start_date)->startOfDay(),
+                                Carbon::parse($request->end_date)->endOfDay()
+                            ]);
+                        }
+                        break;
+                }
+
+            };
+
+            $query->where($dateFilter);
+            $baseQuery->where($dateFilter);
+        }
+        // Search functionality
+
+        if ($request->has('search') && $request->search) {
+            $searchFilter = function ($q) use ($request) {
+                $search = $request->search;
+                $q->where('description_of_issue', 'like', "%{$search}%")
+                    ->orWhere('equipment_with_issue', 'like', "%{$search}%")
+                    ->orWhere('entry_number', 'like', "%{$search}%")
+                    ->orWhereHas('requester', function ($q) use ($search) {
+                        $q->where('first_name', 'like', "%{$search}%")
+                            ->orWhere('last_name', 'like', "%{$search}%")
+                            ->orWhere(DB::raw("CONCAT(first_name, ' ', last_name)"), 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('store', function ($q) use ($search) {
+                        $q->where('store_number', 'like', "%{$search}%")
+                            ->orWhere('name', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('assignedTo', function ($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%");
+                    });
+
+            };
+
+            $query->where($searchFilter);
+            $baseQuery->where($searchFilter);
+        }
+        // Apply status filter to main query
+
+        $selectedStatus = null;
+
+        if ($request->has('status') && $request->status !== 'all') {
+            $selectedStatus = $request->status;
+            $query->where('status', $selectedStatus);
+            $baseQuery->where('status', $selectedStatus);
+        }
+
+        $query->orderBy('urgency_level_id', 'asc')
+            ->orderBy('created_at', 'desc');
+
+        $maintenanceRequests = $query->paginate(15)->withQueryString();
+
+        $urgencyLevels = UrgencyLevel::orderBy('priority_order')->get();
+        $stores = Store::orderBy('store_number')->get();
+        $users = User::where('role', 'user')->orderBy('name')->get();
+
+        if ($selectedStatus) {
+            $totalCount = $baseQuery->count();
+            $statusCounts = [
+                'all' => $totalCount,
+                'on_hold' => $selectedStatus === 'on_hold' ? $totalCount : 0,
+                'received' => $selectedStatus === 'received' ? $totalCount : 0,
+                'in_progress' => $selectedStatus === 'in_progress' ? $totalCount : 0,
+                'done' => $selectedStatus === 'done' ? $totalCount : 0,
+                'canceled' => $selectedStatus === 'canceled' ? $totalCount : 0,
+            ];
+
+        } else {
+
+            $statusCounts = [
+                'all' => $baseQuery->count(),
+                'on_hold' => (clone $baseQuery)->where('status', 'on_hold')->count(),
+                'received' => (clone $baseQuery)->where('status', 'received')->count(),
+                'in_progress' => (clone $baseQuery)->where('status', 'in_progress')->count(),
+                'done' => (clone $baseQuery)->where('status', 'done')->count(),
+                'canceled' => (clone $baseQuery)->where('status', 'canceled')->count(),
+            ];
+
+        }
+
+        $assignedUsers = User::whereHas('taskAssignments')
+            ->orderBy('name')
+            ->get();
+
+       return [
+        'maintenanceRequests' => $maintenanceRequests,
+        'urgencyLevels' => $urgencyLevels,
+        'stores' => $stores,
+        'statusCounts' => $statusCounts,
+        'users' => $users,
+        'assignedUsers' => $assignedUsers,
+    ];
+    }
+    public function show($maintenanceRequest): array
+    {
+        $maintenanceRequest->load([
+            'requester',
+            'reviewedByManager',
+            'urgencyLevel',
+            'attachments',
+            'links',
+            'store',
+            'statusHistories.changedByUser',
+            'assignedTo'
+        ]);
+
+        $users = User::where('role', 'user')
+            ->orderBy('name')
+            ->get();
+
+        return [
+            'maintenanceRequest' => $maintenanceRequest,
+            'users' => $users
+        ];
+    }
+    public function destroy(MaintenanceRequest $maintenanceRequest): bool
+    {
+        try {
+
+            DB::beginTransaction();
+
+            // Delete related records
+            $maintenanceRequest->attachments()->delete();
+            $maintenanceRequest->links()->delete();
+            $maintenanceRequest->statusHistories()->delete();
+            $maintenanceRequest->webhookNotifications()->delete();
+
+            // Force delete
+            $maintenanceRequest->forceDelete();
+
+            DB::commit();
+
+            return true;
+
+        } catch (\Exception $e) {
+
+            DB::rollback();
+
+            Log::error('Delete failed', [
+                'exception' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            throw $e;
+        }
+    }
 }

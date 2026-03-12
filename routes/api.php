@@ -30,3 +30,4 @@ require __DIR__ . '/api/clocking.php';
 require __DIR__ . '/api/users.php';
 require __DIR__ . '/api/calendar.php';
 require __DIR__ . '/api/maintenanceRequests.php';
+require __DIR__ . '/api/Lease.php';

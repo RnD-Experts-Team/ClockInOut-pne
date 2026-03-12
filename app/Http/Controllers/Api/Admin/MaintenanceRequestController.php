@@ -7,9 +7,10 @@ use App\Http\Requests\Api\Admin\UpdateMaintenanceStatusRequest;
 use App\Http\Requests\Api\Admin\BulkUpdateMaintenanceStatusRequest;
 use App\Models\MaintenanceRequest;
 use App\Services\Api\Admin\MaintenanceRequestService;
-use App\Services\CognitoFormsService;
 use Illuminate\Http\JsonResponse;
+
 use Illuminate\Support\Facades\Log;
+use Illuminate\Http\Request;
 
 class MaintenanceRequestController extends Controller
 {
@@ -39,14 +40,7 @@ class MaintenanceRequestController extends Controller
         ]);
     }
 
-    public function index(): JsonResponse
-    {
-        return response()->json([
-            'success' => true,
-            'message' => 'Maintenance requests retrieved successfully',
-            'data' => [],
-        ], 200);
-    }
+ 
     public function bulkUpdateStatus(
         BulkUpdateMaintenanceStatusRequest $request,
         MaintenanceRequestService $service
@@ -73,47 +67,105 @@ class MaintenanceRequestController extends Controller
             ], 422);
         }
     }
-    private function updateCognitoStatus(MaintenanceRequest $maintenanceRequest, string $newStatus, ?string $howWeFixedIt = null): void
+    public function export(Request $request)
     {
-        $formId = $maintenanceRequest->form_id;
-        $entryId = $maintenanceRequest->entry_number;
-
-        if (!$formId) {
-            return;
-        }
-
         try {
-            $cognitoService = app(CognitoFormsService::class);
 
-            $cognitoStatusMap = [
-                'on_hold' => 'On Hold',
-                'received' => 'Received', // CHANGED: reserved → received
-                'in_progress' => 'In Progress',
-                'done' => 'Done',
-                'canceled' => 'Canceled'
+            $csvData = $this->maintenanceService->export($request);
+
+             $filename = 'maintenance_requests_' . date('Y-m-d_H-i-s') . '.csv';
+
+            $headers = [
+                'Content-Type' => 'text/csv',
+                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
             ];
+            return response()->stream(function () use ($csvData) {
 
-            $cognitoData = [
-                'CorrespondenceInternalUseOnly' => [
-                    'Status' => $cognitoStatusMap[$newStatus] ?? $newStatus,
-                    'NotesFromMaintenanceTeam' => $howWeFixedIt,
-                ],
-                'Entry' => [
-                    'Action' => 'Update',
-                    'Role' => 'Internal',
-                ]
-            ];
+                $file = fopen('php://output', 'w');
 
-            $cognitoService->updateEntry($formId, $entryId, $cognitoData);
-        } catch (\Exception $e) {
-            // Log but don't fail the entire operation
-            Log::warning('Failed to update Cognito for maintenance request', [
-                'maintenance_request_id' => $maintenanceRequest->id,
-                'form_id' => $formId,
-                'entry_id' => $entryId,
+                foreach ($csvData as $row) {
+                    fputcsv($file, $row);
+                }
+
+                fclose($file);
+
+            }, 200, $headers);
+
+        } catch (\Throwable $e) {
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Export failed',
                 'error' => $e->getMessage()
-            ]);
+            ], 500);
         }
     }
+    public function index(Request $request)
+    {
+        try{
+            $data = $this->maintenanceService->index($request);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Maintenance requests fetched successfully.',
+                'data' => $data,
+            ], 200);
+        }catch (\Throwable $e) {
+
+            return response()->json([
+                'success' => false,
+                'message' => 'failed',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+
+        
+    }
+    public function show(MaintenanceRequest $maintenanceRequest)
+    {
+        try {
+
+            $data = $this->maintenanceService->show($maintenanceRequest);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Maintenance request fetched successfully.',
+                'data' => $data
+            ], 200);
+
+        } catch (\Throwable $e) {
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch maintenance request.',
+                'error' => $e->getMessage()
+            ], 500);
+
+        }
+    }
+    public function destroy(MaintenanceRequest $maintenanceRequest): JsonResponse
+    {
+        try {
+
+            $this->maintenanceService->destroy($maintenanceRequest);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Maintenance request deleted successfully.'
+            ], 200);
+
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete request.',
+                'error' => $e->getMessage()
+            ], 500);
+
+        }
+    }
+    
+    
+  
 
 }

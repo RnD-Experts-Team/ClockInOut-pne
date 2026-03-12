@@ -317,7 +317,6 @@ class LeaseController extends Controller
             'landlord_phone' => 'nullable|string|max:255',
             'landlord_address' => 'nullable|string',
             'comments' => 'nullable|string',
-            // NEW RENEWAL FIELDS
             'renewal_date' => 'nullable|date',
             'renewal_notes' => 'nullable|string',
             'renewal_status' => 'nullable|in:pending,in_progress,completed,declined',
@@ -348,7 +347,6 @@ class LeaseController extends Controller
                 $validated['renewal_created_by'] = Auth::id();
                 $validated['renewal_reminder_sent'] = false; // Reset reminder flag
                 $validated['renewal_reminder_sent_at'] = null;
-
                 if (!$validated['renewal_status']) {
                     $validated['renewal_status'] = 'pending';
                 }
@@ -481,7 +479,6 @@ class LeaseController extends Controller
     public function export(Request $request)
     {
         $query = Lease::with('store', 'renewalCreatedBy');
-
         if ($request->has('search') && $request->search) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
@@ -518,7 +515,6 @@ class LeaseController extends Controller
             'Franchise Expiration', 'Renewal Options', 'Current Term Override',
             'Lease Expiration', 'SQF', 'HVAC', 'Total Rent', 'Current Term', 'Time Left Current Term',
             'Time Left Last Term', 'Lease to Sales Ratio', 'Time Until Franchise Expires',
-            // NEW RENEWAL COLUMNS
             'Renewal Date', 'Renewal Status', 'Renewal Notes', 'Renewal Created By', 'Days Until Renewal',
             'Created At'
         ];
@@ -551,7 +547,6 @@ class LeaseController extends Controller
                 $lease->time_until_last_term_ends ? $lease->time_until_last_term_ends['formatted'] : 'N/A',
                 $lease->lease_to_sales_ratio ? number_format($lease->lease_to_sales_ratio * 100, 2) . '%' : 'N/A',
                 $lease->time_until_franchise_expires ? $lease->time_until_franchise_expires['formatted'] : 'N/A',
-                // NEW RENEWAL DATA
                 $lease->renewal_date ? $lease->renewal_date->format('Y-m-d') : 'Not Set',
                 $lease->renewal_status ? ucfirst($lease->renewal_status) : 'N/A',
                 $lease->renewal_notes ?? '',
@@ -592,12 +587,9 @@ class LeaseController extends Controller
 
         try {
             DB::beginTransaction();
-
             $import = new LeaseImport();
             Excel::import($import, $request->file('import_file'));
-
             $errors = $import->getErrors();
-
             if (!empty($errors)) {
                 DB::rollback();
                 return back()->withErrors([
@@ -701,13 +693,13 @@ class LeaseController extends Controller
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
         ];
 
-        $callback = function() use ($csvData) {
+       $callback = function() use ($csvData) {
             $file = fopen('php://output', 'w');
             foreach ($csvData as $row) {
                 fputcsv($file, $row);
             }
             fclose($file);
-        };
+        }; 
 
         return response()->stream($callback, 200, $headers);
     }

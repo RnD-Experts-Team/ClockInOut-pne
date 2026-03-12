@@ -133,6 +133,7 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('maintenance-requests', MaintenanceRequestController::class)->only([
         'index', 'show', 'destroy'
     ]);
+    //DONE 
 
     Route::post('leases/portfolio-stats', [App\Http\Controllers\LeaseController::class, 'getPortfolioStats'])
         ->name('leases.portfolio-stats');
