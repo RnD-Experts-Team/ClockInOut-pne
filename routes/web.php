@@ -150,6 +150,9 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('leases', App\Http\Controllers\LeaseController::class);
     Route::get('leases-export', [App\Http\Controllers\LeaseController::class, 'export'])
         ->name('leases.export');
+//done
+
+
 
     Route::resource('stores', StoreController::class);
     Route::patch('stores/{store}/toggle-status', [StoreController::class, 'toggleStatus'])
