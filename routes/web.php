@@ -169,13 +169,31 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('my-tasks/{taskAssignment}/status', [UserTaskController::class, 'updateStatus'])
         ->name('user.tasks.update-status');
     
+//done
+ // Optional: API routes for AJAX calls
+    Route::prefix('api')->group(function () {
+        Route::get('stores/search', [StoreController::class, 'search'])->name('api.stores.search');
+    });
+        Route::get('dashboard', [PaymentController::class, 'dashboard'])->name('dashboard');
+    Route::get('/leases/export/landlord-contact-image', [LeaseController::class, 'exportLandlordContactImage'])->name('leases.export.landlord-contact-image');
+    Route::get('/leases/export/cost-breakdown-image', [LeaseController::class, 'exportCostBreakdownImage'])->name('leases.export.cost-breakdown-image');
+    Route::get('/leases/export/lease-tracker-image', [LeaseController::class, 'exportLeaseTrackerImage'])->name('leases.export.lease-tracker-image');
+    //not found method
 
-
-
-
+// PRIORITY 6B: Native Maintenance Requests - Store Manager
+Route::prefix('requests')
+    ->middleware(['auth', RoleMiddleware::class . ':store_manager'])
+    ->name('native.requests.')
+    ->group(function () {
+        Route::get('/create', [App\Http\Controllers\NativeRequestController::class, 'create'])->name('create');
+        Route::post('/', [App\Http\Controllers\NativeRequestController::class, 'store'])->name('store');
+        Route::get('/', [App\Http\Controllers\NativeRequestController::class, 'index'])->name('index');
+        Route::get('/{request}', [App\Http\Controllers\NativeRequestController::class, 'show'])->name('show');
+    });
 
         
-    Route::get('dashboard', [PaymentController::class, 'dashboard'])->name('dashboard');
+
+
 
     Route::post('payments/portfolio-stats', [PaymentController::class, 'portfolioStats'])->name('payments.portfolio-stats');
 
@@ -194,27 +212,13 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('payments', PaymentController::class);
 
 
-    // Optional: API routes for AJAX calls
-    Route::prefix('api')->group(function () {
-        Route::get('stores/search', [StoreController::class, 'search'])->name('api.stores.search');
-    });
+   
 
     Route::post('/apartment-leases/import-xlsx', [ApartmentLeaseController::class, 'importXlsx'])->name('admin.apartment-leases.import-xlsx');
-    Route::get('/leases/export/landlord-contact-image', [LeaseController::class, 'exportLandlordContactImage'])->name('leases.export.landlord-contact-image');
-    Route::get('/leases/export/cost-breakdown-image', [LeaseController::class, 'exportCostBreakdownImage'])->name('leases.export.cost-breakdown-image');
-    Route::get('/leases/export/lease-tracker-image', [LeaseController::class, 'exportLeaseTrackerImage'])->name('leases.export.lease-tracker-image');
+
 });
 
-// PRIORITY 6B: Native Maintenance Requests - Store Manager
-Route::prefix('requests')
-    ->middleware(['auth', RoleMiddleware::class . ':store_manager'])
-    ->name('native.requests.')
-    ->group(function () {
-        Route::get('/create', [App\Http\Controllers\NativeRequestController::class, 'create'])->name('create');
-        Route::post('/', [App\Http\Controllers\NativeRequestController::class, 'store'])->name('store');
-        Route::get('/', [App\Http\Controllers\NativeRequestController::class, 'index'])->name('index');
-        Route::get('/{request}', [App\Http\Controllers\NativeRequestController::class, 'show'])->name('show');
-    });
+
 
 // PRIORITY 7: Admin Dashboard Routes
 Route::get('/dashboard', function () {

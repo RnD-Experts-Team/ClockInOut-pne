@@ -40,7 +40,7 @@ class NativeRequestController extends Controller
         $nativeRequest = NativeRequest::create([
             'store_id' => $request->store_id,
             'requester_id' => auth()->id(),
-            'is_from_cognito' => false, // Native page submission
+            'is_from_cognito' => false,
             'equipment_with_issue' => $request->equipment_with_issue,
             'description_of_issue' => $request->description_of_issue,
             'urgency_level_id' => $request->urgency_level_id,
