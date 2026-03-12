@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\Admin\UpdateGasRateRequest;
 use App\Http\Requests\Api\ClockInRequest;
 use App\Http\Requests\Api\ClockOutRequest;
 use App\Services\Api\ClockingService;
 use Illuminate\Http\Request;
+use App\Http\Requests\Api\Admin\UpdateClockingRequest;
 
 class ClockingController extends Controller
 {
@@ -26,7 +28,7 @@ class ClockingController extends Controller
             'data' => $data
         ]);
     }
-      public function clockIn(ClockInRequest $request)
+    public function clockIn(ClockInRequest $request)
     {
         $clocking = $this->clockingService->clockIn($request);
 
@@ -56,6 +58,91 @@ class ClockingController extends Controller
             'message' => 'تم تسجيل الإنصراف بنجاح',
             'data' => $result
         ]);
+    }
+  
+
+    public function updateGasRate(UpdateGasRateRequest $request)
+    {
+        try {
+
+            $this->clockingService->updateGasRate($request->gas_payment_rate);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Gas payments rate updated successfully'
+            ]);
+
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage()
+            ], 500);
+
+        }
+    }
+
+
+    public function destroy($id)
+    {
+        try {
+
+            $this->clockingService->deleteClocking($id);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Record deleted successfully'
+            ]);
+
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage()
+            ], 500);
+
+        }
+    }
+    public function ClockingTable(Request $request)
+    {
+        try {
+
+            $data = $this->clockingService->clockingTable($request);
+
+            return response()->json([
+                'status' => true,
+                'data' => $data
+            ]);
+
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage()
+            ], 500);
+
+        }
+    }
+
+    public function updateClocking(UpdateClockingRequest $request)
+    {
+        try {
+
+            $clocking = $this->clockingService->updateClocking($request);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Clocking record updated successfully.',
+                'data' => $clocking
+            ]);
+
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage()
+            ], 422);
+        }
     }
      
 }

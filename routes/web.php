@@ -190,6 +190,17 @@ Route::prefix('requests')
         Route::get('/', [App\Http\Controllers\NativeRequestController::class, 'index'])->name('index');
         Route::get('/{request}', [App\Http\Controllers\NativeRequestController::class, 'show'])->name('show');
     });
+    //done
+
+    // PRIORITY 8: Admin Clocking Management
+    Route::middleware(['auth', RoleMiddleware::class . ':admin'])->group(function () {
+        Route::get('/admin/clockings', [ClockingController::class, 'ClockingTable'])->name('admin.clocking');
+        Route::post('/admin/clocking/update-gas-rate', [ClockingController::class, 'updateGasRate'])
+            ->name('admin.clocking.updateGasRate');
+        Route::delete('/admin/clocking/{id}', [ClockingController::class, 'destroy'])->name('admin.clocking.destroy');
+    });
+    Route::post('/admin/clocking/update', [ClockingController::class, 'updateClocking'])
+    ->name('admin.clocking.update');
 
         
 
@@ -253,20 +264,13 @@ Route::get('/dashboard', function () {
 
 
 
-// PRIORITY 8: Admin Clocking Management
-Route::middleware(['auth', RoleMiddleware::class . ':admin'])->group(function () {
-    Route::get('/admin/clockings', [ClockingController::class, 'ClockingTable'])->name('admin.clocking');
-    Route::post('/admin/clocking/update-gas-rate', [ClockingController::class, 'updateGasRate'])
-        ->name('admin.clocking.updateGasRate');
-    Route::delete('/admin/clocking/{id}', [ClockingController::class, 'destroy'])->name('admin.clocking.destroy');
-});
+
 
 Route::middleware(['auth', RoleMiddleware::class . ':admin'])->group(function () {
     Route::get('/admin/clockings/export', [ExportController::class, 'exportCSV'])->name('admin.clocking.export');
 });
 
-Route::post('/admin/clocking/update', [ClockingController::class, 'updateClocking'])
-    ->name('admin.clocking.update');
+
 
 // PRIORITY 9: Admin Notifications
 Route::middleware(['auth', RoleMiddleware::class . ':admin'])->prefix('notifications')->group(function () {

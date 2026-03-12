@@ -6,6 +6,12 @@ use Illuminate\Support\Facades\Auth;
 use Modules\Invoice\Models\InvoiceCard;
 use Illuminate\Support\Facades\Log;
 use Modules\Invoice\Services\MileageDistributionService;
+use App\Models\Configuration;
+use App\Models\User;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Storage;
+
+
 class ClockingService
 {
     //for user:
@@ -145,6 +151,262 @@ class ClockingService
         Log::info('Clock-out completed successfully', [
             'clocking_id' => $clocking->id
         ]);
+
+        return $clocking;
+    }
+    //for admin
+     public function clockingTable($request)
+    {
+
+        if (Auth::user()->role !== 'admin') {
+            abort(403);
+        }
+        // Get gas payments rate from configuration
+
+        $gasPaymentRate = Configuration::getGasPaymentRate();
+        // Get all users for the dropdown
+
+        $users = User::orderBy('name')->get();
+        // Get filter parameters
+
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+        $selectedUser = $request->input('user_id');
+
+        $query = Clocking::with('user');
+
+        if ($startDate) {
+            $query->whereDate('clock_in', '>=', $startDate);
+        }
+
+        if ($endDate) {
+            $query->whereDate('clock_in', '<=', $endDate);
+        }
+
+        if ($selectedUser) {
+            $query->where('user_id', $selectedUser);
+        }
+
+        $totalQuery = clone $query;
+
+        $clockings = $query->latest()->paginate(25);
+
+        $totalMilesIn = $totalMilesOut = $totalMiles = $totalSeconds = 0;
+        $totalGasPayment = $totalPurchaseCost = $totalEarnings = $totalSalary = 0;
+        $totalFixCount = 0;
+
+        $allFilteredClockings = $totalQuery->get();
+
+        foreach ($allFilteredClockings as $clocking) {
+            // Add miles to totals
+
+            $totalMilesIn += $clocking->miles_in ?? 0;
+            $totalMilesOut += $clocking->miles_out ?? 0;
+            // Calculate total miles and gas payments
+
+            if (!is_null($clocking->miles_in) && !is_null($clocking->miles_out)) {
+                $miles = $clocking->miles_out - $clocking->miles_in;
+                $totalMiles += $miles;
+                $gasPayment = $miles * $gasPaymentRate;
+                $totalGasPayment += $gasPayment;
+            }
+            // Calculate hours and earnings - WITH DATA VALIDATION
+
+            if ($clocking->clock_in && $clocking->clock_out) {
+                $start = Carbon::parse($clocking->clock_in);
+                $end = Carbon::parse($clocking->clock_out);
+                $diffInSeconds = $end->timestamp - $start->timestamp;
+                // Skip records with invalid time (clock_out before clock_in)
+
+                if ($diffInSeconds <= 0) {
+                    continue;
+                }
+
+                $totalSeconds += $diffInSeconds;
+
+                if (isset($clocking->user->hourly_pay)) {
+                    $hoursDecimal = $diffInSeconds / 3600;
+                    $earnings = $hoursDecimal * $clocking->user->hourly_pay;
+                    $totalEarnings += $earnings;
+                }
+            }
+
+            $totalPurchaseCost += $clocking->purchase_cost ?? 0;
+
+            if ($clocking->fixed_something) {
+                $totalFixCount++;
+            }
+        }
+
+        $totalSalary = $totalEarnings + $totalGasPayment + $totalPurchaseCost;
+
+        $totalHoursFormatted = sprintf(
+            '%02d:%02d:%02d',
+            floor($totalSeconds / 3600),
+            floor(($totalSeconds % 3600) / 60),
+            $totalSeconds % 60
+        );
+        // Process individual records for display
+
+        foreach ($clockings as $clocking) {
+            // Calculate individual record totals
+
+            if (!is_null($clocking->miles_in) && !is_null($clocking->miles_out)) {
+                $clocking->total_miles = $clocking->miles_out - $clocking->miles_in;
+                $clocking->gas_payment = $clocking->total_miles * $gasPaymentRate;
+            }
+
+            if ($clocking->clock_in && $clocking->clock_out) {
+
+                $start = Carbon::parse($clocking->clock_in);
+                $end = Carbon::parse($clocking->clock_out);
+
+                $diffInSeconds = $end->timestamp - $start->timestamp;
+
+                if ($diffInSeconds <= 0) {
+
+                    $clocking->total_hours = 'Invalid Time';
+                    $clocking->earnings = 0;
+
+                } else {
+                    // Calculate actual total hours (can exceed 24 hours)
+
+                    $hours = floor($diffInSeconds / 3600);
+                    $minutes = floor(($diffInSeconds % 3600) / 60);
+                    $seconds = $diffInSeconds % 60;
+
+                    $clocking->total_hours = sprintf('%02d:%02d:%02d', $hours, $minutes, $seconds);
+
+                    if (isset($clocking->user->hourly_pay)) {
+
+                        $hoursDecimal = $diffInSeconds / 3600;
+
+                        $clocking->earnings = $hoursDecimal * $clocking->user->hourly_pay;
+                    }
+                }
+            }
+            // Calculate total salary for individual record
+
+            $clocking->total_salary =
+                ($clocking->earnings ?? 0) +
+                ($clocking->gas_payment ?? 0) +
+                ($clocking->purchase_cost ?? 0);
+            // ✅ FIXED: Process fix description for display
+
+            if ($clocking->fix_description) {
+                // Create shortened version (first 50 characters)
+
+                $clocking->fix_description_short =
+                    strlen($clocking->fix_description) > 50
+                    ? substr($clocking->fix_description, 0, 50) . '...'
+                    : $clocking->fix_description;
+
+            } else {
+
+                $clocking->fix_description_short = null;
+            }
+
+            $clocking->formatted_date =
+                $clocking->clock_in
+                ? Carbon::parse($clocking->clock_in)->format('M d, Y')
+                : '';
+
+            $clocking->formatted_clock_in =
+                $clocking->clock_in
+                ? Carbon::parse($clocking->clock_in)->format('g:i A')
+                : '';
+
+            $clocking->formatted_clock_out =
+                $clocking->clock_out
+                ? Carbon::parse($clocking->clock_out)->format('g:i A')
+                : '';
+        }
+
+        return [
+            'clockings' => $clockings,
+            'users' => $users,
+            'gas_payment_rate' => $gasPaymentRate,
+            'totals' => [
+                'totalMilesIn' => $totalMilesIn,
+                'totalMilesOut' => $totalMilesOut,
+                'totalMiles' => $totalMiles,
+                'totalHours' => $totalHoursFormatted,
+                'totalGasPayment' => $totalGasPayment,
+                'totalPurchaseCost' => $totalPurchaseCost,
+                'totalEarnings' => $totalEarnings,
+                'totalFixCount' => $totalFixCount,
+                'totalSalary' => $totalSalary
+            ]
+        ];
+    }
+
+
+    public function updateGasRate($rate)
+    {
+        Configuration::where('key', 'gas_payment_rate')
+            ->update(['value' => $rate]);
+    }
+
+
+    public function deleteClocking($id)
+    {
+        $clocking = Clocking::findOrFail($id);
+
+        if ($clocking->image_in) {
+            Storage::disk('public')->delete($clocking->image_in);
+        }
+
+        if ($clocking->image_out) {
+            Storage::disk('public')->delete($clocking->image_out);
+        }
+
+        if ($clocking->purchase_receipt) {
+            Storage::disk('public')->delete($clocking->purchase_receipt);
+        }
+
+        if ($clocking->fix_image) {
+            Storage::disk('public')->delete($clocking->fix_image);
+        }
+
+        $clocking->delete();
+    }
+    public function updateClocking($request)
+    {
+        $clocking = Clocking::findOrFail($request->clocking_id);
+        // Check if clock_out is after clock_in
+
+        if (
+            $request->clock_in &&
+            $request->clock_out &&
+            Carbon::parse($request->clock_out)
+                ->lessThanOrEqualTo(Carbon::parse($request->clock_in))
+        ) {
+            throw new \Exception(
+                'Clock-out time cannot be before or equal to clock-in time.'
+            );
+        }
+
+        if (
+            !is_null($request->miles_in) &&
+            !is_null($request->miles_out) &&
+            $request->miles_out <= $request->miles_in
+        ) {
+            throw new \Exception(
+                'Miles out must be greater than miles in.'
+            );
+        }
+
+        $updateData = [
+            'clock_in'        => $request->clock_in ?: null,
+            'clock_out'       => $request->clock_out ?: null,
+            'miles_in'        => $request->miles_in ?: null,
+            'miles_out'       => $request->miles_out ?: null,
+            'purchase_cost'   => $request->purchase_cost ?: null,
+            'fixed_something' => $request->fixed_something,
+            'fix_description' => $request->fix_description ?: null,
+        ];
+
+        $clocking->update($updateData);
 
         return $clocking;
     }
