@@ -163,8 +163,20 @@ Route::middleware(['auth'])->group(function () {
     Route::get('companies/export', [CompanyController::class, 'export'])->name('companies.export');
 
 //done
+   // === USER SCHEDULE & TASK VIEWS - ALL AUTHENTICATED USERS ===
+    Route::get('my-schedule', [UserScheduleController::class, 'index'])->name('user.schedule.index');
+    Route::get('my-tasks', [UserTaskController::class, 'index'])->name('user.tasks.index');
+    Route::patch('my-tasks/{taskAssignment}/status', [UserTaskController::class, 'updateStatus'])
+        ->name('user.tasks.update-status');
+    
 
+
+
+
+
+        
     Route::get('dashboard', [PaymentController::class, 'dashboard'])->name('dashboard');
+
     Route::post('payments/portfolio-stats', [PaymentController::class, 'portfolioStats'])->name('payments.portfolio-stats');
 
     Route::get('payments/reports/cost-by-company', [PaymentController::class, 'costByCompanyReport'])->name('payments.cost-by-company');
@@ -173,11 +185,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('payments/reports/cost-per-store-yearly', [PaymentController::class, 'costPerStoreYearlyReport'])->name('payments.cost-per-store-yearly');
     Route::get('payments/reports/pending-projects', [PaymentController::class, 'pendingProjectsReport'])->name('payments.pending-projects');
 
-    // === USER SCHEDULE & TASK VIEWS - ALL AUTHENTICATED USERS ===
-    Route::get('my-schedule', [UserScheduleController::class, 'index'])->name('user.schedule.index');
-    Route::get('my-tasks', [UserTaskController::class, 'index'])->name('user.tasks.index');
-    Route::patch('my-tasks/{taskAssignment}/status', [UserTaskController::class, 'updateStatus'])
-        ->name('user.tasks.update-status');
+ 
+   
 
     Route::get('payments/dashboard', [PaymentController::class, 'dashboard'])->name('payments.dashboard');
     Route::get('payments/export', [PaymentController::class, 'export'])->name('payments.export');

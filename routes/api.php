@@ -33,3 +33,5 @@ require __DIR__ . '/api/maintenanceRequests.php';
 require __DIR__ . '/api/Lease.php';
 require __DIR__ . '/api/Store.php';
 require __DIR__ . '/api/companies.php';
+require __DIR__ . '/api/UserSchedule.php';
+require __DIR__ . '/api/UserTasks.php';

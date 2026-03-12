@@ -1,18 +1,15 @@
 <?php
-// app/Http/Controllers/UserTaskController.php
 
-namespace App\Http\Controllers;
+namespace App\Services\Api;
 
-use App\Services\CognitoFormsService;
-use Illuminate\Http\Request;
 use App\Models\TaskAssignment;
+use App\Services\Api\Admin\CognitoFormsService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-
-class UserTaskController extends Controller
+class UserTaskService
 {
-    public function index(Request $request)
+    public function index()
     {
         $user = Auth::user();
 
@@ -40,27 +37,22 @@ class UserTaskController extends Controller
                 ->where('status', 'completed')->count(),
         ];
 
-        return view('user.tasks.index', compact('taskAssignments', 'taskStats'));
+        return [
+            'taskAssignments' => $taskAssignments,
+            'taskStats' => $taskStats
+        ];
     }
-
-    public function updateStatus(Request $request, TaskAssignment $taskAssignment)
+     public function updateStatus($request, TaskAssignment $taskAssignment)
     {
-         // Ensure user can only update their own tasks
+        // Ensure user can only update their own tasks
         if ($taskAssignment->assigned_user_id !== Auth::id()) {
-            abort(403, 'Unauthorized action.');
+            throw new \Exception('Unauthorized action.');
         }
 
-        // Validate request
-        $request->validate([
-            'status' => 'required|in:pending,in_progress,completed',
-            'costs' => 'required_if:status,completed|nullable|numeric|min:0',
-            'how_we_fixed_it' => 'required_if:status,completed|nullable|string|max:1000',
-        ]);
 
         try {
             DB::beginTransaction();
 
-            // Map task status to maintenance request status
             $statusMap = [
                 'pending' => 'on_hold',
                 'in_progress' => 'in_progress',
@@ -79,14 +71,12 @@ class UserTaskController extends Controller
                 'updated_at' => now(),
             ]);
 
-            // Fetch the related MaintenanceRequest
             $maintenanceRequest = $taskAssignment->maintenanceRequest;
 
             if (!$maintenanceRequest) {
                 throw new \Exception('No related maintenance request found for this task.');
             }
 
-            // Update MaintenanceRequest using the model's updateStatus method
             $maintenanceRequest->updateStatus(
                 $newMaintenanceStatus,
                 $newTaskStatus === 'completed' ? $costs : null,
@@ -94,7 +84,6 @@ class UserTaskController extends Controller
                 $userId
             );
 
-            // Update Cognito Forms if form_id exists
             if ($maintenanceRequest->form_id) {
                 $cognitoService = app(CognitoFormsService::class);
 
@@ -137,14 +126,18 @@ class UserTaskController extends Controller
 
             DB::commit();
 
-            return redirect()->back()->with('success', 'Task status updated successfully.');
+            return $taskAssignment;
+
         } catch (\Exception $e) {
+
             DB::rollback();
+
             Log::error('Failed to update task status', [
                 'task_id' => $taskAssignment->id,
                 'error' => $e->getMessage(),
             ]);
-            return redirect()->back()->withErrors(['error' => 'Failed to update task status: ' . $e->getMessage()]);
+
+            throw $e;
         }
     }
-    }
+}
