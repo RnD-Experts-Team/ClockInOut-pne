@@ -157,8 +157,13 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('stores', StoreController::class);
     Route::patch('stores/{store}/toggle-status', [StoreController::class, 'toggleStatus'])
         ->name('stores.toggle-status');
+//done
 
     Route::resource('companies', CompanyController::class);
+    Route::get('companies/export', [CompanyController::class, 'export'])->name('companies.export');
+
+//done
+
     Route::get('dashboard', [PaymentController::class, 'dashboard'])->name('dashboard');
     Route::post('payments/portfolio-stats', [PaymentController::class, 'portfolioStats'])->name('payments.portfolio-stats');
 
@@ -175,7 +180,6 @@ Route::middleware(['auth'])->group(function () {
         ->name('user.tasks.update-status');
 
     Route::get('payments/dashboard', [PaymentController::class, 'dashboard'])->name('payments.dashboard');
-    Route::get('companies/export', [CompanyController::class, 'export'])->name('companies.export');
     Route::get('payments/export', [PaymentController::class, 'export'])->name('payments.export');
     Route::get('payments/store-image/{store}', [PaymentController::class, 'storeImageView'])->name('payments.store-image');
     Route::resource('payments', PaymentController::class);
