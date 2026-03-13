@@ -888,34 +888,7 @@ class ApartmentLeaseController extends Controller
             ], 500);
         }
     }
-
-    private function calculateStats()
-    {
-        $total = ApartmentLease::count();
-        $families = ApartmentLease::whereIn('is_family', ['Yes', 'yes'])->count();
-        $totalCars = ApartmentLease::sum('has_car');
-        $expiringSoon = ApartmentLease::whereBetween('expiration_date', [now(), now()->addMonth()])->count();
-        $totalMonthlyRent = ApartmentLease::sum(DB::raw('rent + COALESCE(utilities, 0)'));
-        $averageRent = ApartmentLease::avg(DB::raw('rent + COALESCE(utilities, 0)'));
-        $averageAT = ApartmentLease::avg('number_of_AT');
-        $totalAT = ApartmentLease::sum('number_of_AT');
-        $occupancyRate = $total ? 100 : 0;
-
-        return [
-            'total' => $total,
-            'families' => $families,
-            'total_cars' => $totalCars,
-            'expiring_soon' => $expiringSoon,
-            'total_monthly_rent' => $totalMonthlyRent,
-            'average_rent' => $averageRent,
-            'average_at' => $averageAT,
-            'total_at' => $totalAT,
-            'occupancy_rate' => $occupancyRate,
-            'expiring_this_month' => ApartmentLease::whereMonth('expiration_date', now()->month)->whereYear('expiration_date', now()->year)->count(),
-            'expiring_next_month' => ApartmentLease::whereMonth('expiration_date', now()->addMonth()->month)->whereYear('expiration_date', now()->addMonth()->year)->count(),
-            'expiring_next_3_months' => ApartmentLease::whereBetween('expiration_date', [now(), now()->addMonths(3)])->count(),
-        ];
-    }
+ 
 
     public function list()
     {
