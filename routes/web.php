@@ -257,7 +257,15 @@ Route::middleware(['auth'])->group(function () {
     });
 });
 //alredy exist and some methods not found
-        
+        // PRIORITY 9: Admin Notifications
+Route::middleware(['auth', RoleMiddleware::class . ':admin'])->prefix('notifications')->group(function () {
+    Route::get('/', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::get('/unread', [NotificationController::class, 'unread'])->name('notifications.unread');
+    Route::patch('/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
+    Route::patch('/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
+    Route::delete('/notifications/clear', [NotificationController::class, 'clear'])->name('notifications.clear');
+});
+// done
 
 
 
@@ -317,14 +325,7 @@ Route::middleware(['auth', RoleMiddleware::class . ':admin'])->group(function ()
 
 
 
-// PRIORITY 9: Admin Notifications
-Route::middleware(['auth', RoleMiddleware::class . ':admin'])->prefix('notifications')->group(function () {
-    Route::get('/', [NotificationController::class, 'index'])->name('notifications.index');
-    Route::get('/unread', [NotificationController::class, 'unread'])->name('notifications.unread');
-    Route::patch('/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
-    Route::patch('/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
-    Route::delete('/notifications/clear', [NotificationController::class, 'clear'])->name('notifications.clear');
-});
+
 
 // PRIORITY 10: Admin Prefix Routes
 Route::prefix('admin')->name('admin.')->middleware(['auth', RoleMiddleware::class . ':admin'])->group(function () {
