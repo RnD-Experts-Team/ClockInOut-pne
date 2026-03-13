@@ -36,3 +36,4 @@ require __DIR__ . '/api/companies.php';
 require __DIR__ . '/api/UserSchedule.php';
 require __DIR__ . '/api/UserTasks.php';
 require __DIR__ . '/api/NativeRequest.php';
+require __DIR__ . '/api/Notification.php';

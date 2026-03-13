@@ -178,6 +178,14 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/leases/export/landlord-contact-image', [LeaseController::class, 'exportLandlordContactImage'])->name('leases.export.landlord-contact-image');
     Route::get('/leases/export/cost-breakdown-image', [LeaseController::class, 'exportCostBreakdownImage'])->name('leases.export.cost-breakdown-image');
     Route::get('/leases/export/lease-tracker-image', [LeaseController::class, 'exportLeaseTrackerImage'])->name('leases.export.lease-tracker-image');
+   
+   // PRIORITY 7: Admin Dashboard Routes
+Route::get('/dashboard', function () {
+    return view('dashboard');
+})->middleware(['auth', RoleMiddleware::class . ':admin'])->name('dashboard');
+
+
+
     //not found method
 
 // PRIORITY 6B: Native Maintenance Requests - Store Manager
@@ -201,7 +209,54 @@ Route::prefix('requests')
     });
     Route::post('/admin/clocking/update', [ClockingController::class, 'updateClocking'])
     ->name('admin.clocking.update');
+//done
 
+
+// PRIORITY 14: Lower Priority Routes
+
+
+Route::get('/leases/landlord-contact', [LeaseController::class, 'landlordContact'])->name('leases.landlord-contact');
+Route::get('/leases/cost-breakdown', [LeaseController::class, 'costBreakdown'])->name('leases.cost-breakdown');
+Route::get('/leases/lease-tracker', [LeaseController::class, 'leaseTracker'])->name('leases.lease-tracker');
+// PRIORITY 5: Calendar System Routes (Core functionality)
+Route::middleware(['auth'])->group(function () {
+    // Main Calendar Routes
+    Route::prefix('calendar')->name('calendar.')->group(function () {
+        Route::get('/', [CalendarController::class, 'index'])->name('index');
+        Route::get('/events', [CalendarController::class, 'getEvents'])->name('events');
+        Route::get('/filters', [CalendarController::class, 'getFilters'])->name('filters');
+        Route::get('/month', [CalendarController::class, 'monthView'])->name('month');
+        Route::get('/week/{date?}', [CalendarController::class, 'weekView'])->name('week');
+        Route::get('/day/{date?}', [CalendarController::class, 'dayView'])->name('day'); // ➕ ADD THIS
+        Route::get('/list', [CalendarController::class, 'listView'])->name('list'); // ➕ ADD THIS
+        Route::get('/daily/{date?}', [CalendarController::class, 'dailyOverview'])->name('daily');
+        Route::get('/daily/{date}/events', [CalendarController::class, 'getDailyEvents'])->name('daily.events');
+
+        // ➕ ADD THESE NEW ROUTES
+        Route::get('/create', [CalendarController::class, 'create'])->name('create');
+        Route::get('/reminders', [CalendarController::class, 'reminders'])->name('reminders');
+        Route::get('/export', [CalendarController::class, 'export'])->name('export');
+        Route::get('/settings', [CalendarController::class, 'settings'])->name('settings');
+
+
+        // Calendar Event CRUD (Admin only)
+        Route::middleware([RoleMiddleware::class . ':admin'])->group(function () {
+            Route::post('/events', [CalendarController::class, 'store'])->name('events.store');
+            Route::put('/events/{event}', [CalendarController::class, 'update'])->name('events.update');
+            Route::delete('/events/{event}', [CalendarController::class, 'destroy'])->name('events.destroy');
+        });
+    });
+
+    Route::get('/admin/calendar/events', [CalendarController::class, 'getEvents'])->name('admin.calendar.events');
+
+    // ➕ ADD NOTIFICATION ROUTES FOR REAL-TIME SYSTEM
+    Route::prefix('admin/notifications')->name('admin.notifications.')->group(function () {
+        Route::get('/current', [NotificationForCalenderController::class, 'getCurrent'])->name('current');
+        Route::post('/mark-seen', [NotificationForCalenderController::class, 'markSeen'])->name('mark-seen');
+        Route::delete('/clear', [NotificationForCalenderController::class, 'clear'])->name('clear');
+    });
+});
+//alredy exist and some methods not found
         
 
 
@@ -213,10 +268,6 @@ Route::prefix('requests')
     Route::get('payments/reports/weekly-maintenance', [PaymentController::class, 'weeklyMaintenanceReport'])->name('payments.weekly-maintenance');
     Route::get('payments/reports/cost-per-store-yearly', [PaymentController::class, 'costPerStoreYearlyReport'])->name('payments.cost-per-store-yearly');
     Route::get('payments/reports/pending-projects', [PaymentController::class, 'pendingProjectsReport'])->name('payments.pending-projects');
-
- 
-   
-
     Route::get('payments/dashboard', [PaymentController::class, 'dashboard'])->name('payments.dashboard');
     Route::get('payments/export', [PaymentController::class, 'export'])->name('payments.export');
     Route::get('payments/store-image/{store}', [PaymentController::class, 'storeImageView'])->name('payments.store-image');
@@ -229,12 +280,6 @@ Route::prefix('requests')
 
 });
 
-
-
-// PRIORITY 7: Admin Dashboard Routes
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', RoleMiddleware::class . ':admin'])->name('dashboard');
 
 
 
@@ -447,12 +492,6 @@ Route::middleware(['auth', RoleMiddleware::class . ':admin'])->prefix('export')-
     Route::post('/calendar-screenshot', [ExportController::class, 'generateScreenshot'])->name('calendar-screenshot');
 });
 
-// PRIORITY 14: Lower Priority Routes
-
-
-Route::get('/leases/landlord-contact', [LeaseController::class, 'landlordContact'])->name('leases.landlord-contact');
-Route::get('/leases/cost-breakdown', [LeaseController::class, 'costBreakdown'])->name('leases.cost-breakdown');
-Route::get('/leases/lease-tracker', [LeaseController::class, 'leaseTracker'])->name('leases.lease-tracker');
 
 //export Clock in out data to excel
 Route::get('/export-clocking/{startDate?}/{endDate?}', [ExportController::class, 'exportToExcel'])->name('export.clocking');
@@ -499,44 +538,7 @@ Route::prefix('workbooks')
             });
     });
 
-// PRIORITY 5: Calendar System Routes (Core functionality)
-Route::middleware(['auth'])->group(function () {
-    // Main Calendar Routes
-    Route::prefix('calendar')->name('calendar.')->group(function () {
-        Route::get('/', [CalendarController::class, 'index'])->name('index');
-        Route::get('/events', [CalendarController::class, 'getEvents'])->name('events');
-        Route::get('/filters', [CalendarController::class, 'getFilters'])->name('filters');
-        Route::get('/month', [CalendarController::class, 'monthView'])->name('month');
-        Route::get('/week/{date?}', [CalendarController::class, 'weekView'])->name('week');
-        Route::get('/day/{date?}', [CalendarController::class, 'dayView'])->name('day'); // ➕ ADD THIS
-        Route::get('/list', [CalendarController::class, 'listView'])->name('list'); // ➕ ADD THIS
-        Route::get('/daily/{date?}', [CalendarController::class, 'dailyOverview'])->name('daily');
-        Route::get('/daily/{date}/events', [CalendarController::class, 'getDailyEvents'])->name('daily.events');
 
-        // ➕ ADD THESE NEW ROUTES
-        Route::get('/create', [CalendarController::class, 'create'])->name('create');
-        Route::get('/reminders', [CalendarController::class, 'reminders'])->name('reminders');
-        Route::get('/export', [CalendarController::class, 'export'])->name('export');
-        Route::get('/settings', [CalendarController::class, 'settings'])->name('settings');
-
-
-        // Calendar Event CRUD (Admin only)
-        Route::middleware([RoleMiddleware::class . ':admin'])->group(function () {
-            Route::post('/events', [CalendarController::class, 'store'])->name('events.store');
-            Route::put('/events/{event}', [CalendarController::class, 'update'])->name('events.update');
-            Route::delete('/events/{event}', [CalendarController::class, 'destroy'])->name('events.destroy');
-        });
-    });
-
-    Route::get('/admin/calendar/events', [CalendarController::class, 'getEvents'])->name('admin.calendar.events');
-
-    // ➕ ADD NOTIFICATION ROUTES FOR REAL-TIME SYSTEM
-    Route::prefix('admin/notifications')->name('admin.notifications.')->group(function () {
-        Route::get('/current', [NotificationForCalenderController::class, 'getCurrent'])->name('current');
-        Route::post('/mark-seen', [NotificationForCalenderController::class, 'markSeen'])->name('mark-seen');
-        Route::delete('/clear', [NotificationForCalenderController::class, 'clear'])->name('clear');
-    });
-});
 
 // PRIORITY 12: Calendar Extended Features (UPDATE THIS SECTION)
 Route::middleware(['auth'])->group(function () {
