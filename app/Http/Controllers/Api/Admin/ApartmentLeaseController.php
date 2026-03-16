@@ -1,89 +1,152 @@
 <?php
 
 namespace App\Http\Controllers\Api\Admin;
-use App\Services\Api\Admin\ApartmentLeaseService;
+
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Admin\ApartmentLeaseStoreRequest;
+use App\Http\Requests\Api\Admin\ApartmentLeaseUpdateRequest;
 use App\Models\ApartmentLease;
+use App\Services\Api\Admin\ApartmentLeaseService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class ApartmentLeaseController extends Controller
 {
+    protected ApartmentLeaseService $apartmentLeaseService;
 
-    public function __construct(private ApartmentLeaseService $service)
+    public function __construct(ApartmentLeaseService $apartmentLeaseService)
     {
+        $this->apartmentLeaseService = $apartmentLeaseService;
     }
 
-     public function export(Request $request)
+    public function list(): JsonResponse
     {
-        $result = $this->service->exportLeases($request);
-
-        if (!$result['success']) {
-
-            return response()->json([
-                'success' => false,
-                'message' => $result['message']
-            ],500);
-        }
+        $leases = $this->apartmentLeaseService->list();
 
         return response()->json([
-            'success' => true,
-            'filename' => $result['filename'],
-            'csv' => $result['data']
-        ]);
+            'status' => true,
+            'message' => 'Apartment leases fetched successfully',
+            'data' => $leases,
+        ], 200);
     }
-
-
-
-    public function list()
+    public function index(Request $request): JsonResponse
     {
-        
-        $leases = $this->service->listLeases();
+        $data = $this->apartmentLeaseService->index($request);
+
         return response()->json([
-            'success' => true,
-            'data' => $leases
+            'status' => true,
+            'message' => 'Apartment leases fetched successfully',
+            'data' => $data
         ]);
     }
-     public function store(ApartmentLeaseStoreRequest $request)
+     public function show(ApartmentLease $apartmentLease): JsonResponse
     {
+        $lease = $this->apartmentLeaseService->show($apartmentLease);
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Apartment lease fetched successfully',
+            'data' => $lease,
+        ], 200);
+    }
+     public function store(ApartmentLeaseStoreRequest $request): JsonResponse
+    {
+
         try {
 
-            $this->service->createLease(
+            $lease = $this->apartmentLeaseService->store($request->validated());
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Apartment lease created successfully',
+                'data' => $lease
+            ], 201);
+
+        }
+
+        catch (\Exception $e) {
+
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to create apartment lease',
+                'error' => $e->getMessage()
+            ], 500);
+
+        }
+
+    }
+    public function update(ApartmentLeaseUpdateRequest $request, ApartmentLease $apartmentLease): JsonResponse
+    {
+
+        try {
+
+            $lease = $this->apartmentLeaseService->update(
+                $apartmentLease,
                 $request->validated()
             );
 
-            return redirect()
-                ->route('admin.apartment-leases.index')
-                ->with('success', 'Apartment lease created successfully.');
+            return response()->json([
+                'status' => true,
+                'message' => 'Apartment lease updated successfully',
+                'data' => $lease
+            ]);
+
+        }
+
+        catch (\Exception $e) {
+
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to update apartment lease',
+                'error' => $e->getMessage()
+            ],500);
+
+        }
+
+    }
+    public function destroy(ApartmentLease $apartmentLease): JsonResponse
+    {
+        try {
+
+            $this->apartmentLeaseService->destroy($apartmentLease);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Apartment lease deleted successfully'
+            ], 200);
 
         } catch (\Exception $e) {
 
-            return back()
-                ->withErrors([
-                    'error' => 'Failed to create apartment lease: ' . $e->getMessage()
-                ]);
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to delete apartment lease',
+                'error' => $e->getMessage()
+            ], 500);
+
         }
     }
-
-
-    public function show(ApartmentLease $apartmentLease)
+    public function export(Request $request)
     {
-        $apartmentLease->load(['store','renewalCreatedBy']);
+        try {
 
-        return view(
-            'admin.apartment-leases.show',
-            compact('apartmentLease')
-        );
+            $data = $this->apartmentLeaseService->export($request);
+
+            return response()->json([
+                'success' => true,
+                'count' => $data->count(),
+                'data' => $data
+            ]);
+
+        } catch (\Exception $e) {
+
+            Log::error('Apartment Lease Export Error: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to export apartment leases',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
-    public function index(Request $request)
-    {
-        $data = $this->service->getLeases($request);
-
-        return view('admin.apartment-leases.index', [
-            'leases' => $data['leases'],
-            'stats' => $data['stats'],
-            'stores' => $data['stores']
-        ]);
-    }
-
 }

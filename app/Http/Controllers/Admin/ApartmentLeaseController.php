@@ -76,7 +76,6 @@ class ApartmentLeaseController extends Controller
             $storeFilter = function ($q) use ($request) {
                 $q->where('store_id', $request->store_id);
             };
-
             $query->where($storeFilter);
             $baseQuery->where($storeFilter);
         }
@@ -318,8 +317,7 @@ class ApartmentLeaseController extends Controller
             'drive_time' => 'nullable|string',
             'notes' => 'nullable|string',
             'lease_holder' => 'required|string',
-            // NEW: Renewal fields
-            'renewal_date' => 'nullable|date',
+           'renewal_date' => 'nullable|date',
             'renewal_status' => 'nullable|in:pending,in_prLogress,completed,declined',
             'renewal_notes' => 'nullable|string',
         ]);

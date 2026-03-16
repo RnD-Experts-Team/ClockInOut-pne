@@ -7,213 +7,23 @@ use App\Models\CalendarEvent;
 use App\Models\CalendarReminder;
 use App\Models\Store;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+
+use Carbon\Carbon;
 
 class ApartmentLeaseService
 {
-    public function exportLeases($request)
-    {
-        try {
-
-            $query = ApartmentLease::with(['store','renewalCreatedBy']);
-
-            // Search
-            if ($request->filled('search')) {
-
-                $search = $request->search;
-
-                $query->where(function ($q) use ($search) {
-
-                    $q->where('store_number','like',"%{$search}%")
-                        ->orWhere('apartment_address','like',"%{$search}%")
-                        ->orWhere('lease_holder','like',"%{$search}%")
-                        ->orWhere('notes','like',"%{$search}%")
-                        ->orWhereHas('store',function($q) use ($search){
-
-                            $q->where('store_number','like',"%{$search}%")
-                              ->orWhere('name','like',"%{$search}%");
-
-                        });
-                });
-            }
-
-            // Family filter
-            if ($request->filled('family_filter') && $request->family_filter !== 'all') {
-
-                if ($request->family_filter === 'yes') {
-                    $query->whereIn('is_family',['Yes','yes']);
-                }
-
-                elseif ($request->family_filter === 'no') {
-                    $query->whereIn('is_family',['No','no']);
-                }
-            }
-
-            // Car filter
-            if ($request->filled('car_filter') && $request->car_filter !== 'all') {
-
-                if ($request->car_filter === 'with_car') {
-                    $query->where('has_car','>',0);
-                }
-
-                elseif ($request->car_filter === 'no_car') {
-                    $query->where('has_car',0);
-                }
-            }
-
-            // Renewal filter
-            if ($request->filled('lease_status') && $request->lease_status !== 'all') {
-
-                switch ($request->lease_status) {
-
-                    case 'renewal_pending':
-
-                        $query->whereNotNull('renewal_date')
-                              ->where('renewal_status','pending');
-                        break;
-
-                    case 'renewal_overdue':
-
-                        $query->whereNotNull('renewal_date')
-                              ->where('renewal_date','<',now()->startOfDay())
-                              ->where('renewal_status','!=','completed');
-                        break;
-
-                    case 'renewal_due_soon':
-
-                        $query->whereNotNull('renewal_date')
-                              ->where('renewal_date','>=',now()->startOfDay())
-                              ->where('renewal_date','<=',now()->addDays(30)->endOfDay())
-                              ->where('renewal_status','!=','completed');
-                        break;
-
-                    case 'renewal_completed':
-
-                        $query->where('renewal_status','completed');
-                        break;
-                }
-            }
-
-            $leases = $query->orderBy('store_number')->get();
-
-            $csv = $this->generateCsv($leases);
-
-            return [
-                'success' => true,
-                'filename' => 'apartment-leases-'.now()->format('Y-m-d-H-i-s').'.csv',
-                'data' => $csv
-            ];
-
-        } catch (\Exception $e) {
-
-            Log::error('Apartment Lease Export Error: '.$e->getMessage());
-
-            return [
-                'success' => false,
-                'message' => $e->getMessage()
-            ];
-        }
-    }
-
-
-
-    private function generateCsv($leases)
-    {
-
-        $handle = fopen('php://temp','r+');
-
-        fputcsv($handle,[
-            'Store Number',
-            'Store Name',
-            'Apartment Address',
-            'Rent',
-            'Utilities',
-            'Total Rent',
-            'Number of AT',
-            'Has Car',
-            'Is Family',
-            'Expiration Date',
-            'Drive Time',
-            'Notes',
-            'Lease Holder',
-            'Expiration Warning',
-            'Renewal Date',
-            'Renewal Status',
-            'Renewal Notes',
-            'Days Until Renewal',
-            'Renewal Created By'
-        ]);
-
-        foreach ($leases as $lease) {
-
-            $renewalDate = '';
-            $daysUntilRenewal = '';
-
-            if ($lease->renewal_date) {
-
-                try {
-
-                    $renewalDateCarbon = $lease->renewal_date instanceof Carbon
-                        ? $lease->renewal_date
-                        : Carbon::parse($lease->renewal_date);
-
-                    $renewalDate = $renewalDateCarbon->format('Y-m-d');
-
-                    $daysUntilRenewal = now()->diffInDays($renewalDateCarbon,false);
-
-                } catch (\Exception $e) {
-
-                    $renewalDate = 'Invalid Date';
-                    $daysUntilRenewal = 'N/A';
-                }
-            }
-
-            fputcsv($handle,[
-
-                $lease->store ? $lease->store->store_number : $lease->store_number,
-                $lease->store ? $lease->store->name : 'N/A',
-                $lease->apartment_address,
-                $lease->rent,
-                $lease->utilities ?? 0,
-                $lease->total_rent,
-                $lease->number_of_AT,
-                $lease->has_car,
-                $lease->is_family ?? '',
-                $lease->expiration_date ? $lease->expiration_date->format('Y-m-d') : '',
-                $lease->drive_time ?? '',
-                $lease->notes ?? '',
-                $lease->lease_holder,
-                $lease->expiration_warning ?? '',
-                $renewalDate,
-                $lease->renewal_status ?? '',
-                $lease->renewal_notes ?? '',
-                $daysUntilRenewal,
-                $lease->renewalCreatedBy->name ?? ''
-            ]);
-        }
-
-        rewind($handle);
-
-        $csv = stream_get_contents($handle);
-
-        fclose($handle);
-
-        return $csv;
-    }
-
-
-    public function listLeases()
+    
+    public function list()
     {
         return ApartmentLease::with('store')->get();
     }
-
-    public function getLeases($request)
+    public function index(Request $request)
     {
         $query = ApartmentLease::with('store');
+        // Create a base query for stats calculation
 
-        // Base query for stats
         $baseQuery = clone $query;
 
         // Search
@@ -225,9 +35,9 @@ class ApartmentLeaseService
                     ->orWhere('apartment_address', 'like', "%{$search}%")
                     ->orWhere('lease_holder', 'like', "%{$search}%")
                     ->orWhere('notes', 'like', "%{$search}%")
-                    ->orWhereHas('store', function ($q) use ($search) {
+                    ->orWhereHas('store', function($q) use ($search) {
                         $q->where('store_number', 'like', "%{$search}%")
-                          ->orWhere('name', 'like', "%{$search}%");
+                            ->orWhere('name', 'like', "%{$search}%");
                     });
             };
 
@@ -237,13 +47,14 @@ class ApartmentLeaseService
 
         // Family filter
         if ($request->filled('family_filter') && $request->family_filter !== 'all') {
-
             $familyFilter = function ($q) use ($request) {
                 if ($request->family_filter === 'yes') {
                     $q->whereIn('is_family', ['Yes', 'yes']);
-                } elseif ($request->family_filter === 'no') {
+                }
+                elseif ($request->family_filter === 'no') {
                     $q->whereIn('is_family', ['No', 'no']);
                 }
+
             };
 
             $query->where($familyFilter);
@@ -254,11 +65,15 @@ class ApartmentLeaseService
         if ($request->filled('car_filter') && $request->car_filter !== 'all') {
 
             $carFilter = function ($q) use ($request) {
+
                 if ($request->car_filter === 'with_car') {
                     $q->where('has_car', '>', 0);
-                } elseif ($request->car_filter === 'no_car') {
-                    $q->where('has_car', 0);
                 }
+
+                elseif ($request->car_filter === 'no_car') {
+                    $q->where('has_car', '=', 0);
+                }
+
             };
 
             $query->where($carFilter);
@@ -267,104 +82,128 @@ class ApartmentLeaseService
 
         // Store filter
         if ($request->filled('store_id') && $request->store_id !== 'all') {
-
             $storeFilter = function ($q) use ($request) {
                 $q->where('store_id', $request->store_id);
             };
-
             $query->where($storeFilter);
             $baseQuery->where($storeFilter);
         }
 
-        // Renewal Status filter
+        // Renewal Status
         if ($request->filled('lease_status') && $request->lease_status !== 'all') {
-
-            $renewalFilter = function ($q) use ($request) {
+            $renewalFilter = function($q) use ($request) {
 
                 switch ($request->lease_status) {
 
                     case 'renewal_pending':
+
                         $q->whereNotNull('renewal_date')
-                          ->where('renewal_status', 'pending');
+                            ->where('renewal_status', 'pending');
+
                         break;
 
                     case 'renewal_overdue':
+
                         $q->whereNotNull('renewal_date')
-                          ->where('renewal_date', '<', now()->startOfDay())
-                          ->where('renewal_status', '!=', 'completed');
+                            ->where('renewal_date', '<', now()->startOfDay())
+                            ->where('renewal_status', '!=', 'completed');
+
                         break;
 
                     case 'renewal_due_soon':
+
                         $q->whereNotNull('renewal_date')
-                          ->where('renewal_date', '>=', now()->startOfDay())
-                          ->where('renewal_date', '<=', now()->addDays(30)->endOfDay())
-                          ->where('renewal_status', '!=', 'completed');
+                            ->where('renewal_date', '>=', now()->startOfDay())
+                            ->where('renewal_date', '<=', now()->addDays(30)->endOfDay())
+                            ->where('renewal_status', '!=', 'completed');
+
                         break;
 
                     case 'renewal_completed':
+
                         $q->where('renewal_status', 'completed');
+
                         break;
+
                 }
+
             };
 
             $query->where($renewalFilter);
             $baseQuery->where($renewalFilter);
         }
 
-        // Date range filter
+        // Date range
         if ($request->has('date_range') && $request->date_range !== 'all') {
 
-            $dateFilter = function ($q) use ($request) {
+            $dateFilter = function($q) use ($request) {
 
                 switch ($request->date_range) {
 
                     case 'expiring_this_month':
-                        $q->whereMonth('expiration_date', now()->month)
-                          ->whereYear('expiration_date', now()->year);
+
+                        $q->whereMonth('expiration_date', Carbon::now()->month)
+                            ->whereYear('expiration_date', Carbon::now()->year);
+
                         break;
 
                     case 'expiring_next_month':
-                        $nextMonth = now()->addMonth();
+
+                        $nextMonth = Carbon::now()->addMonth();
+
                         $q->whereMonth('expiration_date', $nextMonth->month)
-                          ->whereYear('expiration_date', $nextMonth->year);
+                            ->whereYear('expiration_date', $nextMonth->year);
+
                         break;
 
                     case 'expiring_3_months':
+
                         $q->whereBetween('expiration_date', [
-                            now()->startOfDay(),
-                            now()->addMonths(3)->endOfDay()
+                            Carbon::now()->startOfDay(),
+                            Carbon::now()->addMonths(3)->endOfDay()
                         ]);
+
                         break;
 
                     case 'expired':
-                        $q->where('expiration_date', '<', now()->startOfDay());
+
+                        $q->where('expiration_date', '<', Carbon::now()->startOfDay());
+
                         break;
 
                     case 'renewal':
+
                         $q->whereNotNull('renewal_date')
-                          ->whereBetween('renewal_date', [
-                              now()->startOfDay(),
-                              now()->addDays(30)->endOfDay()
-                          ]);
+                            ->whereBetween('renewal_date', [
+                                Carbon::now()->startOfDay(),
+                                Carbon::now()->addDays(30)->endOfDay()
+                            ]);
+
                         break;
 
                     case 'custom':
+
                         if ($request->has('start_date') && $request->has('end_date')) {
+
                             $q->whereBetween('expiration_date', [
                                 Carbon::parse($request->start_date)->startOfDay(),
                                 Carbon::parse($request->end_date)->endOfDay()
                             ]);
+
                         }
+
                         break;
+
                 }
+
             };
 
             $query->where($dateFilter);
             $baseQuery->where($dateFilter);
         }
+        // Load renewal relationships
 
-        $leases = $query
-            ->with(['renewalCreatedBy'])
+        $leases = $query->with(['renewalCreatedBy'])
             ->orderBy('store_number')
             ->paginate(15)
             ->withQueryString();
@@ -379,25 +218,318 @@ class ApartmentLeaseService
             'stores' => $stores
         ];
     }
+    public function show(ApartmentLease $apartmentLease)
+    {
+        return $apartmentLease->load(['store', 'renewalCreatedBy']);
+    }
+    public function store(array $validated)
+    {
+        DB::beginTransaction();
 
+        try {
 
+            if (!$validated['store_id'] && $validated['new_store_number']) {
+
+                $store = Store::create([
+                    'store_number' => $validated['new_store_number'],
+                    'name' => $validated['new_store_name'],
+                    'is_active' => true,
+                ]);
+
+                $validated['store_id'] = $store->id;
+                $validated['store_number'] = $store->store_number;
+
+            }
+
+            elseif ($validated['store_id']) {
+
+                $store = Store::find($validated['store_id']);
+
+                $validated['store_number'] = $store->store_number;
+
+            }
+
+            if (isset($validated['renewal_date']) && $validated['renewal_date']) {
+
+                $validated['renewal_created_by'] = auth()->id();
+
+                $validated['renewal_status'] = $validated['renewal_status'] ?? 'pending';
+
+            }
+
+            $validated['created_by'] = auth()->id();
+
+            unset($validated['new_store_number'], $validated['new_store_name']);
+
+            $apartmentLease = ApartmentLease::create($validated);
+
+            if ($apartmentLease->renewal_date) {
+
+                $this->createRenewalCalendarEvent($apartmentLease);
+
+                $this->createRenewalReminders($apartmentLease);
+
+            }
+
+            DB::commit();
+
+            return $apartmentLease;
+
+        } catch (\Exception $e) {
+
+            DB::rollback();
+
+            throw $e;
+
+        }
+    }
+    public function update(ApartmentLease $apartmentLease, array $validated)
+    {
+        DB::beginTransaction();
+
+        try {
+
+            $oldRenewalDate = $apartmentLease->renewal_date;
+
+            // Handle store creation if needed
+            if (!$validated['store_id'] && $validated['new_store_number']) {
+
+                $store = Store::create([
+                    'store_number' => $validated['new_store_number'],
+                    'name' => $validated['new_store_name'],
+                    'is_active' => true,
+                ]);
+
+                $validated['store_id'] = $store->id;
+                $validated['store_number'] = $store->store_number;
+            }
+
+            elseif ($validated['store_id']) {
+
+                $store = Store::find($validated['store_id']);
+
+                $validated['store_number'] = $store->store_number;
+
+            }
+
+            // Handle renewal date changes
+            if (isset($validated['renewal_date']) && $validated['renewal_date']) {
+
+                if (!$oldRenewalDate || $oldRenewalDate != $validated['renewal_date']) {
+                    $validated['renewal_created_by'] = auth()->id();
+                }
+
+                $validated['renewal_status'] = $validated['renewal_status'] ?? 'pending';
+            }
+
+            unset($validated['new_store_number'], $validated['new_store_name']);
+
+            $apartmentLease->update($validated);
+
+            // Update calendar events if renewal date changed
+            if ($oldRenewalDate != $apartmentLease->renewal_date) {
+
+                if ($oldRenewalDate) {
+
+                    CalendarEvent::where('related_model_type', ApartmentLease::class)
+                        ->where('related_model_id', $apartmentLease->id)
+                        ->where('event_type', 'apartment_lease_renewal')
+                        ->delete();
+
+                    CalendarReminder::where('related_model_type', ApartmentLease::class)
+                        ->where('related_model_id', $apartmentLease->id)
+                        ->where('reminder_type', 'apartment_lease_renewal')
+                        ->delete();
+                }
+
+                if ($apartmentLease->renewal_date) {
+
+                    $this->createRenewalCalendarEvent($apartmentLease);
+
+                    $this->createRenewalReminders($apartmentLease);
+
+                }
+
+            }
+
+            DB::commit();
+
+            return $apartmentLease->fresh(['store','renewalCreatedBy']);
+
+        }
+
+        catch (\Exception $e) {
+
+            DB::rollback();
+
+            throw $e;
+
+        }
+    }
+    public function destroy(ApartmentLease $apartmentLease)
+    {
+        DB::beginTransaction();
+
+        try {
+
+            // Delete related calendar events
+            CalendarEvent::where('related_model_type', ApartmentLease::class)
+                ->where('related_model_id', $apartmentLease->id)
+                ->delete();
+
+            // Delete related reminders
+            CalendarReminder::where('related_model_type', ApartmentLease::class)
+                ->where('related_model_id', $apartmentLease->id)
+                ->delete();
+
+            $apartmentLease->delete();
+
+            DB::commit();
+
+            return true;
+
+        } catch (\Exception $e) {
+
+            DB::rollback();
+
+            throw $e;
+
+        }
+    }
+     public function export($request)
+    {
+        $query = ApartmentLease::with(['store', 'renewalCreatedBy']);
+
+        // Search filter
+        if ($request->filled('search')) {
+            $search = $request->search;
+
+            $query->where(function ($q) use ($search) {
+                $q->where('store_number', 'like', "%{$search}%")
+                    ->orWhere('apartment_address', 'like', "%{$search}%")
+                    ->orWhere('lease_holder', 'like', "%{$search}%")
+                    ->orWhere('notes', 'like', "%{$search}%")
+                    ->orWhereHas('store', function ($q) use ($search) {
+                        $q->where('store_number', 'like', "%{$search}%")
+                            ->orWhere('name', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        // Family filter
+        if ($request->filled('family_filter') && $request->family_filter !== 'all') {
+            if ($request->family_filter === 'yes') {
+                $query->whereIn('is_family', ['Yes', 'yes']);
+            } elseif ($request->family_filter === 'no') {
+                $query->whereIn('is_family', ['No', 'no']);
+            }
+        }
+
+        // Car filter
+        if ($request->filled('car_filter') && $request->car_filter !== 'all') {
+            if ($request->car_filter === 'with_car') {
+                $query->where('has_car', '>', 0);
+            } elseif ($request->car_filter === 'no_car') {
+                $query->where('has_car', '=', 0);
+            }
+        }
+
+        // Lease status filter
+        if ($request->filled('lease_status') && $request->lease_status !== 'all') {
+
+            switch ($request->lease_status) {
+
+                case 'renewal_pending':
+                    $query->whereNotNull('renewal_date')
+                        ->where('renewal_status', 'pending');
+                    break;
+
+                case 'renewal_overdue':
+                    $query->whereNotNull('renewal_date')
+                        ->where('renewal_date', '<', now()->startOfDay())
+                        ->where('renewal_status', '!=', 'completed');
+                    break;
+
+                case 'renewal_due_soon':
+                    $query->whereNotNull('renewal_date')
+                        ->where('renewal_date', '>=', now()->startOfDay())
+                        ->where('renewal_date', '<=', now()->addDays(30)->endOfDay())
+                        ->where('renewal_status', '!=', 'completed');
+                    break;
+
+                case 'renewal_completed':
+                    $query->where('renewal_status', 'completed');
+                    break;
+            }
+        }
+
+        $leases = $query->orderBy('store_number')->get();
+
+        return $leases->map(function ($lease) {
+
+            $renewalDate = null;
+            $daysUntilRenewal = null;
+
+            if ($lease->renewal_date) {
+                try {
+
+                    $renewalDateCarbon = $lease->renewal_date instanceof Carbon
+                        ? $lease->renewal_date
+                        : Carbon::parse($lease->renewal_date);
+
+                    $renewalDate = $renewalDateCarbon->format('Y-m-d');
+
+                    $daysUntilRenewal = now()->diffInDays($renewalDateCarbon, false);
+
+                } catch (\Exception $e) {
+
+                    $renewalDate = 'Invalid Date';
+                    $daysUntilRenewal = null;
+                }
+            }
+
+            return [
+
+                'store_number' => $lease->store ? $lease->store->store_number : $lease->store_number,
+                'store_name' => $lease->store ? $lease->store->name : 'N/A',
+                'apartment_address' => $lease->apartment_address,
+                'rent' => $lease->rent,
+                'utilities' => $lease->utilities ?? 0,
+                'total_rent' => $lease->total_rent,
+                'number_of_AT' => $lease->number_of_AT,
+                'has_car' => $lease->has_car,
+                'is_family' => $lease->is_family ?? '',
+                'expiration_date' => $lease->expiration_date ? $lease->expiration_date->format('Y-m-d') : null,
+                'drive_time' => $lease->drive_time ?? '',
+                'notes' => $lease->notes ?? '',
+                'lease_holder' => $lease->lease_holder,
+                'expiration_warning' => $lease->expiration_warning ?? '',
+
+                'renewal_date' => $renewalDate,
+                'renewal_status' => $lease->renewal_status ?? '',
+                'renewal_notes' => $lease->renewal_notes ?? '',
+                'days_until_renewal' => $daysUntilRenewal,
+                'renewal_created_by' => $lease->renewalCreatedBy->name ?? ''
+
+            ];
+        });
+    }
+    
     private function calculateFilteredStats($query)
     {
+
         $total = (clone $query)->count();
 
-        $totalMonthlyRent = (clone $query)->sum(
-            DB::raw('rent + COALESCE(utilities,0)')
-        );
+        $totalMonthlyRent = (clone $query)->sum(DB::raw('rent + COALESCE(utilities, 0)'));
 
-        $families = (clone $query)
-            ->whereIn('is_family', ['Yes', 'yes'])
-            ->count();
+        $families = (clone $query)->whereIn('is_family', ['Yes', 'yes'])->count();
 
         $totalCars = (clone $query)->sum('has_car');
 
         $totalAT = (clone $query)->sum('number_of_AT');
 
         $startDate = now()->startOfDay();
+
         $endDate = now()->addMonth()->endOfMonth();
 
         $expiringSoon = (clone $query)
@@ -406,10 +538,8 @@ class ApartmentLeaseService
 
         $renewalsDueSoon = (clone $query)
             ->whereNotNull('renewal_date')
-            ->whereBetween('renewal_date', [
-                now()->startOfDay(),
-                now()->addDays(30)->endOfDay()
-            ])
+            ->where('renewal_date', '>=', now()->startOfDay())
+            ->where('renewal_date', '<=', now()->addDays(30)->endOfDay())
             ->where('renewal_status', '!=', 'completed')
             ->count();
 
@@ -420,81 +550,44 @@ class ApartmentLeaseService
             ->count();
 
         return [
+
             'total' => $total,
+
             'families' => $families,
+
             'total_cars' => $totalCars,
+
             'expiring_soon' => $expiringSoon,
+
             'total_monthly_rent' => $totalMonthlyRent,
+
             'average_rent' => $total > 0 ? $totalMonthlyRent / $total : 0,
+
             'total_at' => $totalAT,
+
             'average_at' => $total > 0 ? $totalAT / $total : 0,
+
             'occupancy_rate' => $total > 0 ? 100 : 0,
+
+            'expiring_this_month' => $query->whereMonth('expiration_date', now()->month)
+                ->whereYear('expiration_date', now()->year)
+                ->count(),
+
+            'expiring_next_month' => $query->whereMonth('expiration_date', now()->addMonth()->month)
+                ->whereYear('expiration_date', now()->addMonth()->year)
+                ->count(),
+
+            'expiring_next_3_months' => $query->whereBetween('expiration_date', [now(), now()->addMonths(3)])
+                ->count(),
+
             'renewals_due_soon' => $renewalsDueSoon,
-            'overdue_renewals' => $overdueRenewals,
+
+            'overdue_renewals' => $overdueRenewals
+
         ];
     }
-
-    public function createLease(array $data)
-    {
-        DB::beginTransaction();
-
-        try {
-
-            // Create store if needed
-            if (!$data['store_id'] && !empty($data['new_store_number'])) {
-
-                $store = Store::create([
-                    'store_number' => $data['new_store_number'],
-                    'name' => $data['new_store_name'],
-                    'is_active' => true,
-                ]);
-
-                $data['store_id'] = $store->id;
-                $data['store_number'] = $store->store_number;
-            }
-
-            elseif ($data['store_id']) {
-
-                $store = Store::find($data['store_id']);
-                $data['store_number'] = $store->store_number;
-            }
-
-            // Renewal info
-            if (!empty($data['renewal_date'])) {
-
-                $data['renewal_created_by'] = auth()->id();
-                $data['renewal_status'] = $data['renewal_status'] ?? 'pending';
-            }
-
-            $data['created_by'] = auth()->id();
-
-            unset(
-                $data['new_store_number'],
-                $data['new_store_name']
-            );
-
-            $lease = ApartmentLease::create($data);
-
-            // Calendar + reminders
-            if ($lease->renewal_date) {
-
-                $this->createRenewalCalendarEvent($lease);
-                $this->createRenewalReminders($lease);
-            }
-
-            DB::commit();
-
-            return $lease;
-
-        } catch (\Exception $e) {
-
-            DB::rollback();
-            throw $e;
-        }
-    }
-
-
-      private function createRenewalCalendarEvent(ApartmentLease $apartmentLease)
+    
+    private function createRenewalCalendarEvent(ApartmentLease $apartmentLease)
     {
         try {
             // Validate required data
@@ -633,4 +726,7 @@ class ApartmentLeaseService
             return [];
         }
     }
+
+
+
 }

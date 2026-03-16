@@ -28,9 +28,8 @@ class ApartmentLeaseStoreRequest extends FormRequest
             'drive_time' => 'nullable|string',
             'notes' => 'nullable|string',
             'lease_holder' => 'required|string',
-
             'renewal_date' => 'nullable|date|after:today',
-            'renewal_status' => 'nullable|in:pending,in_progress,completed,declined',
+            'renewal_status' => 'nullable|in:pending,in_prLogress,completed,declined',
             'renewal_notes' => 'nullable|string',
         ];
     }

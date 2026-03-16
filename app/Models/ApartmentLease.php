@@ -34,6 +34,14 @@ class ApartmentLease extends Model
         'renewal_reminder_sent_at',
         'renewal_completed_at',
     ];
+    public function getExpirationWarningAttribute()
+    {
+        return [
+            'text' => $this->expiration_warning_text,
+            'class' => $this->expiration_warning_class,
+            'sort_value' => $this->expiration_warning_sort_value,
+        ];
+    }
 
     // Add proper casting for your fields
     public function store(): BelongsTo

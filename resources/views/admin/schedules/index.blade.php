@@ -74,7 +74,7 @@
                                 <div>
                                     <div class="text-sm font-medium text-gray-900">{{ $schedule->name }}</div>
                                     <div class="text-sm text-gray-500">Created by {{ $schedule->creator->name ?? 'Unknown' }}</div>
-                                    <div class="text-xs text-gray-400">{{ $schedule->created_at->diffForHumans() }}</div>
+                                    {{-- <div class="text-xs text-gray-400">{{ $schedule->created_at->diffForHumans() }}</div> --}}
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">

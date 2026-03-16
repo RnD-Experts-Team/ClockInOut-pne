@@ -342,9 +342,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', RoleMiddleware::clas
     Route::post('apartment-leases/import', [ApartmentLeaseController::class, 'import'])->name('apartment-leases.import');
     Route::post('apartment-leases/analytics', [ApartmentLeaseController::class, 'analytics'])->name('apartment-leases.analytics');
     Route::get('apartment-leases/list', [ApartmentLeaseController::class, 'list'])->name('apartment-leases.list');
-
     // Resource routes AFTER custom routes
     Route::resource('apartment-leases', ApartmentLeaseController::class);
+
     Route::delete('schedules/shift-types', [ScheduleController::class, 'deleteShiftType'])
         ->name('schedules.delete-shift-type');
     Route::delete('schedules/roles', [ScheduleController::class, 'deleteRole'])
@@ -358,6 +358,10 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', RoleMiddleware::clas
     Route::post('schedules/{schedule}/activate', [ScheduleController::class, 'activate'])
         ->name('schedules.activate');
 
+
+
+
+        
     // Task Management
     Route::resource('task-assignments', TaskAssignmentController::class)
         ->except(['create', 'store']);

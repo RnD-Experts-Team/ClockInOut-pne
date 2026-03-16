@@ -39,3 +39,5 @@ require __DIR__ . '/api/NativeRequest.php';
 require __DIR__ . '/api/Notification.php';
 require __DIR__ . '/api/Scorcards.php';
 require __DIR__ . '/api/ApartmentLease.php';
+require __DIR__ . '/api/Schedule.php';
+require __DIR__ . '/api/TaskAssignment.php';
