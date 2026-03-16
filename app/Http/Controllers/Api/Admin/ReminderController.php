@@ -175,7 +175,7 @@ class ReminderController extends Controller
 
         } catch (\Exception $e) {
 
-            \Log::error('Reminder Snooze Error', [
+            Log::error('Reminder Snooze Error', [
                 'message' => $e->getMessage(),
                 'reminder_id' => $reminder->id
             ]);
@@ -223,7 +223,7 @@ class ReminderController extends Controller
 
         } catch (\Exception $e) {
 
-            \Log::error('Get Due Reminders Error', [
+            Log::error('Get Due Reminders Error', [
                 'message' => $e->getMessage(),
                 'user_id' => auth()->id()
             ]);

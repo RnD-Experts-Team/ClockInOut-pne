@@ -44,3 +44,4 @@ require __DIR__ . '/api/TaskAssignment.php';
 require __DIR__ . '/api/AdminNativeRequest.php';
 require __DIR__ . '/api/AdminActivity.php';
 require __DIR__ . '/api/Reminder.php';
+require __DIR__ . '/api/Expiration.php';
