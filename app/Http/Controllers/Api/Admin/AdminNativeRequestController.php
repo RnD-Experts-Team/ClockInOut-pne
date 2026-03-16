@@ -91,19 +91,19 @@ class AdminNativeRequestController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => 'Request updated successfully.',
-                    'request' => $nativeRequest,
+                    'request' => $request,
                 ]);
             }
 
             return redirect()
                 ->route('admin.native.index')
-                ->with('success', 'Request #' . $nativeRequest->id . ' updated successfully.');
+                ->with('success', 'Request #' . $request->id . ' updated successfully.');
 
         } catch (\Exception $e) {
 
             Log::error('Update Native Request Status Error', [
                 'message' => $e->getMessage(),
-                'request_id' => $nativeRequest->id
+                'request_id' => $request->id
             ]);
 
             return response()->json([

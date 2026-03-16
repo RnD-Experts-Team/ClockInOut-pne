@@ -385,6 +385,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', RoleMiddleware::clas
             Route::patch('/{request}/status', [App\Http\Controllers\Admin\AdminNativeRequestController::class, 'updateStatus'])->name('updateStatus');
         });
 });
+//done
+
 
 // PRIORITY 11: Workbook System
 Route::middleware(['auth',RoleMiddleware::class . ':admin'])->group(function () {
@@ -409,6 +411,7 @@ Route::middleware(['auth',RoleMiddleware::class . ':admin'])->group(function () 
             ->name('rows.save');
     });
 });
+//methods not found
 
 // PRIORITY 12: Calendar Extended Features
 Route::middleware(['auth'])->group(function () {
@@ -420,6 +423,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/api/stats', [AdminActivityController::class, 'getStats'])->name('stats');
         Route::post('/filter', [AdminActivityController::class, 'filter'])->name('filter');
     });
+
+    
 
     // Reminders System
     Route::prefix('reminders')->name('reminders.')->group(function () {

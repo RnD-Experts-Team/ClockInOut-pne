@@ -42,3 +42,4 @@ require __DIR__ . '/api/ApartmentLease.php';
 require __DIR__ . '/api/Schedule.php';
 require __DIR__ . '/api/TaskAssignment.php';
 require __DIR__ . '/api/AdminNativeRequest.php';
+require __DIR__ . '/api/AdminActivity.php';
