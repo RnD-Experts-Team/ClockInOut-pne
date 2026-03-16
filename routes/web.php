@@ -425,6 +425,8 @@ Route::middleware(['auth'])->group(function () {
     });
 
     
+    
+    
 
     // Reminders System
     Route::prefix('reminders')->name('reminders.')->group(function () {
@@ -439,6 +441,9 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/api/due', [ReminderController::class, 'getDueReminders'])->name('due');
         Route::post('/bulk-action', [ReminderController::class, 'bulkAction'])->name('bulk-action');
     });
+//done
+
+
 
     // Expiration Tracking
     Route::prefix('expiration')->name('expiration.')->group(function () {
