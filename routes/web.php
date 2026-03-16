@@ -372,6 +372,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', RoleMiddleware::clas
     Route::get('api/tasks/available', [ScheduleController::class, 'getAvailableTasks'])
         ->name('api.tasks.available');
 
+
+
+        
     // Native Maintenance Requests - Admin
     Route::prefix('requests')
         ->name('native.')
