@@ -164,6 +164,20 @@ class MaintenanceRequestController extends Controller
 
         }
     }
+     public function getByStore($storeId)
+    {
+        return $this->maintenanceService->getByStore($storeId);
+    }
+
+    public function getLatestByStore(Request $request, $storeId)
+    {
+        return $this->maintenanceService->getLatestByStore($request, $storeId);
+    }
+
+    public function showAPI(MaintenanceRequest $maintenanceRequest)
+    {
+        return $this->maintenanceService->showAPI($maintenanceRequest);
+    }
     
     
   

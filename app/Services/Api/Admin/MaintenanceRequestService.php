@@ -6,8 +6,8 @@ use App\Models\UrgencyLevel;
 use App\Models\Store;
 use App\Models\User;
 use Carbon\Carbon;
-use App\Http\Requests\Api\Admin\UpdateMaintenanceStatusRequest;
-use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+ 
 use Illuminate\Support\Facades\Log;
 use App\Services\Api\Admin\CognitoFormsService;
 use Illuminate\Support\Facades\DB;
@@ -253,7 +253,7 @@ class MaintenanceRequestService
     }
     public function bulkUpdateStatus(array $data, $userId)
     {
-    try{
+         try{
         DB::beginTransaction();
         $requestIds = $data['request_ids'];
         $newStatus = $data['status'];
@@ -355,7 +355,7 @@ class MaintenanceRequestService
         }
 
     }
-       private function updateCognitoStatus(MaintenanceRequest $maintenanceRequest, string $newStatus, ?string $howWeFixedIt = null): void
+    private function updateCognitoStatus(MaintenanceRequest $maintenanceRequest, string $newStatus, ?string $howWeFixedIt = null): void
     {
         $formId = $maintenanceRequest->form_id;
         $entryId = $maintenanceRequest->entry_number;
@@ -793,5 +793,160 @@ class MaintenanceRequestService
 
             throw $e;
         }
+    }
+    public function getByStore($storeId)
+    {
+        try {
+            $maintenanceRequests = MaintenanceRequest::where('store_id', $storeId)
+                ->whereNotIn('status', ['done', 'completed', 'canceled'])
+                ->select('id', 'equipment_with_issue', 'status')
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            return response()->json($maintenanceRequests);
+        } catch (\Exception $e) {
+            Log::error('Error fetching maintenance requests by store: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to load maintenance requests'], 500);
+        }
+    }
+
+    public function getLatestByStore(Request $request, $storeId)
+    {
+        try {
+            // Subtask 6: Validate store_id format (must end with at least 2 digits)
+            if (!preg_match('/\d{2}$/', $storeId)) {
+                return response()->json([
+                    'error' => 'Invalid store_id format. Must end with 2 digits.'
+                ], 400);
+            }
+
+            // Subtask 2: Extract last 2 digits from store_id
+            // Example: "03759-0001" → "01"
+            $lastTwoDigits = substr($storeId, -2);
+
+            // Convert to integer to remove leading zeros
+            // "01" → 1 (to match store_number '1' in database)
+            $storeNumber = (int) $lastTwoDigits;
+
+            // First, find the store by store_number
+            $store = Store::where('store_number', (string) $storeNumber)->first();
+
+            // If store doesn't exist, return informative message
+            if (!$store) {
+                return response()->json([
+                    'message' => 'No store found with store number: ' . $storeNumber,
+                    'data' => []
+                ], 200);
+            }
+
+            // Check if limit parameter is provided
+            $limit = $request->query('limit');
+
+            // Subtask 3: Query maintenance requests
+            $query = MaintenanceRequest::where('store_id', $store->id)
+                ->orderBy('date_submitted', 'desc');
+
+            $perPage = $request->integer('per_page', 15); // default 15 if not provided
+
+            // If limit is provided, use it (with validation)
+            if ($limit !== null) {
+                // Validate limit is a positive integer between 1 and 100
+                if (!is_numeric($limit) || $limit < 1 || $limit > 100) {
+                    return response()->json([
+                        'error' => 'Invalid limit. Must be between 1 and 100.'
+                    ], 400);
+                }
+
+                // Get limited results without pagination
+                $requests = $query->limit($limit)
+                    ->get(['id', 'entry_number', 'status', 'equipment_with_issue', 'date_submitted']);
+
+                // Subtask 4: Map response to required fields only
+                $response = $requests->map(function ($request) {
+                    return [
+                        'id' => $request->id,
+                        'entry_number' => $request->entry_number,
+                        'status' => $request->status,
+                        'broken_item' => $request->equipment_with_issue,
+                        'submitted_at' => $request->date_submitted
+                    ];
+                });
+
+                return response()->json([
+                    'store_number' => $store->store_number,
+                    'store_name' => $store->name,
+                    'limit' => (int) $limit,
+                    'count' => $response->count(),
+                    'data' => $response
+                ], 200);
+            } else {
+                if ($perPage < 1 || $perPage > 100) {
+                    return response()->json([
+                        'error' => 'Invalid per_page. Must be between 1 and 100.'
+                    ], 400);
+                }
+                // No limit provided - return all with pagination (15 per page)
+                $paginatedRequests = $query->paginate(
+                    $perPage,
+                    ['id', 'entry_number', 'status', 'equipment_with_issue', 'date_submitted']
+                );
+                // Map the paginated data
+                $mappedData = $paginatedRequests->map(function ($request) {
+                    return [
+                        'id' => $request->id,
+                        'entry_number' => $request->entry_number,
+                        'status' => $request->status,
+                        'broken_item' => $request->equipment_with_issue,
+                        'submitted_at' => $request->date_submitted
+                    ];
+                });
+
+                return response()->json([
+                    'store_number' => $store->store_number,
+                    'store_name' => $store->name,
+                    'pagination' => [
+                        'current_page' => $paginatedRequests->currentPage(),
+                        'per_page' => $paginatedRequests->perPage(),
+                        'total' => $paginatedRequests->total(),
+                        'last_page' => $paginatedRequests->lastPage(),
+                        'from' => $paginatedRequests->firstItem(),
+                        'to' => $paginatedRequests->lastItem(),
+                    ],
+                    'links' => [
+                        'first' => $paginatedRequests->url(1),
+                        'last' => $paginatedRequests->url($paginatedRequests->lastPage()),
+                        'prev' => $paginatedRequests->previousPageUrl(),
+                        'next' => $paginatedRequests->nextPageUrl(),
+                    ],
+                    'data' => $mappedData
+                ], 200);
+            }
+        } catch (\Exception $e) {
+            Log::error('Error fetching latest maintenance requests by store', [
+                'store_id' => $storeId,
+                'limit' => $limit ?? 'not set',
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'error' => 'Failed to load maintenance requests'
+            ], 500);
+        }
+    }
+
+    public function showAPI(MaintenanceRequest $maintenanceRequest)
+    {
+        $maintenanceRequest->load([
+            'requester',
+            'reviewedByManager',
+            'urgencyLevel',
+            'attachments',
+            'links',
+            'store',
+            'statusHistories.changedByUser',
+            'assignedTo'
+        ]);
+        return response()->json($maintenanceRequest);
     }
 }

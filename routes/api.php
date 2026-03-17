@@ -50,3 +50,4 @@ require __DIR__ . '/api/MaintenanceCalendar.php';
 require __DIR__ . '/api/TaskCalendar.php';
 require __DIR__ . '/api/Export.php';
 require __DIR__ . '/api/workbooks.php';
+require __DIR__ . '/api/MaintenanceWebhook.php';
