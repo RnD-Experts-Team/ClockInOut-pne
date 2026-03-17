@@ -14,5 +14,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/api/due', [ReminderController::class, 'getDueReminders'])->name('due');
         Route::post('/bulk-action', [ReminderController::class, 'bulkAction'])->name('bulk-action');
     });
+    Route::get('/check-reminders', [ReminderController::class, 'checkPendingReminders']);
+    Route::post('/reminders/{id}/dismiss', [ReminderController::class, 'dismissReminder']);
 });
  

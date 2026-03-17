@@ -560,13 +560,13 @@ Route::prefix('workbooks')
     });
 
 
-
+//done 
 // PRIORITY 12: Calendar Extended Features (UPDATE THIS SECTION)
 Route::middleware(['auth'])->group(function () {
 
     Route::get('/check-reminders', [ReminderController::class, 'checkPendingReminders']);
     Route::post('/reminders/{id}/dismiss', [ReminderController::class, 'dismissReminder']);
-
+//done
 
     // Reminders System - COMPLETE ROUTES
     Route::prefix('reminders')->name('reminders.')->group(function () {
@@ -574,7 +574,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/create', [ReminderController::class, 'create'])->name('create');
         Route::post('/', [ReminderController::class, 'store'])->name('store');
         Route::get('/{reminder}', [ReminderController::class, 'show'])->name('show');
-        Route::get('/{reminder}/edit', [ReminderController::class, 'edit'])->name('edit');//
+        Route::get('/{reminder}/edit', [ReminderController::class, 'edit'])->name('edit');
         Route::put('/{reminder}', [ReminderController::class, 'update'])->name('update');
 
         // AJAX Actions for the dashboard
@@ -586,6 +586,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/api/due', [ReminderController::class, 'getDueReminders'])->name('due');
         Route::post('/bulk-action', [ReminderController::class, 'bulkAction'])->name('bulk-action');
         Route::get('/export', [ReminderController::class, 'export'])->name('export');//
+        //repeate
 
             // Personal reminder notifications
 
@@ -602,6 +603,13 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/api/stats', [AdminActivityController::class, 'getStats'])->name('stats');
         Route::post('/filter', [AdminActivityController::class, 'filter'])->name('filter');
     });
+        //repeate
+
+
+
+
+
+
 
     // Expiration Tracking (KEEP YOUR EXISTING ROUTES)
     Route::prefix('expiration')->name('expiration.')->group(function () {
@@ -614,6 +622,11 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/api/expiring-items', [ExpirationController::class, 'getExpiringItems'])->name('expiring-items');
         Route::post('/update-warning-settings', [ExpirationController::class, 'updateWarningSettings'])->name('update-warning-settings');
     });
+        //repeate
+
+
+
+
 
     // Clock Events Management (KEEP YOUR EXISTING ROUTES)
     Route::prefix('clock-events')->name('clock-events.')->group(function () {
@@ -625,6 +638,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/api/events', [ClockEventController::class, 'getEvents'])->name('api.events');
         Route::get('/api/work-hours-summary', [ClockEventController::class, 'getWorkHoursSummary'])->name('work-hours-summary');
     });
+            //repeate
+
 
     // Maintenance Calendar (KEEP YOUR EXISTING ROUTES)
     Route::prefix('maintenance-calendar')->name('maintenance-calendar.')->group(function () {
@@ -638,6 +653,8 @@ Route::middleware(['auth'])->group(function () {
             Route::put('/reschedule/{event}', [MaintenanceCalendarController::class, 'reschedule'])->name('reschedule');
         });
     });
+                //repeate
+
 
     // Task Calendar (KEEP YOUR EXISTING ROUTES)
     Route::prefix('task-calendar')->name('task-calendar.')->group(function () {

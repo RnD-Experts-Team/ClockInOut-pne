@@ -12,7 +12,7 @@ use App\Services\Api\Admin\ReminderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
-
+use Throwable;
 class ReminderController extends Controller
 {
     protected ReminderService $service;
@@ -259,6 +259,56 @@ class ReminderController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to perform bulk action'
+            ], 500);
+        }
+    }
+    
+     public function checkPendingReminders(Request $request): JsonResponse
+    {
+        $userId = auth()->id();
+
+        if (!$userId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User not authenticated'
+            ], 401);
+        }
+
+        try {
+            $result = $this->service->checkPendingReminders($userId);
+
+            return response()->json($result, 200);
+
+        } catch (Throwable $e) {
+
+            Log::error('Error checking pending reminders: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error checking reminders',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+     public function dismissReminder(Request $request, $id): JsonResponse
+    {
+        try {
+            $userId = auth()->id();
+
+            $result = $this->service->dismissReminderForUser($userId, $id);
+
+            return response()->json($result, 200);
+
+        } catch (Throwable $e) {
+
+            Log::error('Error dismissing reminder: ' . $e->getMessage(), [
+                'reminder_id' => $id,
+                'user_id' => auth()->id()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error dismissing reminder'
             ], 500);
         }
     }

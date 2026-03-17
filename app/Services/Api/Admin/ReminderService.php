@@ -7,6 +7,7 @@ use App\Models\CalendarReminder;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class ReminderService
 {
@@ -148,6 +149,25 @@ class ReminderService
             'message' => 'Reminder dismissed'
         ];
     }
+    public function dismissReminderForUser(int $userId, int $id): array
+    {
+        $reminder = CalendarReminder::where('admin_user_id', $userId)
+            ->findOrFail($id);
+
+        $reminder->update([
+            'notification_status' => 'dismissed',
+            'notified_at' => Carbon::now()
+        ]);
+
+        // Clear user's cache
+        $cacheKey = "pending_reminders_user_" . $userId;
+        Cache::forget($cacheKey);
+
+        return [
+            'success' => true,
+            'message' => 'Reminder dismissed successfully'
+        ];
+    }
 
     public function snoozeReminder($reminder, int $minutes): array
     {
@@ -240,4 +260,49 @@ class ReminderService
             'message' => $count . ' reminders updated successfully'
         ];
     }
+    public function checkPendingReminders(int $userId): array
+    {
+        $currentTime = Carbon::now();
+
+        Log::info("Current time (app timezone): " . $currentTime);
+        Log::info("Current time (UTC): " . $currentTime->utc());
+
+        $reminders = CalendarReminder::where('admin_user_id', $userId)
+            ->where('notification_status', 'pending')
+            ->whereTime('reminder_time', '<=', $currentTime->format('H:i:s'))
+            ->whereDate('reminder_date', '<=', $currentTime->format('Y-m-d'))
+            ->orderBy('reminder_time', 'asc')
+            ->get();
+
+        Log::info("Found reminders: " . $reminders->count());
+
+        foreach ($reminders as $reminder) {
+            $reminder->update([
+                'notification_status' => 'shown',
+                'notified_at' => $currentTime
+            ]);
+        }
+
+        return [
+            'success' => true,
+            'reminders' => $reminders->map(function ($reminder) {
+                return [
+                    'id' => $reminder->id,
+                    'title' => $reminder->title,
+                    'description' => $reminder->description,
+                    'reminder_time' => $reminder->reminder_time,
+                    'priority' => 'normal',
+                    'status' => $reminder->notification_status,
+                    'type' => $reminder->reminder_type ?? 'custom_reminder'
+                ];
+            }),
+            'count' => $reminders->count(),
+            'notified_count' => $reminders->count(),
+            'timestamp' => $currentTime->toISOString(),
+            'debug_current_time' => $currentTime->format('Y-m-d H:i:s'),
+            'debug_timezone' => config('app.timezone')
+        ];
+    }
+
+    
 }

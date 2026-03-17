@@ -15,4 +15,3 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/update-warning-settings', [ExpirationController::class, 'updateWarningSettings'])->name('update-warning-settings');
     });
 });
- 

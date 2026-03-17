@@ -11,3 +11,4 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/filter', [AdminActivityController::class, 'filter'])->name('filter');
         });
 });
+      
