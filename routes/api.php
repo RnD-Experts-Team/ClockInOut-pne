@@ -46,3 +46,7 @@ require __DIR__ . '/api/AdminActivity.php';
 require __DIR__ . '/api/Reminder.php';
 require __DIR__ . '/api/Expiration.php';
 require __DIR__ . '/api/ClockEvent.php';
+require __DIR__ . '/api/MaintenanceCalendar.php';
+require __DIR__ . '/api/TaskCalendar.php';
+require __DIR__ . '/api/Export.php';
+require __DIR__ . '/api/workbooks.php';

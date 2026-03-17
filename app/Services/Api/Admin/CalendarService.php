@@ -679,6 +679,7 @@ class CalendarService
             'custom_events' => $events->where('event_type', 'custom')->values(),
         ];
     }
+ 
 
 
 }

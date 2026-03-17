@@ -424,10 +424,6 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/filter', [AdminActivityController::class, 'filter'])->name('filter');
     });
 
-    
-    
-    
-
     // Reminders System
     Route::prefix('reminders')->name('reminders.')->group(function () {
         Route::get('/', [ReminderController::class, 'index'])->name('index');
@@ -442,8 +438,6 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/bulk-action', [ReminderController::class, 'bulkAction'])->name('bulk-action');
     });
 //done
-
-
 
     // Expiration Tracking
     Route::prefix('expiration')->name('expiration.')->group(function () {
@@ -471,6 +465,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/api/work-hours-summary', [ClockEventController::class, 'getWorkHoursSummary'])->name('work-hours-summary');
     });
 
+    //done
+
     // Maintenance Calendar
     Route::prefix('maintenance-calendar')->name('maintenance-calendar.')->group(function () {
         Route::get('/', [MaintenanceCalendarController::class, 'index'])->name('index');
@@ -483,6 +479,7 @@ Route::middleware(['auth'])->group(function () {
             Route::put('/reschedule/{event}', [MaintenanceCalendarController::class, 'reschedule'])->name('reschedule');
         });
     });
+//done
 
     // Task Calendar
     Route::prefix('task-calendar')->name('task-calendar.')->group(function () {
@@ -497,6 +494,8 @@ Route::middleware(['auth'])->group(function () {
         });
     });
 });
+//done
+
 
 // PRIORITY 13: Export Routes
 Route::middleware(['auth', RoleMiddleware::class . ':admin'])->prefix('export')->name('export.')->group(function () {
@@ -512,11 +511,12 @@ Route::middleware(['auth', RoleMiddleware::class . ':admin'])->prefix('export')-
     // Screenshot Generation
     Route::post('/calendar-screenshot', [ExportController::class, 'generateScreenshot'])->name('calendar-screenshot');
 });
+//methods not found
 
 
 //export Clock in out data to excel
 Route::get('/export-clocking/{startDate?}/{endDate?}', [ExportController::class, 'exportToExcel'])->name('export.clocking');
-
+//done
 
 
 

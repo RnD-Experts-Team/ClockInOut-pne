@@ -254,6 +254,13 @@ class MaintenanceCalendarController extends Controller
 
         return response()->json($statistics);
     }
+       private function extractPriorityFromEvent(CalendarEvent $event): string
+    {
+        if (preg_match('/Priority:\s*(\w+)/i', $event->description, $matches)) {
+            return strtolower($matches[1]);
+        }
+        return 'normal';
+    }
 
     /**
      * Build maintenance description
@@ -308,13 +315,7 @@ class MaintenanceCalendarController extends Controller
     /**
      * Extract priority from event description
      */
-    private function extractPriorityFromEvent(CalendarEvent $event): string
-    {
-        if (preg_match('/Priority:\s*(\w+)/i', $event->description, $matches)) {
-            return strtolower($matches[1]);
-        }
-        return 'normal';
-    }
+ 
 
 
 }
