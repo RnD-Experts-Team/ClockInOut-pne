@@ -456,6 +456,9 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/api/expiring-items', [ExpirationController::class, 'getExpiringItems'])->name('expiring-items');
         Route::post('/update-warning-settings', [ExpirationController::class, 'updateWarningSettings'])->name('update-warning-settings');
     });
+    //done
+
+    
 
     // Clock Events Management
     Route::prefix('clock-events')->name('clock-events.')->group(function () {

@@ -33,6 +33,13 @@ class DailyClockEvent extends Model
     {
         return $this->belongsTo(User::class);
     }
+    public function scopeByDateRange($query, $startDate, $endDate)
+    {
+        return $query->whereBetween('event_timestamp', [
+            $startDate->startOfDay(),
+            $endDate->endOfDay()
+        ]);
+    }
 
     // Scopes
     public function scopeByUser($query, $userId)

@@ -125,6 +125,41 @@ class ClockEventController extends Controller
             ]
         ]);
     }
+      private function validateEventSequence(int $userId, string $eventType): array
+    {
+        $lastEvent = DailyClockEvent::byUser($userId)
+            ->whereDate('event_timestamp', Carbon::today())
+            ->orderBy('event_timestamp', 'desc')
+            ->first();
+
+        if (!$lastEvent) {
+            // First event of the day
+            if ($eventType !== 'clock_in') {
+                return [
+                    'valid' => false,
+                    'message' => 'First event of the day must be clock in.'
+                ];
+            }
+            return ['valid' => true];
+        }
+
+        // Validate sequence based on last event
+        $invalidSequences = [
+            'clock_in' => ['clock_in', 'break_end'],
+            'clock_out' => ['clock_out', 'break_start', 'break_end'],
+            'break_start' => ['clock_out', 'break_start'],
+            'break_end' => ['clock_in', 'break_end'],
+        ];
+
+        if (in_array($eventType, $invalidSequences[$lastEvent->event_type] ?? [])) {
+            return [
+                'valid' => false,
+                'message' => "Cannot {$eventType} after {$lastEvent->event_type}."
+            ];
+        }
+
+        return ['valid' => true];
+    }
 
     /**
      * Get clock events for specific date and user
@@ -163,6 +198,7 @@ class ClockEventController extends Controller
             })
         ]);
     }
+
 
     /**
      * Get work hours summary for date range
@@ -294,39 +330,5 @@ class ClockEventController extends Controller
     /**
      * Validate event sequence
      */
-    private function validateEventSequence(int $userId, string $eventType): array
-    {
-        $lastEvent = DailyClockEvent::byUser($userId)
-            ->whereDate('event_timestamp', Carbon::today())
-            ->orderBy('event_timestamp', 'desc')
-            ->first();
-
-        if (!$lastEvent) {
-            // First event of the day
-            if ($eventType !== 'clock_in') {
-                return [
-                    'valid' => false,
-                    'message' => 'First event of the day must be clock in.'
-                ];
-            }
-            return ['valid' => true];
-        }
-
-        // Validate sequence based on last event
-        $invalidSequences = [
-            'clock_in' => ['clock_in', 'break_end'],
-            'clock_out' => ['clock_out', 'break_start', 'break_end'],
-            'break_start' => ['clock_out', 'break_start'],
-            'break_end' => ['clock_in', 'break_end'],
-        ];
-
-        if (in_array($eventType, $invalidSequences[$lastEvent->event_type] ?? [])) {
-            return [
-                'valid' => false,
-                'message' => "Cannot {$eventType} after {$lastEvent->event_type}."
-            ];
-        }
-
-        return ['valid' => true];
-    }
+  
 }
