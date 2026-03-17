@@ -23,6 +23,11 @@ return Application::configure(basePath: dirname(__DIR__))
             }
         },
     )
+    ->withProviders([
+        App\Providers\InvoiceServiceProvider::class,
+        App\Providers\EventServiceProvider::class,
+        App\Providers\RouteServiceProvider::class,
+    ])
     ->withMiddleware(function (Middleware $middleware) {
         // Add SetLocale middleware to web group
         $middleware->web(append: [
