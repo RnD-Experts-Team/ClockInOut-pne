@@ -4,11 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\Admin\ModulesInvoice\EmailRecipientController;
 use App\Http\Middleware\RoleMiddleware;
 
-/*
-|--------------------------------------------------------------------------
-| Invoice Module Routes
-|--------------------------------------------------------------------------
-*/
+ 
 
 Route::middleware(['auth:sanctum'])->prefix('Invoice')->name('invoice.')->group(function () {
     

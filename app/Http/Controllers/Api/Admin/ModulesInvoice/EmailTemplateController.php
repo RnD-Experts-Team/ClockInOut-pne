@@ -4,9 +4,7 @@ namespace App\Http\Controllers\Api\Admin\ModulesInvoice;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Admin\ModulesInvoice\StoreUpdateInvoiceEmailTemplateRequest;
-use App\Models\InvoiceEmailTemplate;
 use App\Services\Api\Admin\ModulesInvoice\EmailTemplateService;
-use Illuminate\Http\Request;
 
 class EmailTemplateController extends Controller
 {

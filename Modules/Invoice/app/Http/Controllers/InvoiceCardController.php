@@ -90,7 +90,6 @@ class InvoiceCardController extends Controller
         // Validate odometer if using car
         if ($clocking->using_car && $request->arrival_odometer) {
             $odometerService = new \Modules\Invoice\Services\OdometerCalculationService();
-            
             // Create temporary card to get previous odometer
             $tempCard = new InvoiceCard([
                 'clocking_id' => $clocking->id,

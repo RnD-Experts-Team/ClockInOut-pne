@@ -11,6 +11,7 @@ use Modules\Invoice\Services\InvoiceService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 
 class InvoiceController extends Controller
 {
@@ -150,7 +151,7 @@ class InvoiceController extends Controller
                 'message' => 'Invoice sent successfully to ' . $request->email,
             ]);
         } catch (\Exception $e) {
-            \Log::error('Error sending invoice email: ' . $e->getMessage());
+            Log::error('Error sending invoice email: ' . $e->getMessage());
             
             return response()->json([
                 'success' => false,
