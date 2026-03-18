@@ -53,4 +53,5 @@ require __DIR__ . '/api/workbooks.php';
 require __DIR__ . '/api/MaintenanceWebhook.php';
 //Modules
 require __DIR__ . '/api/EmailTemplate.php';
+require __DIR__ . '/api/EmailRecipient.php';
 
