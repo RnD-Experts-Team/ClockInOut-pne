@@ -21,7 +21,8 @@
 // // 
 
 // Route::get('/maintenance-requests/{maintenanceRequest}', [MaintenanceRequestController::class, 'showAPI'])->middleware(['auth.token.store']);
-
+ // Invoice Cards (User Side)
+   
 
 require __DIR__ . '/api/Language.php';
 require __DIR__ . '/api/auth.php';
@@ -55,4 +56,5 @@ require __DIR__ . '/api/MaintenanceWebhook.php';
 require __DIR__ . '/api/EmailTemplate.php';
 require __DIR__ . '/api/EmailRecipient.php';
 require __DIR__ . '/api/Invoice.php';
+require __DIR__ . '/api/InvoiceCard.php';
 

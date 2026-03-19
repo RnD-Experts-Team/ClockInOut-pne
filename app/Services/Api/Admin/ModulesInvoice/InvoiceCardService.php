@@ -5,10 +5,14 @@ namespace App\Services\Api\Admin\ModulesInvoice;
 use App\Models\Clocking;
 use App\Models\Configuration;
 use App\Models\ModulesInvoice\InvoiceCard;
+use App\Models\ModulesInvoice\InvoiceCardMaterial;
+use App\Models\ModulesInvoice\InvoiceCardTask;
 use App\Models\Store;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+
 class InvoiceCardService
 {
     public function store($request)
@@ -406,4 +410,242 @@ class InvoiceCardService
             throw $e;
         }
     }
+    public function addMaterial($request, $cardId)
+    {
+        Log::info('Material add request received', [
+            'card_id' => $cardId,
+            'request_data' => $request->all(),
+            'user_id' => Auth::id()
+        ]);
+
+        $card = InvoiceCard::findOrFail($cardId);
+
+        // Check authorization
+        if ($card->user_id !== Auth::id()) {
+            Log::warning('Unauthorized material add attempt', [
+                'card_id' => $cardId,
+                'card_user_id' => $card->user_id,
+                'requesting_user_id' => Auth::id()
+            ]);
+            abort(403, 'Unauthorized');
+        }
+
+        Log::info('Starting material add transaction', [
+            'card_id' => $cardId,
+            'clocking_id' => $card->clocking_id
+        ]);
+
+        DB::beginTransaction();
+        try {
+            // Handle receipt photos
+            $photoPaths = [];
+            if ($request->hasFile('receipt_photos')) {
+                Log::info('Processing receipt photos', [
+                    'photo_count' => count($request->file('receipt_photos'))
+                ]);
+                foreach ($request->file('receipt_photos') as $photo) {
+                    $path = $photo->store('invoice_receipts', 'public');
+                    $photoPaths[] = $path;
+                }
+            }
+
+            // Create material
+            $material = InvoiceCardMaterial::create([
+                'invoice_card_id' => $card->id,
+                'maintenance_request_id' => $request->maintenance_request_id, // Associate with specific task
+                'item_name' => $request->item_name,
+                'cost' => $request->cost,
+                'receipt_photos' => $photoPaths,
+            ]);
+
+            Log::info('Material created successfully', [
+                'material_id' => $material->id,
+                'cost' => $material->cost
+            ]);
+
+            // Recalculate materials cost
+            $card->calculateMaterialsCost();
+            $card->calculateTotalCost();
+
+            // Sync the associated Clocking record for backward compatibility
+            if ($card->clocking_id) {
+                Log::info('Syncing with clocking record', [
+                    'clocking_id' => $card->clocking_id
+                ]);
+                $this->syncClockingWithMaterials($card->clocking_id);
+            } else {
+                Log::warning('No clocking_id found for card', [
+                    'card_id' => $card->id
+                ]);
+            }
+
+            DB::commit();
+
+            $taskInfo = $request->maintenance_request_id ? " for Task #{$request->maintenance_request_id}" : "";
+            Log::info('Material add completed successfully', [
+                'material_id' => $material->id,
+                'task_info' => $taskInfo
+            ]);
+
+            return [
+                'success' => true,
+                'message' => "Material added successfully{$taskInfo}!",
+                'data' => $material
+            ];
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Failed to add material', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return [
+                'success' => false,
+                'message' => 'Failed to add material: ' . $e->getMessage()
+            ];
+        }
+    }
+    public function deleteMaterial($materialId, $userId)
+    {
+        DB::beginTransaction();
+        try {
+            $material = InvoiceCardMaterial::findOrFail($materialId);
+            $card = $material->invoiceCard;
+
+            // Check authorization
+            if ($card->user_id !== $userId) {
+                return [
+                    'success' => false,
+                    'message' => 'Unauthorized',
+                    'status_code' => 403
+                ];
+            }
+
+            // Store material cost for clocking update
+            $materialCost = $material->cost;
+            
+            // Delete photos
+            if ($material->receipt_photos) {
+                foreach ($material->receipt_photos as $photo) {
+                    Storage::disk('public')->delete($photo);
+                }
+            }
+
+            $material->delete();
+
+            // Recalculate costs
+            $card->calculateMaterialsCost();
+            $card->calculateTotalCost();
+
+            // Sync the associated Clocking record for backward compatibility
+            if ($card->clocking_id) {
+                $this->syncClockingWithMaterials($card->clocking_id);
+            }
+
+            DB::commit();
+
+            return [
+                'success' => true,
+                'message' => 'Material deleted successfully!',
+                'status_code' => 200
+            ];
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Failed to delete material', ['error' => $e->getMessage()]);
+
+            return [
+                'success' => false,
+                'message' => 'Failed to delete material.',
+                'error' => $e->getMessage(),
+                'status_code' => 500
+            ];
+        }
+    }
+ 
+  
+    public function addTaskToCard(int $cardId, int $taskId)
+    {
+        $card = InvoiceCard::find($cardId);
+        if (!$card) {
+            return ['success' => false, 'message' => 'Card not found'];
+        }
+
+        $existing = InvoiceCardTask::where('invoice_card_id', $cardId)
+            ->where('maintenance_request_id', $taskId)
+            ->first();
+
+        if ($existing) {
+            return ['success' => false, 'message' => 'Task already attached'];
+        }
+
+        $task = InvoiceCardTask::create([
+            'invoice_card_id' => $cardId,
+            'maintenance_request_id' => $taskId,
+            'task_status' => 'pending'
+        ]);
+
+        return ['success' => true, 'task' => $task];
+    }
+
+    public function syncClockingWithMaterials($clockingId)
+    {
+        $clocking = Clocking::find($clockingId);
+        if (!$clocking) {
+            return;
+        }
+
+        // Get all materials from all cards in this clocking session
+        $totalMaterialsCost = InvoiceCardMaterial::whereHas('invoiceCard', function($query) use ($clockingId) {
+            $query->where('clocking_id', $clockingId);
+        })->sum('cost');
+
+        // Get the first receipt photo from any material in this session
+        $firstReceiptPhoto = InvoiceCardMaterial::whereHas('invoiceCard', function($query) use ($clockingId) {
+            $query->where('clocking_id', $clockingId);
+        })->whereNotNull('receipt_photos')->first();
+
+        // Update clocking record
+        $clocking->bought_something = $totalMaterialsCost > 0;
+        $clocking->purchase_cost = $totalMaterialsCost;
+        
+        if ($firstReceiptPhoto && !empty($firstReceiptPhoto->receipt_photos)) {
+            $clocking->purchase_receipt = $firstReceiptPhoto->receipt_photos[0];
+        } elseif ($totalMaterialsCost == 0) {
+            $clocking->purchase_receipt = null;
+        }
+        
+        $clocking->save();
+
+        Log::info('Synced clocking record with all materials', [
+            'clocking_id' => $clockingId,
+            'total_materials_cost' => $totalMaterialsCost,
+            'bought_something' => $clocking->bought_something
+        ]);
+    }
+    public function getIncompleteCards()
+    {
+        $incompleteCards = InvoiceCard::where('user_id', Auth::id())
+            ->where('status', 'not_done')
+            ->whereNotNull('end_time')
+            ->with('store')
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function($card) {
+                return [
+                    'id' => $card->id,
+                    'store_id' => $card->store_id,
+                    'store_name' => $card->store->store_number . ' - ' . $card->store->name,
+                    'created_at' => $card->created_at->format('M d, Y g:i A'),
+                    'not_done_reason' => $card->not_done_reason,
+                    'materials_count' => $card->materials->count(),
+                    'tasks_count' => $card->maintenanceRequests->count(),
+                ];
+            });
+
+        return $incompleteCards;
+    }
+ 
+    
+    
 }
