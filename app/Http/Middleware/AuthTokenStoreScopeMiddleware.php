@@ -40,34 +40,36 @@ class AuthTokenStoreScopeMiddleware
         // 3) Build store_context EXACTLY as TokenVerifyController expects
         $storeContext = $this->buildStoreContext($request);
 
-        // 4) Redis cache: key includes token+route+method+store_context signature
+        // // 4) Redis cache: key includes token+route+method+store_context signature
         // $cache = Cache::store('redis');
         // $cacheKey = $this->verifyCacheKey($serviceName, $userToken, $request, $storeContext);
 
-        // $verify = $cache->remember($cacheKey, $cacheTtl, function () use (
-        //     $baseUrl,
-        //     $verifyPath,
-        //     $serviceName,
-        //     $callToken,
-        //     $timeout,
-        //     $retries,
-        //     $retryMs,
-        //     $userToken,
-        //     $request,
-        //     $storeContext
-        // ) {
-        $verify = $this->verifyWithAuthServer(
-            $baseUrl,
-            $verifyPath,
-            $serviceName,
-            $callToken,
-            $timeout,
-            $retries,
-            $retryMs,
-            $userToken,
-            $request,
-            $storeContext
-        );
+        $verify =
+            // $cache->remember($cacheKey, $cacheTtl, function () use (
+            //     $baseUrl,
+            //     $verifyPath,
+            //     $serviceName,
+            //     $callToken,
+            //     $timeout,
+            //     $retries,
+            //     $retryMs,
+            //     $userToken,
+            //     $request,
+            //     $storeContext
+            // ) {
+            //     return 
+            $this->verifyWithAuthServer(
+                $baseUrl,
+                $verifyPath,
+                $serviceName,
+                $callToken,
+                $timeout,
+                $retries,
+                $retryMs,
+                $userToken,
+                $request,
+                $storeContext
+            );
         // });
 
         // 5) Enforce BOTH token validity + authorization decision
@@ -89,15 +91,14 @@ class AuthTokenStoreScopeMiddleware
             abort(401, 'Unauthorized: missing user id');
         }
 
-        // 6) DO NOT REPLICATE USERS HERE. 
-        // Commented out until it is merged with the rest of the systems
-        // $user = User::query()->find($userId);
-        // if (!$user) {
-        //     abort(401, 'Unauthorized: user not synced yet');
-        // }
+        // 6) DO NOT REPLICATE USERS HERE.
+        $user = User::query()->find($userId);
+        if (!$user) {
+            abort(401, 'Unauthorized: user not synced yet');
+        }
 
-        // // 7) Login for session-based parts of this app
-        // Auth::login($user);
+        // 7) Login for session-based parts of this app
+        Auth::login($user);
 
         // 8) Expose roles/perms/ext to downstream middlewares/controllers
         $request->attributes->set('authz_roles', (array) ($verify['roles'] ?? []));
@@ -142,13 +143,35 @@ class AuthTokenStoreScopeMiddleware
             $body = (array) ($request->except(['entities', 'file', 'files']) ?? []);
         }
 
+        // Add any request headers you want authz to inspect here
+        $headerKeys = [
+            'X-Store-Id',
+            'X-Store-Ids',
+            'X-StoreId',
+            'X-StoreIds',
+            'store_id',
+            'store_ids',
+            'storeId',
+            'storeIds',
+            'store',
+        ];
+
+        $headers = [];
+        foreach ($headerKeys as $key) {
+            $value = $request->header($key);
+
+            if ($value !== null && $value !== '') {
+                $headers[$key] = $value;
+            }
+        }
+
         $ctx = [
             'path' => $path,
             'query' => $query,
             'body' => $body,
+            'header' => $headers,
         ];
 
-        // stabilize ordering for hashing
         $this->ksortRecursive($ctx);
 
         return $ctx;
@@ -158,15 +181,18 @@ class AuthTokenStoreScopeMiddleware
     {
         $out = [];
         foreach ($params as $k => $v) {
-            // Route model binding: keep it small + deterministic
             if (is_object($v) && isset($v->id)) {
+                // Route model binding: resolved model → use integer PK
                 $out[$k] = (int) $v->id;
                 continue;
             }
+            // Scalars (strings, integers) pass through as-is
+            // e.g. store_id = "03795-00001" stays a string
             $out[$k] = $v;
         }
         return $out;
     }
+
 
     private function ksortRecursive(array &$arr): void
     {
