@@ -92,13 +92,13 @@ class AuthTokenStoreScopeMiddleware
         }
 
         // 6) DO NOT REPLICATE USERS HERE.
-        $user = User::query()->find($userId);
-        if (!$user) {
-            abort(401, 'Unauthorized: user not synced yet');
-        }
+        // $user = User::query()->find($userId);
+        // if (!$user) {
+        //     abort(401, 'Unauthorized: user not synced yet');
+        // }
 
-        // 7) Login for session-based parts of this app
-        Auth::login($user);
+        // // 7) Login for session-based parts of this app
+        // Auth::login($user);
 
         // 8) Expose roles/perms/ext to downstream middlewares/controllers
         $request->attributes->set('authz_roles', (array) ($verify['roles'] ?? []));
