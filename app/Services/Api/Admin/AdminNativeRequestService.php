@@ -10,6 +10,12 @@ use Illuminate\Http\Request;
 
 class AdminNativeRequestService
 {
+    protected $filterService;
+
+    public function __construct(RequestFilterService $filterService)
+    {
+        $this->filterService = $filterService;
+    }
     public function getAll($request): array
     {
         $query = NativeRequest::query()
@@ -22,42 +28,10 @@ class AdminNativeRequestService
             'done' => NativeRequest::where('status', 'done')->count(),
             'canceled' => NativeRequest::where('status', 'canceled')->count(),
         ];
+        // Apply filters from the service
+        $query = $this->filterService->applyFilters($query, $request);
 
-        if ($request->filled('status') && $request->status !== 'all') {
-            $query->where('status', $request->status);
-        }
-
-        if ($request->filled('urgency') && $request->urgency !== 'all') {
-            $query->where('urgency_level_id', $request->urgency);
-        }
-
-        if ($request->filled('store') && $request->store !== 'all') {
-            $query->where('store_id', $request->store);
-        }
-
-        if ($request->filled('assigned_to') && $request->assigned_to !== 'all') {
-            if ($request->assigned_to === 'unassigned') {
-                $query->whereNull('assigned_to');
-            } else {
-                $query->where('assigned_to', $request->assigned_to);
-            }
-        }
-
-        if ($request->filled('search')) {
-            $search = $request->search;
-
-            $query->where(function ($q) use ($search) {
-                $q->where('equipment_with_issue', 'LIKE', "%{$search}%")
-                    ->orWhere('description_of_issue', 'LIKE', "%{$search}%")
-                    ->orWhereHas('store', function ($storeQuery) use ($search) {
-                        $storeQuery->where('store_number', 'LIKE', "%{$search}%")
-                            ->orWhere('name', 'LIKE', "%{$search}%");
-                    })
-                    ->orWhereHas('requester', function ($requesterQuery) use ($search) {
-                        $requesterQuery->where('name', 'LIKE', "%{$search}%");
-                    });
-            });
-        }
+       
 
         if ($request->filled('date_from')) {
             $query->where('request_date', '>=', $request->date_from);
@@ -124,41 +98,9 @@ class AdminNativeRequestService
         $query = NativeRequest::query()
             ->with(['store', 'requester', 'urgencyLevel', 'assignedTo', 'attachments']);
 
-        if ($request->filled('status') && $request->status !== 'all') {
-            $query->where('status', $request->status);
-        }
+        // Apply filters from the service
+        $query = $this->filterService->applyFilters($query, $request);
 
-        if ($request->filled('urgency') && $request->urgency !== 'all') {
-            $query->where('urgency_level_id', $request->urgency);
-        }
-
-        if ($request->filled('store') && $request->store !== 'all') {
-            $query->where('store_id', $request->store);
-        }
-
-        if ($request->filled('assigned_to') && $request->assigned_to !== 'all') {
-            if ($request->assigned_to === 'unassigned') {
-                $query->whereNull('assigned_to');
-            } else {
-                $query->where('assigned_to', $request->assigned_to);
-            }
-        }
-
-        if ($request->filled('search')) {
-            $search = $request->search;
-
-            $query->where(function ($q) use ($search) {
-                $q->where('equipment_with_issue', 'LIKE', "%{$search}%")
-                    ->orWhere('description_of_issue', 'LIKE', "%{$search}%")
-                    ->orWhereHas('store', function ($storeQuery) use ($search) {
-                        $storeQuery->where('store_number', 'LIKE', "%{$search}%")
-                            ->orWhere('name', 'LIKE', "%{$search}%");
-                    })
-                    ->orWhereHas('requester', function ($requesterQuery) use ($search) {
-                        $requesterQuery->where('name', 'LIKE', "%{$search}%");
-                    });
-            });
-        }
 
         return $query->orderBy('request_date', 'desc')
             ->orderBy('created_at', 'desc')

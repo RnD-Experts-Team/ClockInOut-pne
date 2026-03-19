@@ -17,14 +17,12 @@ class CompanyService
         // Apply search filter
         if ($request->filled('search')) {
             $search = $request->search;
-
             $searchFilter = function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                     ->orWhere('contact_person', 'like', "%{$search}%")
                     ->orWhere('email', 'like', "%{$search}%")
                     ->orWhere('phone', 'like', "%{$search}%");
             };
-
             $query->where($searchFilter);
             $baseQuery->where($searchFilter);
         }
@@ -198,16 +196,12 @@ class CompanyService
 
         // Apply same filters as index
         if ($request->filled('search')) {
-
             $search = $request->search;
-
             $query->where(function ($q) use ($search) {
-
                 $q->where('name', 'like', "%{$search}%")
                     ->orWhere('contact_person', 'like', "%{$search}%")
                     ->orWhere('email', 'like', "%{$search}%")
                     ->orWhere('phone', 'like', "%{$search}%");
-
             });
         }
 

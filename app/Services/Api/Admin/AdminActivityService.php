@@ -61,9 +61,9 @@ class AdminActivityService
     }
     public function getDailyActivity(string $date): array
     {
-        $selectedDate = \Carbon\Carbon::parse($date);
+        $selectedDate = Carbon::parse($date);
 
-        $activities = \App\Models\AdminActivityLog::byDate($selectedDate)
+        $activities = AdminActivityLog::byDate($selectedDate)
             ->with('adminUser')
             ->orderBy('performed_at', 'desc')
             ->get();

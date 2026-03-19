@@ -9,29 +9,12 @@ class FolderService
 {
     public function index(Request $request): array
     {
-        $query = Folder::query()->withCount('workbooks');
+         $query = Folder::query()->withCount('workbooks');
 
-        if ($request->filled('search')) {
-            $search = $request->search;
+        // Apply filters and sorting using the service
+        $query = $this->applyFiltersAndSorting($query, $request);
 
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
-            });
-        }
-
-        $sortBy = $request->get('sort_by', 'created_at');
-        $sortOrder = $request->get('sort_order', 'desc');
-
-        if (in_array($sortBy, ['name', 'created_at', 'workbooks_count'])) {
-            if ($sortBy === 'workbooks_count') {
-                $query->orderBy('workbooks_count', $sortOrder);
-            } else {
-                $query->orderBy($sortBy, $sortOrder);
-            }
-        }
-
-         $folders = $query->latest()->get();
+        $folders = $query->latest()->get();
 
         return [
             'success' => true,
@@ -73,21 +56,8 @@ class FolderService
     {
         $query = $folder->workbooks()->with('columns');
 
-        if ($request->filled('search')) {
-            $search = $request->search;
-
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
-            });
-        }
-
-        $sortBy = $request->get('sort_by', 'created_at');
-        $sortOrder = $request->get('sort_order', 'desc');
-
-        if (in_array($sortBy, ['name', 'created_at'])) {
-            $query->orderBy($sortBy, $sortOrder);
-        }
+        // Apply filters and sorting using the service
+        $query = $this->applyFiltersAndSorting($query, $request);
 
         $workbooks = $query->get();
 
@@ -98,5 +68,30 @@ class FolderService
                 'workbooks' => $workbooks,
             ]
         ];
+    }
+    private function applyFiltersAndSorting($query, Request $request)
+    {
+        // Apply search filter
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        // Apply sorting
+        $sortBy = $request->get('sort_by', 'created_at');
+        $sortOrder = $request->get('sort_order', 'desc');
+
+        if (in_array($sortBy, ['name', 'created_at', 'workbooks_count'])) {
+            if ($sortBy === 'workbooks_count') {
+                $query->orderBy('workbooks_count', $sortOrder);
+            } else {
+                $query->orderBy($sortBy, $sortOrder);
+            }
+        }
+
+        return $query;
     }
 }
