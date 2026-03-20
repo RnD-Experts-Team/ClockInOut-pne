@@ -1,10 +1,10 @@
 <?php
 
-namespace Modules\Invoice\Database\Seeders;
+namespace Database\Seeders;
 
+use App\Models\ModulesInvoice\InvoiceEmailTemplate;
 use Illuminate\Database\Seeder;
-use Modules\Invoice\Models\InvoiceEmailTemplate;
-
+ 
 class InvoiceEmailTemplateSeeder extends Seeder
 {
     /**
