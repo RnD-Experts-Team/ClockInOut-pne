@@ -3,6 +3,7 @@
 namespace App\Services\Api\Admin;
 
 use App\Models\ExpirationTracking;
+use Carbon\Carbon;
 
 class ExpirationService
 {
@@ -86,7 +87,7 @@ class ExpirationService
 
     public function renewExpiration(array $validated, $expiration): array
     {
-        $newDate = \Carbon\Carbon::parse($validated['new_expiration_date']);
+        $newDate = Carbon::parse($validated['new_expiration_date']);
 
         if ($validated['action'] === 'renew') {
 
@@ -94,7 +95,7 @@ class ExpirationService
 
         } else {
 
-            $days = \Carbon\Carbon::today()->diffInDays($newDate);
+            $days = Carbon::today()->diffInDays($newDate);
 
             $expiration->extend($days, $validated['notes'] ?? null);
         }

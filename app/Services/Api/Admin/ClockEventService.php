@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 
 class ClockEventService
 {
+     
     public function getClockEventsData($request)
     {
         $date = $request->get('date')

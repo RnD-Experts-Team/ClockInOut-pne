@@ -45,11 +45,7 @@ class ReminderService
     public function store(array $validated, int $adminId): array
     {
         // Create full datetime
-        $reminderDateTime = Carbon::createFromFormat(
-            'Y-m-d H:i',
-            $validated['reminder_date'] . ' ' . $validated['reminder_time']
-        );
-
+       $reminderDateTime = $this->createReminderDateTime($validated['reminder_date'], $validated['reminder_time']);
         $reminder = CalendarReminder::create(array_merge($validated, [
             'admin_user_id' => $adminId,
             'status' => 'pending',
@@ -78,10 +74,9 @@ class ReminderService
                 'calendar_event_id' => $calendarEvent->id
             ]);
         }
-
         // Clear cache
-        $cacheKey = "pending_reminders_user_" . $adminId;
-        Cache::forget($cacheKey);
+
+        $this->forgetCache($adminId);
 
         // Success message
         $message = 'Reminder created successfully! ';
@@ -109,10 +104,7 @@ class ReminderService
     public function updateReminder(array $validated, $reminder, int $adminId): array
     {
         // Create full datetime
-        $reminderDateTime = \Carbon\Carbon::createFromFormat(
-            'Y-m-d H:i',
-            $validated['reminder_date'] . ' ' . $validated['reminder_time']
-        );
+        $reminderDateTime = $this->createReminderDateTime($validated['reminder_date'], $validated['reminder_time']);
 
         $reminder->update(array_merge($validated, [
             'reminder_time' => $reminderDateTime,
@@ -131,11 +123,8 @@ class ReminderService
                 'start_time' => $reminder->reminder_time,
             ]);
         }
-
         // Clear cache
-        $cacheKey = "pending_reminders_user_" . $adminId;
-        \Cache::forget($cacheKey);
-
+        $this->forgetCache($adminId);
         return [
             'reminder' => $reminder,
             'message' => 'Reminder updated successfully'
@@ -158,11 +147,9 @@ class ReminderService
             'notification_status' => 'dismissed',
             'notified_at' => Carbon::now()
         ]);
-
         // Clear user's cache
-        $cacheKey = "pending_reminders_user_" . $userId;
-        Cache::forget($cacheKey);
 
+        $this->forgetCache($userId);
         return [
             'success' => true,
             'message' => 'Reminder dismissed successfully'
@@ -187,12 +174,12 @@ class ReminderService
     }
     public function getDueReminders(int $userId): array
     {
-        $dueReminders = \App\Models\CalendarReminder::byUser($userId)
+        $dueReminders = CalendarReminder::byUser($userId)
             ->dueSoon(24)
             ->with('calendarEvent')
             ->get();
 
-        $overdueReminders = \App\Models\CalendarReminder::byUser($userId)
+        $overdueReminders = CalendarReminder::byUser($userId)
             ->overdue()
             ->with('calendarEvent')
             ->get();
@@ -225,7 +212,7 @@ class ReminderService
     }
     public function bulkAction(array $validated, int $adminId): array
     {
-        $reminders = \App\Models\CalendarReminder::whereIn('id', $validated['reminder_ids'])
+        $reminders = CalendarReminder::whereIn('id', $validated['reminder_ids'])
             ->where('admin_user_id', $adminId)
             ->get();
 
@@ -303,6 +290,25 @@ class ReminderService
             'debug_timezone' => config('app.timezone')
         ];
     }
+    private function forgetCache(int $adminId): void
+    {
+        $cacheKey = "pending_reminders_user_" . $adminId;
+        Cache::forget($cacheKey);
+    }
+
+    private function createReminderDateTime(string $reminderDate, string $reminderTime)
+    {
+        return Carbon::createFromFormat('Y-m-d H:i', $reminderDate . ' ' . $reminderTime);
+    }
+
+    private function updateNotificationStatus($reminder, string $status): void
+    {
+        $reminder->update([
+            'notification_status' => $status,
+            'notified_at' => Carbon::now()
+        ]);
+    }
+
 
     
 }

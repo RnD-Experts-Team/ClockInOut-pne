@@ -17,6 +17,7 @@ class AdminActivityService
             ? Carbon::parse($request->get('end_date'))
             : Carbon::today();
 
+
         $activities = AdminActivityLog::byDateRange($startDate, $endDate)
             ->with('adminUser')
             ->orderBy('performed_at', 'desc')
@@ -158,5 +159,35 @@ class AdminActivityService
         }
 
         return $query->paginate(50);
+    }
+
+    private function getDateRange($request)
+    {
+        $startDate = $request->get('start_date')
+            ? Carbon::parse($request->get('start_date'))
+            : Carbon::today()->subDays(30);
+
+        $endDate = $request->get('end_date')
+            ? Carbon::parse($request->get('end_date'))
+            : Carbon::today();
+            
+
+        return [$startDate, $endDate];
+    }
+
+    private function getActivitiesGroupedByType($startDate, $endDate)
+    {
+        return AdminActivityLog::byDateRange($startDate, $endDate)
+            ->selectRaw('action_type, COUNT(*) as count')
+            ->groupBy('action_type')
+            ->pluck('count', 'action_type');
+    }
+
+    private function getActivitiesGroupedByDate($startDate, $endDate)
+    {
+        return AdminActivityLog::byDateRange($startDate, $endDate)
+            ->selectRaw('DATE(performed_at) as date, COUNT(*) as count')
+            ->groupBy('date')
+            ->pluck('count', 'date');
     }
 }

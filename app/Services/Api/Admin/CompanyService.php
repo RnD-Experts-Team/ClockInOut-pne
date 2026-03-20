@@ -7,6 +7,7 @@ use App\Models\Payment;
 
 class CompanyService
 {
+   
     public function index($request)
     {
         $query = Company::query();
@@ -26,6 +27,7 @@ class CompanyService
             $query->where($searchFilter);
             $baseQuery->where($searchFilter);
         }
+        
 
         // Apply status filter
         if ($request->filled('is_active') && $request->is_active !== 'all') {
