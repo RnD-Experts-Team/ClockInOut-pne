@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers\Api\Admin;
 
+use App\Exports\ClockingExport;
 use App\Http\Controllers\Controller;
 use App\Services\Api\Admin\ExportService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Throwable;
 use Illuminate\Support\Facades\Log;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ExportController extends Controller
 {
@@ -15,7 +17,7 @@ class ExportController extends Controller
         private ExportService $service
     ) {}
 
-    public function exportToExcel(Request $request, $startDateParam = null, $endDateParam = null): JsonResponse
+  public function exportToExcel(Request $request, $startDateParam = null, $endDateParam = null)
     {
         try {
 
@@ -24,11 +26,16 @@ class ExportController extends Controller
 
             $result = $this->service->exportData($startDate, $endDate);
 
-            return response()->json($result, 200);
+            $data = $result['data'] ?? [];
+
+            return Excel::download(
+                new ClockingExport($data),
+                'clocking.xlsx'
+            );
 
         } catch (Throwable $e) {
 
-            Log::error('Clocking export JSON error: ' . $e->getMessage());
+            Log::error('Clocking export Excel error: ' . $e->getMessage());
 
             return response()->json([
                 'success' => false,

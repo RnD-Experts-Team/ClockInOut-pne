@@ -1,12 +1,14 @@
 <?php
 
 namespace App\Http\Controllers\Api\Admin;
+
 use App\Models\Company;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Admin\CompanyStoreRequest;
 use App\Http\Requests\Api\Admin\CompanyUpdateRequest;
 use App\Services\Api\Admin\CompanyService;
+use Maatwebsite\Excel\Facades\Excel;
 
 class CompanyController extends Controller
 {
@@ -131,23 +133,19 @@ class CompanyController extends Controller
     public function export(Request $request)
     {
         try {
+            $file = $this->companyService->export($request);
 
-            $data = $this->companyService->export($request);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Companies exported successfully',
-                'data' => $data
+            return response(base64_decode($file['content']), 200, [
+                'Content-Type' => 'text/csv; charset=UTF-8',
+                'Content-Disposition' => 'attachment; filename="' . $file['filename'] . '"',
             ]);
 
         } catch (\Throwable $e) {
-
             return response()->json([
                 'success' => false,
                 'message' => 'Export failed',
                 'error' => $e->getMessage()
             ], 500);
-
         }
     }
 

@@ -58,20 +58,35 @@ class LeaseController extends Controller
             'message' => $result['message']
         ], 200);
     }
-    public function downloadTemplate(): JsonResponse
+   public function downloadTemplate()
     {
         try {
 
             $template = $this->leaseService->downloadTemplate();
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Lease import template generated successfully.',
-                'data' => [
-                    'filename' => $template['filename'],
-                    'rows' => $template['data']
-                ]
-            ], 200);
+            $filename = $template['filename'];
+            $rows = $template['data'];
+
+            $file = fopen('php://temp', 'w');
+
+            // إذا في headers (أول صف)
+            if (!empty($rows)) {
+                fputcsv($file, array_keys($rows[0]));
+            }
+
+            // البيانات
+            foreach ($rows as $row) {
+                fputcsv($file, $row);
+            }
+
+            rewind($file);
+            $csvContent = stream_get_contents($file);
+            fclose($file);
+
+            return response($csvContent, 200, [
+                'Content-Type' => 'text/csv; charset=UTF-8',
+                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            ]);
 
         } catch (\Throwable $e) {
 
@@ -257,12 +272,11 @@ class LeaseController extends Controller
     {
         try {
 
-            $file = $this->leaseService->export($request);
+            $csvContent = $this->leaseService->export($request);
 
-            return response()->json([
-                'success' => true,
-                'filename' => 'leases_with_renewals_' . now()->format('Y-m-d_H-i-s') . '.csv',
-                'file' => $file
+            return response($csvContent, 200, [
+                'Content-Type' => 'text/csv; charset=UTF-8',
+                'Content-Disposition' => 'attachment; filename="leases_with_renewals_' . now()->format('Y-m-d_H-i-s') . '.csv"',
             ]);
 
         } catch (\Exception $e) {

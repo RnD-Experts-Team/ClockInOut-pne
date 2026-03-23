@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Admin;
 
+use App\Exports\ApartmentLeaseExport;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Admin\ApartmentLeaseStoreRequest;
 use App\Http\Requests\Api\Admin\ApartmentLeaseUpdateRequest;
@@ -10,7 +11,7 @@ use App\Services\Api\Admin\ApartmentLeaseService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-
+use Maatwebsite\Excel\Facades\Excel;
 class ApartmentLeaseController extends Controller
 {
     protected ApartmentLeaseService $apartmentLeaseService;
@@ -132,11 +133,10 @@ class ApartmentLeaseController extends Controller
 
             $data = $this->apartmentLeaseService->export($request);
 
-            return response()->json([
-                'success' => true,
-                'count' => $data->count(),
-                'data' => $data
-            ]);
+            return Excel::download(
+                new ApartmentLeaseExport($data),
+                'apartment_leases.xlsx'
+            );
 
         } catch (\Exception $e) {
 
@@ -149,4 +149,5 @@ class ApartmentLeaseController extends Controller
             ], 500);
         }
     }
+   
 }

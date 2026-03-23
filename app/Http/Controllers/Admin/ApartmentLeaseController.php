@@ -822,7 +822,6 @@ class ApartmentLeaseController extends Controller
                     'Notes',
                     'Lease Holder',
                     'Expiration Warning',
-                    // NEW: Renewal columns
                     'Renewal Date',
                     'Renewal Status',
                     'Renewal Notes',
