@@ -106,7 +106,7 @@ class InvoiceCardService
 
                 // Calculate distance, driving time, and driving payment if using car
                 if ($clocking->using_car && $existingCard->arrival_odometer) {
-                    $odometerService = new \Modules\Invoice\Services\OdometerCalculationService();
+                    $odometerService = new OdometerCalculationService();
                     // Use accumulate=true to add new driving data to existing data
                     $odometerService->calculateAll($existingCard, true);
                     

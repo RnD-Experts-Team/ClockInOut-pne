@@ -3,8 +3,8 @@
 namespace App\Services\Api;
 
 use App\Models\MaintenanceRequest;
+use App\Models\ModulesInvoice\InvoiceCard;
 use App\Services\Api\Admin\CognitoFormsService;
-use Modules\Invoice\Models\InvoiceCard;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 

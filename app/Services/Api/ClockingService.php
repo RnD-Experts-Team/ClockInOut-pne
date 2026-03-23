@@ -3,15 +3,14 @@ namespace App\Services\Api;
 use App\Models\Clocking;
 use App\Models\Store;
 use Illuminate\Support\Facades\Auth;
-use Modules\Invoice\Models\InvoiceCard;
 use Illuminate\Support\Facades\Log;
-use Modules\Invoice\Services\MileageDistributionService;
 use App\Models\Configuration;
+use App\Models\ModulesInvoice\InvoiceCard;
 use App\Models\User;
+use App\Services\Api\Admin\ModulesInvoice\MileageDistributionService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
-
-
+ 
 class ClockingService
 {
     //for user:
@@ -132,7 +131,7 @@ class ClockingService
 
         if ($clocking->using_car && $request->miles_out) {
             try {
-                $mileageService = new \Modules\Invoice\Services\MileageDistributionService();
+                $mileageService = new MileageDistributionService();
                 $mileageService->distributeReturnMiles($clocking->id);
 
                 Log::info('Final segment miles distributed successfully', [

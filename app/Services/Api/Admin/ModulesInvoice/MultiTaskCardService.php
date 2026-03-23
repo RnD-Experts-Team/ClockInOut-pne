@@ -1,8 +1,8 @@
 <?php
 namespace App\Services\Api\Admin\ModulesInvoice;
 
-use Modules\Invoice\Models\InvoiceCardTask;
-use Modules\Invoice\Models\InvoiceCard;
+use App\Models\ModulesInvoice\InvoiceCard;
+use App\Models\ModulesInvoice\InvoiceCardTask;
 use Illuminate\Support\Facades\Log;
 
 class MultiTaskCardService
