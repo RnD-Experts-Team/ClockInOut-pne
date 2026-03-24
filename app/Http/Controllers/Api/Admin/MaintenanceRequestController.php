@@ -168,6 +168,25 @@ class MaintenanceRequestController extends Controller
     {
         return $this->maintenanceService->getByStore($storeId);
     }
+    public function ticketReport(Request $request)
+    {
+        try {
+            // Delegate the logic to the service
+            $maintenanceRequests = $this->maintenanceService->getTicketReport($request);
+
+            return response()->json([
+                'success' => true,
+                'data' => $maintenanceRequests
+            ], 200);
+        } catch (\Exception $e) {
+            \Log::error('Ticket Report Error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch the ticket report',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 
     public function getLatestByStore(Request $request, $storeId)
     {

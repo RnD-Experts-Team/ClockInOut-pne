@@ -6,9 +6,9 @@ use App\Http\Requests\Api\Admin\LeaseStoreRequest;
 use Illuminate\Http\Request;
 use App\Services\Api\Admin\LeaseService;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\Admin\LeaseImportRequest;
 use App\Http\Requests\Api\Admin\LeaseUpdateRequest;
-use App\Http\Requests\LeaseImportRequest;
-use App\Models\Lease;
+ use App\Models\Lease;
 use Illuminate\Http\JsonResponse;
 
 class LeaseController extends Controller
@@ -58,7 +58,7 @@ class LeaseController extends Controller
             'message' => $result['message']
         ], 200);
     }
-   public function downloadTemplate()
+    public function downloadTemplate()
     {
         try {
 

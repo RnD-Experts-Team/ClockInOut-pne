@@ -809,6 +809,76 @@ class MaintenanceRequestService
             return response()->json(['error' => 'Failed to load maintenance requests'], 500);
         }
     }
+    public function getTicketReport(Request $request)
+    {
+        // Initialize the query for maintenance requests
+        $query = MaintenanceRequest::with(['store', 'requester', 'assignedTo', 'urgencyLevel'])
+            ->select([
+                'id',
+                'entry_number',
+                'store_id',
+                'equipment_with_issue',
+                'status',
+                'costs',
+                'urgency_level_id',
+                'assigned_to',
+                'due_date',
+                'task_end_date',
+                'created_at',
+                'assignment_source',
+                'current_task_assignment_id'
+            ]);
+
+        // Apply status filter if provided
+        if ($request->filled('status') && $request->status !== 'all') {
+            $query->where('status', $request->status);
+        }
+
+        // Apply urgency level filter if provided
+        if ($request->filled('urgency') && $request->urgency !== 'all') {
+            $query->where('urgency_level_id', $request->urgency);
+        }
+
+        // Apply store filter if provided
+        if ($request->filled('store') && $request->store !== 'all') {
+            $query->where('store', 'LIKE', '%' . $request->store . '%');
+        }
+
+        // Apply search filter if provided
+        if ($request->filled('search')) {
+            $query->where(function ($q) use ($request) {
+                $q->where('store', 'LIKE', '%' . $request->search . '%')
+                    ->orWhere('equipment_with_issue', 'LIKE', '%' . $request->search . '%')
+                    ->orWhere('description_of_issue', 'LIKE', '%' . $request->search . '%');
+            });
+        }
+
+        // Apply date range filter if provided
+        if ($request->filled('date_range') && $request->date_range !== 'all') {
+            switch ($request->date_range) {
+                case 'this_week':
+                    $query->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()]);
+                    break;
+                case 'this_month':
+                    $query->whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()]);
+                    break;
+                case 'this_year':
+                    $query->whereBetween('created_at', [now()->startOfYear(), now()->endOfYear()]);
+                    break;
+                case 'custom':
+                    if ($request->filled('start_date')) {
+                        $query->whereDate('created_at', '>=', $request->start_date);
+                    }
+                    if ($request->filled('end_date')) {
+                        $query->whereDate('created_at', '<=', $request->end_date);
+                    }
+                    break;
+            }
+        }
+
+        // Execute the query and get the data
+        return $query->get();
+    }
 
     public function getLatestByStore(Request $request, $storeId)
     {
