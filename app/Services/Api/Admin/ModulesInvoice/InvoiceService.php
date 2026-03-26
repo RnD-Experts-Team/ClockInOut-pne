@@ -16,12 +16,7 @@ use Illuminate\Support\Facades\App;
 
 class InvoiceService
 {
-    protected $invoiceService;
-
-    public function __construct(InvoiceService $invoiceService)
-    {
-        $this->invoiceService = $invoiceService;
-    }
+    
     public function index(array $filters)
     {
         $query = Invoice::with(['store', 'user', 'invoiceCard']);

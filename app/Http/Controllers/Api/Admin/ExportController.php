@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api\Admin;
 use App\Exports\ClockingExport;
 use App\Http\Controllers\Controller;
 use App\Services\Api\Admin\ExportService;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Throwable;
 use Illuminate\Support\Facades\Log;

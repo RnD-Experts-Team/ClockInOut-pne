@@ -2,14 +2,15 @@
 
 namespace App\Mail;
 
+use App\Models\ModulesInvoice\Invoice;
+use App\Models\ModulesInvoice\InvoiceEmailTemplate;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Queue\SerializesModels;
-use Modules\Invoice\Models\Invoice;
-use Modules\Invoice\Models\InvoiceEmailTemplate;
+ 
 
 class InvoiceMail extends Mailable
 {
