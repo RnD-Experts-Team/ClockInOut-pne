@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\EquipmentTrackerController;
 use App\Http\Controllers\Admin\ApartmentLeaseController;
 use App\Http\Controllers\AdminActivityController;
 use App\Http\Controllers\AttendanceController;
@@ -271,6 +272,20 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', RoleMiddleware::clas
             Route::get('/{request}', [App\Http\Controllers\Admin\AdminNativeRequestController::class, 'show'])->name('show');
             Route::patch('/{request}/status', [App\Http\Controllers\Admin\AdminNativeRequestController::class, 'updateStatus'])->name('updateStatus');
         });
+
+    // ── Equipment Tracker ────────────────────────────────────────────────────
+    Route::prefix('equipment')->name('equipment.')->group(function () {
+        Route::get('/', [EquipmentTrackerController::class, 'index'])->name('index');
+        Route::get('/export', [EquipmentTrackerController::class, 'export'])->name('export');
+        Route::get('/create', [EquipmentTrackerController::class, 'create'])->name('create');
+        Route::post('/', [EquipmentTrackerController::class, 'store'])->name('store');
+        Route::get('/{id}', [EquipmentTrackerController::class, 'show'])->name('show');
+        Route::get('/{id}/export', [EquipmentTrackerController::class, 'exportDetail'])->name('export-detail');
+        Route::get('/{id}/edit', [EquipmentTrackerController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [EquipmentTrackerController::class, 'update'])->name('update');
+        Route::delete('/{id}', [EquipmentTrackerController::class, 'destroy'])->name('destroy');
+        Route::patch('/mr/{mrId}/reassign', [EquipmentTrackerController::class, 'reassignMr'])->name('mr.reassign');
+    });
 });
 
 // PRIORITY 11: Workbook System

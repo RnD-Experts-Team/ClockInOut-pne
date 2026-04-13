@@ -8,6 +8,14 @@
             <div>
                 <h1 class="text-3xl font-bold text-black-900">Maintenance Request #{{ $maintenanceRequest->entry_number ?? $maintenanceRequest->id }}</h1>
                 <p class="mt-2 text-sm text-black-700">View and manage maintenance request details</p>
+                @if(($maintenanceRequest->source ?? 'cognito') === 'manual')
+                    <div class="mt-3 inline-flex items-center gap-2 px-3 py-1.5 bg-orange-100 border border-orange-300 text-orange-800 text-sm rounded-lg">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                        </svg>
+                        Created manually by {{ $maintenanceRequest->createdByUser?->name ?? 'Technician' }}
+                    </div>
+                @endif
             </div>
             <a href="{{ route('maintenance-requests.index') }}"
                class="inline-flex items-center px-4 py-2 border border-orange-200 text-sm font-medium rounded-lg text-black-700 bg-orange-50 hover:bg-orange-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-all duration-200">
@@ -47,7 +55,9 @@
                         <div>
                             <dt class="text-sm font-medium text-black-500">Requester</dt>
                             <dd class="mt-1 text-sm text-black-900">
-                                @if($maintenanceRequest->requester)
+                                @if(($maintenanceRequest->source ?? 'cognito') === 'manual')
+                                    <em class="text-gray-500">— Manual record (no Cognito requester)</em>
+                                @elseif($maintenanceRequest->requester)
                                     {{ $maintenanceRequest->requester->first_name }} {{ $maintenanceRequest->requester->last_name }}
                                 @else
                                     No Requester
@@ -88,7 +98,9 @@
                         <div>
                             <dt class="text-sm font-medium text-black-500">Urgency Level</dt>
                             <dd class="mt-1">
-                                @if($maintenanceRequest->urgencyLevel)
+                                @if(($maintenanceRequest->source ?? 'cognito') === 'manual')
+                                    <span class="inline-flex items-center px-3 py-1 text-sm font-semibold rounded-full bg-orange-100 text-black-800">N/A (Manual Record)</span>
+                                @elseif($maintenanceRequest->urgencyLevel)
                                     @switch($maintenanceRequest->urgencyLevel->name)
                                         @case('Critical')
                                         @case('Impacts Sales')

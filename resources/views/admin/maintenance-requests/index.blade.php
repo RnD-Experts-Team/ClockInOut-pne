@@ -277,6 +277,11 @@
                                 </td>
                                 <td class="px-4 py-4 text-sm font-bold text-gray-900">
                                     <span class="bg-gray-100 px-2 py-1 rounded-lg">#{{ $request->entry_number ?? $request->id }}</span>
+                                    @if(($request->source ?? 'cognito') === 'manual')
+                                        <span class="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800">Manual</span>
+                                    @else
+                                        <span class="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700">Cognito</span>
+                                    @endif
                                 </td>
                                 <td class="px-4 py-4 text-sm text-gray-600">
                                     @if($request->store && is_object($request->store))
@@ -385,7 +390,17 @@
                                     @endswitch
                                 </td>
                                 <td class="px-4 py-4 text-sm text-gray-600">
-                                    @if($request->effective_assigned_user)
+                                    @if($request->source === 'manual' && !$request->assigned_to && $request->createdByUser)
+                                        <div class="flex items-center">
+                                            <div class="w-6 h-6 bg-orange-400 rounded-full flex items-center justify-center mr-2">
+                                                <span class="text-xs font-medium text-white">{{ substr($request->createdByUser->name, 0, 1) }}</span>
+                                            </div>
+                                            <div>
+                                                <div class="font-medium text-gray-900">{{ $request->createdByUser->name }}</div>
+                                                <div class="text-xs text-gray-500">Created By</div>
+                                            </div>
+                                        </div>
+                                    @elseif($request->effective_assigned_user)
                                         <div class="flex items-center">
                                             <div class="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center mr-2">
                                                 <span class="text-xs font-medium text-white">{{ substr($request->effective_assigned_user->name, 0, 1) }}</span>

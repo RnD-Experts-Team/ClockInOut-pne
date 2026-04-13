@@ -23,6 +23,7 @@ Route::middleware(['auth'])->prefix('Invoice')->name('invoice.')->group(function
         Route::post('/{id}/add-task', [InvoiceCardController::class, 'addTask'])->name('add-task');
         Route::post('/{id}/remove-task', [InvoiceCardController::class, 'removeTask'])->name('remove-task');
         Route::post('/{id}/complete-task', [InvoiceCardController::class, 'completeTask'])->name('complete-task');
+        Route::post('/{id}/manual-fix', [InvoiceCardController::class, 'storeManualFix'])->name('manual-fix.store');
         
         // Admin-only sync route
         Route::post('/sync-clocking-records', [InvoiceCardController::class, 'syncAllClockingRecords'])->name('sync-clocking-records');
@@ -39,6 +40,13 @@ Route::middleware(['auth'])->prefix('Invoice')->name('invoice.')->group(function
         Route::post('/{id}/send-email', [InvoiceController::class, 'sendEmail'])->name('send-email');
         Route::get('/{id}/download', [InvoiceController::class, 'download'])->name('download');
         Route::post('/{id}/save-image', [InvoiceController::class, 'saveImage'])->name('save-image');
+    });
+
+    // Invoice Card Status Report (Admin Only)
+    Route::middleware([\App\Http\Middleware\RoleMiddleware::class . ':admin'])->prefix('cards-report')->name('cards-report.')->group(function () {
+        Route::get('/', [InvoiceCardController::class, 'report'])->name('index');
+        Route::get('/export/completed', [InvoiceCardController::class, 'exportReportCompleted'])->name('export.completed');
+        Route::get('/export/open', [InvoiceCardController::class, 'exportReportOpen'])->name('export.open');
     });
     
     // Email Template Management (Admin Side)
