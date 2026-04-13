@@ -14,10 +14,21 @@ class RequestSyncService
      */
     public function syncMaintenanceRequest(MaintenanceRequest $mr): void
     {
+        // Manual fix records do not come from Cognito — skip native sync entirely
+        if ($mr->source === 'manual') {
+            return;
+        }
+
         $mr->load(['attachments', 'urgencyLevel', 'requester', 'store']);
 
-        // Validate that the requester_id exists in users table to avoid foreign key constraint violation
-        if ($mr->requester_id && !\App\Models\User::where('id', $mr->requester_id)->exists()) {
+        // Validate that the requester_id exists in users table to avoid foreign key constraint violation.
+        // Also skip sync entirely when requester_id is null (e.g. not_in_cognito records).
+        if (! $mr->requester_id) {
+            Log::info('RequestSyncService: skipping sync, no requester_id', ['maintenance_request_id' => $mr->id]);
+            return;
+        }
+
+        if (!\App\Models\User::where('id', $mr->requester_id)->exists()) {
             Log::warning('RequestSyncService: Requester user not found, skipping sync', [
                 'maintenance_request_id' => $mr->id,
                 'requester_id' => $mr->requester_id,

@@ -792,4 +792,230 @@ class InvoiceCardController extends Controller
             'incomplete_cards' => $incompleteCards
         ]);
     }
+
+    // ─── Task 2: Manual Fix Records ───────────────────────────────────────────
+
+    /**
+     * Create a manual maintenance request from within an InvoiceCard and
+     * automatically attach it to that card as a task.
+     */
+    public function storeManualFix(Request $request, $cardId)
+    {
+        $card = InvoiceCard::findOrFail($cardId);
+
+        // Only the technician who owns this card can add manual fixes
+        if ($card->user_id !== Auth::id()) {
+            abort(403, 'Unauthorized');
+        }
+
+        $validated = $request->validate([
+            'equipment_id'        => 'required|exists:equipment,id',
+            'description_of_issue'=> 'required|string|max:2000',
+            'how_we_fixed_it'     => 'nullable|string|max:2000',
+            'before_image'        => 'nullable|image|max:5120', // 5 MB
+            'after_image'         => 'nullable|image|max:5120',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $beforePath = null;
+            $afterPath  = null;
+
+            if ($request->hasFile('before_image')) {
+                $beforePath = $request->file('before_image')
+                    ->store('equipment-photos/before', 'public');
+            }
+            if ($request->hasFile('after_image')) {
+                $afterPath = $request->file('after_image')
+                    ->store('equipment-photos/after', 'public');
+            }
+
+            $mr = MaintenanceRequest::create([
+                'store_id'             => $card->store_id,
+                'equipment_id'         => $validated['equipment_id'],
+                'equipment_with_issue' => \App\Models\Equipment::find($validated['equipment_id'])?->name ?? 'Manual Fix',
+                'description_of_issue' => $validated['description_of_issue'],
+                'how_we_fixed_it'      => $validated['how_we_fixed_it'] ?? null,
+                'source'               => 'manual',
+                'status'               => 'in_progress',
+                'created_by_user_id'   => Auth::id(),
+                'request_date'         => now(),
+                'date_submitted'       => now(),
+                'not_in_cognito'       => true,
+                'before_image'         => $beforePath,
+                'after_image'          => $afterPath,
+            ]);
+
+            // Attach to this card via the pivot table
+            $card->maintenanceRequests()->attach($mr->id, [
+                'task_status' => 'pending',
+                'status'      => 'not_done',
+            ]);
+
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Failed to create manual fix record', ['error' => $e->getMessage()]);
+            return back()->withErrors(['error' => 'Failed to create manual fix. Please try again.']);
+        }
+
+        return back()->with('success', 'Manual fix record added to this card.');
+    }
+
+    // ─── Task 3: Invoice Card Status Report ───────────────────────────────────
+
+    /**
+     * Admin-only report: Invoice card status by month.
+     */
+    public function report(Request $request)
+    {
+        $month   = $request->input('month', now()->format('Y-m'));
+        $storeId = $request->input('store');
+        $userId  = $request->input('user');
+        $status  = $request->input('status');
+        $invoiceStatus = $request->input('invoice_status');
+
+        [$year, $mon] = explode('-', $month);
+
+        $base = InvoiceCard::with(['user', 'store', 'invoice'])
+            ->whereYear('start_time', $year)
+            ->whereMonth('start_time', $mon)
+            ->when($storeId, fn ($q) => $q->where('store_id', $storeId))
+            ->when($userId,  fn ($q) => $q->where('user_id', $userId))
+            ->when($status && $status !== 'all', fn ($q) => $q->where('status', $status));
+
+        $cards = $base->get()->map(function ($card) {
+            $card->cross_month   = $this->isCrossMonth($card);
+            $card->days_open     = $card->end_time ? null : (int) now()->diffInDays($card->start_time);
+            $card->invoice_status = $card->invoice ? 'Invoiced' : 'Pending Invoice';
+            return $card;
+        });
+
+        // Apply invoice_status filter after derivation
+        if ($invoiceStatus && $invoiceStatus !== 'all') {
+            $cards = $cards->filter(fn ($c) => $c->invoice_status === $invoiceStatus)->values();
+        }
+
+        $completed = $cards->where('status', 'completed');
+        $open      = $cards->whereIn('status', ['in_progress', 'not_done'])
+                           ->sortByDesc('days_open')
+                           ->values();
+
+        $summary = [
+            'total'            => $cards->count(),
+            'completed_count'  => $completed->count(),
+            'open_count'       => $open->count(),
+            'total_cost'       => $completed->sum('total_cost'),
+            'outstanding_cost' => $open->sum('total_cost'),
+            'invoiced_total'   => $completed->where('invoice_status', 'Invoiced')->sum('total_cost'),
+            'pending_total'    => $completed->where('invoice_status', 'Pending Invoice')->sum('total_cost'),
+        ];
+
+        $stores = \App\Models\Store::active()->orderBy('store_number')->get();
+        $users  = \App\Models\User::whereIn('role', ['user', 'admin'])
+                      ->orderBy('name')->get();
+
+        return view('invoice::cards.report', compact(
+            'completed', 'open', 'summary',
+            'stores', 'users',
+            'month', 'storeId', 'userId', 'status', 'invoiceStatus'
+        ));
+    }
+
+    /**
+     * CSV export — completed tab of the report.
+     */
+    public function exportReportCompleted(Request $request)
+    {
+        return $this->exportReport($request, 'completed');
+    }
+
+    /**
+     * CSV export — open tab of the report.
+     */
+    public function exportReportOpen(Request $request)
+    {
+        return $this->exportReport($request, 'open');
+    }
+
+    private function exportReport(Request $request, string $tab)
+    {
+        $month   = $request->input('month', now()->format('Y-m'));
+        $storeId = $request->input('store');
+        $userId  = $request->input('user');
+
+        [$year, $mon] = explode('-', $month);
+
+        $cards = InvoiceCard::with(['user', 'store', 'invoice'])
+            ->whereYear('start_time', $year)
+            ->whereMonth('start_time', $mon)
+            ->when($storeId, fn ($q) => $q->where('store_id', $storeId))
+            ->when($userId,  fn ($q) => $q->where('user_id', $userId))
+            ->get()
+            ->map(function ($card) {
+                $card->cross_month    = $this->isCrossMonth($card);
+                $card->days_open      = $card->end_time ? null : (int) now()->diffInDays($card->start_time);
+                $card->invoice_status = $card->invoice ? 'Invoiced' : 'Pending Invoice';
+                return $card;
+            });
+
+        if ($tab === 'completed') {
+            $rows     = $cards->where('status', 'completed')->values();
+            $filename = 'cards-report-completed-' . $month . '.csv';
+        } else {
+            $rows     = $cards->whereIn('status', ['in_progress', 'not_done'])
+                              ->sortByDesc('days_open')->values();
+            $filename = 'cards-report-open-' . $month . '.csv';
+        }
+
+        return response()->streamDownload(function () use ($rows, $tab) {
+            $handle = fopen('php://output', 'w');
+            $headers = [
+                'Card #', 'Technician', 'Store', 'Start Date', 'End Date', 'Status',
+                'Cross-Month', 'Labor Cost', 'Materials', 'Mileage', 'Total Cost', 'Invoice Status',
+            ];
+            if ($tab === 'open') {
+                $headers[] = 'Days Open';
+            }
+            fputcsv($handle, $headers);
+
+            foreach ($rows as $card) {
+                $row = [
+                    $card->id,
+                    $card->user?->name,
+                    $card->store?->name,
+                    $card->start_time?->format('Y-m-d'),
+                    $card->end_time?->format('Y-m-d') ?? '—',
+                    ucfirst(str_replace('_', ' ', $card->status)),
+                    $card->cross_month ? 'Yes' : 'No',
+                    number_format((float) $card->labor_cost, 2),
+                    number_format((float) $card->materials_cost, 2),
+                    number_format((float) $card->mileage_payment, 2),
+                    number_format((float) $card->total_cost, 2),
+                    $card->invoice_status,
+                ];
+                if ($tab === 'open') {
+                    $row[] = $card->days_open ?? 0;
+                }
+                fputcsv($handle, $row);
+            }
+            fclose($handle);
+        }, $filename, ['Content-Type' => 'text/csv']);
+    }
+
+    /**
+     * Determine if a card spans across two different calendar months.
+     */
+    private function isCrossMonth(InvoiceCard $card): bool
+    {
+        if ($card->end_time) {
+            return $card->start_time->month !== $card->end_time->month
+                || $card->start_time->year  !== $card->end_time->year;
+        }
+
+        // Still open: cross-month if start was in a different month than today
+        return $card->start_time->month !== now()->month
+            || $card->start_time->year  !== now()->year;
+    }
 }
+

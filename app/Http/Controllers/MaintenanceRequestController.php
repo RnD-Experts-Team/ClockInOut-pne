@@ -26,6 +26,7 @@ class MaintenanceRequestController extends Controller
             'links',
             'store',
             'assignedTo',
+            'createdByUser',
             'taskAssignments' => function($q) {
                 $q->orderBy('assigned_at', 'desc')->with('assignedUser');
             }
@@ -51,7 +52,9 @@ class MaintenanceRequestController extends Controller
             'due_date',
             'assignment_source',
             'current_task_assignment_id',
-            'task_end_date', // ADD THIS LINE
+            'task_end_date',
+            'source',
+            'created_by_user_id',
             'created_at',
             'updated_at'
         ]);

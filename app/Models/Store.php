@@ -43,6 +43,11 @@ class Store extends Model
         return $this->hasMany(Payment::class);
     }
 
+    public function equipment(): HasMany
+    {
+        return $this->hasMany(\App\Models\Equipment::class);
+    }
+
     // Scopes
     public function scopeActive($query)
     {

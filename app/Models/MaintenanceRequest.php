@@ -13,6 +13,17 @@ class MaintenanceRequest extends Model
 {
     use HasFactory;
 
+    protected static function booted(): void
+    {
+        // Auto-link equipment_id from equipment_with_issue text when creating a new record
+        // and no equipment_id was explicitly provided.
+        static::creating(function (self $mr) {
+            if (empty($mr->equipment_id) && !empty($mr->equipment_with_issue)) {
+                $mr->equipment_id = Equipment::matchByName($mr->equipment_with_issue);
+            }
+        });
+    }
+
     protected $fillable = [
         'form_id',
         'store_id',
@@ -35,7 +46,11 @@ class MaintenanceRequest extends Model
         'assignment_source',
         'current_task_assignment_id',
         'task_end_date',
-
+        'equipment_id',
+        'source',
+        'created_by_user_id',
+        'before_image',
+        'after_image',
     ];
 
     protected $casts = [
@@ -152,6 +167,21 @@ class MaintenanceRequest extends Model
     public function store(): BelongsTo
     {
         return $this->belongsTo(Store::class);
+    }
+
+    public function equipment(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Equipment::class);
+    }
+
+    public function createdByUser(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\User::class, 'created_by_user_id');
+    }
+
+    public function assignedToUser(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\User::class, 'assigned_to');
     }
 
     public function urgencyLevel(): BelongsTo
