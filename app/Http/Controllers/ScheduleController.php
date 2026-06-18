@@ -34,10 +34,10 @@ class ScheduleController extends Controller
     {
         // Get the week dates
         $startDate = $request->start_date ?
-            Carbon::parse($request->start_date)->startOfWeek(Carbon::MONDAY) :
-            Carbon::now()->startOfWeek(Carbon::MONDAY);
+            Carbon::parse($request->start_date)->startOfWeek(Carbon::TUESDAY) :
+            Carbon::now()->startOfWeek(Carbon::TUESDAY);
 
-        $endDate = $startDate->copy()->endOfWeek(Carbon::SUNDAY);
+        $endDate = $startDate->copy()->endOfWeek(Carbon::MONDAY);
 
         // Generate current week days
         $currentWeek = collect();
@@ -110,7 +110,7 @@ class ScheduleController extends Controller
             'name' => $cleanName,
             'start_date' => $request->start_date,
             'end_date' => $request->end_date,
-            'week_start_date' => Carbon::parse($request->start_date)->startOfWeek(),
+            'week_start_date' => Carbon::parse($request->start_date)->startOfWeek(Carbon::TUESDAY),
             'status' => $request->has('publish') ? 'published' : 'draft',
             'created_by' => Auth::id(),
         ]);
@@ -326,7 +326,7 @@ class ScheduleController extends Controller
                 'name' => $cleanName,
                 'start_date' => $request->start_date,
                 'end_date' => $request->end_date,
-                'week_start_date' => Carbon::parse($request->start_date)->startOfWeek(),
+                'week_start_date' => Carbon::parse($request->start_date)->startOfWeek(Carbon::TUESDAY),
                 'status' => $request->has('publish') ? 'published' : $schedule->status,
             ]);
 
@@ -589,13 +589,13 @@ class ScheduleController extends Controller
         }
 
         // Use start_date instead of week_start_date for comparison
-        $weekStart = Carbon::parse($schedule->start_date)->startOfWeek();
+        $weekStart = Carbon::parse($schedule->start_date)->startOfWeek(Carbon::TUESDAY);
 
         // Deactivate other active schedules for the same week
         Schedule::where('status', 'active')
             ->whereBetween('start_date', [
                 $weekStart->format('Y-m-d'),
-                $weekStart->copy()->endOfWeek()->format('Y-m-d')
+                $weekStart->copy()->endOfWeek(Carbon::MONDAY)->format('Y-m-d')
             ])
             ->update(['status' => 'archived']);
 

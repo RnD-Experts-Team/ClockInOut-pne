@@ -310,6 +310,12 @@ return [
     'this_week' => 'Esta Semana',
     'average_daily_hours' => 'Promedio de Horas Diarias',
     'per_working_day' => 'por día de trabajo',
+    'fuel_reimbursement' => 'Reembolso de Combustible',
+    'from_mileage' => 'Por Kilometraje',
+    'payments_to_company' => 'Pagos a la Empresa',
+    'from_purchases' => 'Por Compras',
+    'week_total' => 'Total Semanal',
+    'pay_fuel_payments' => 'Pago + Combustible + Pagos',
 
     // Common UI Elements
     'read_more' => 'Leer Más',

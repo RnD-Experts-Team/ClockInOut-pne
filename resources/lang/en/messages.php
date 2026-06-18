@@ -297,4 +297,10 @@ return [
     'this_week' => 'This Week',
     'average_daily_hours' => 'Average Daily Hours',
     'per_working_day' => 'Per Working Day',
+    'fuel_reimbursement' => 'Fuel Reimbursement',
+    'from_mileage' => 'From Mileage',
+    'payments_to_company' => 'Payments to Company',
+    'from_purchases' => 'From Purchases',
+    'week_total' => 'Week Total',
+    'pay_fuel_payments' => 'Pay + Fuel + Payments',
 ];

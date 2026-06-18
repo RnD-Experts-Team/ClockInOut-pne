@@ -125,6 +125,54 @@
                     </div>
                 </div>
             </div>
+
+            <!-- NEW Card 7: Fuel Reimbursement -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <svg class="h-8 w-8 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 13l4-8h7l4 8M3 13v6a1 1 0 001 1h10a1 1 0 001-1v-6M3 13h12m4-2v6a2 2 0 11-4 0V7l2-2"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-4 {{ isRtl() ? 'mr-4 ml-0' : '' }}">
+                        <p class="text-sm font-medium text-gray-600">{{ __('messages.fuel_reimbursement') }}</p>
+                        <p class="text-2xl font-bold text-amber-900">${{ number_format($weeklyFuelCost ?? 0, 2) }}</p>
+                        <p class="text-xs text-gray-500">{{ __('messages.from_mileage') }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NEW Card 8: Payments to Company -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <svg class="h-8 w-8 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-4 {{ isRtl() ? 'mr-4 ml-0' : '' }}">
+                        <p class="text-sm font-medium text-gray-600">{{ __('messages.payments_to_company') }}</p>
+                        <p class="text-2xl font-bold text-rose-900">${{ number_format($weeklyPayments ?? 0, 2) }}</p>
+                        <p class="text-xs text-gray-500">{{ __('messages.from_purchases') }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NEW Card 9: Week Total (matches Scorecard TOTAL) -->
+            <div class="bg-orange-50 rounded-lg shadow p-6 border-2 border-orange-200">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <svg class="h-8 w-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-4 {{ isRtl() ? 'mr-4 ml-0' : '' }}">
+                        <p class="text-sm font-medium text-gray-700">{{ __('messages.week_total') }}</p>
+                        <p class="text-2xl font-bold text-orange-600">${{ number_format($weeklyTotal ?? 0, 2) }}</p>
+                        <p class="text-xs text-gray-500">{{ __('messages.pay_fuel_payments') }}</p>
+                    </div>
+                </div>
+            </div>
         </div>
 
 
