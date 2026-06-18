@@ -16,10 +16,10 @@ class UserScheduleController extends Controller
 
         // Get current week or requested week
         $startDate = $request->input('start_date')
-            ? Carbon::parse($request->input('start_date'))->startOfWeek(Carbon::MONDAY)
-            : Carbon::now()->startOfWeek(Carbon::MONDAY);
+            ? Carbon::parse($request->input('start_date'))->startOfWeek(Carbon::TUESDAY)
+            : Carbon::now()->startOfWeek(Carbon::TUESDAY);
 
-        $endDate = $startDate->copy()->endOfWeek(Carbon::SUNDAY);
+        $endDate = $startDate->copy()->endOfWeek(Carbon::MONDAY);
         $currentWeekStart = $startDate->copy();
         $currentWeekEnd = $endDate->copy();
         $previousWeek = $startDate->copy()->subWeek();
@@ -56,20 +56,28 @@ class UserScheduleController extends Controller
             ->get();
 
         // NEW: Get user's actual clocking records for this week
+        // NOTE: do NOT filter out open shifts here — payments-to-company are recorded
+        // per clocking even when clock_out is still null (matches the Scorecard logic).
         $clockingRecords = \App\Models\Clocking::where('user_id', $user->id)
             ->whereBetween('clock_in', [
                 $startDate->format('Y-m-d H:i:s'),
                 $endDate->endOfDay()->format('Y-m-d H:i:s')
             ])
-            ->whereNotNull('clock_out') // Only completed shifts
             ->get();
 
-        // NEW: Calculate actual worked hours from clocking data
+        // NEW: Calculate actual worked hours + full settlement from clocking data
+        // Mirrors App\Http\Controllers\Admin\ScorecardController::calculateUserScorecard()
+        $gasPaymentRate = \App\Models\Configuration::getGasPaymentRate();
         $actualWorkedSeconds = 0;
         $daysWorked = 0;
-        $weeklyEarnings = 0;
+        $weeklyEarnings = 0;  // Hourly pay only
+        $weeklyFuelCost = 0;  // Mileage reimbursement
+        $weeklyPayments = 0;  // Payments made to company (purchase_cost)
 
         foreach ($clockingRecords as $clocking) {
+            // Payments to company are counted regardless of clock_out (matches Scorecard)
+            $weeklyPayments += $clocking->purchase_cost;
+
             if ($clocking->clock_in && $clocking->clock_out) {
                 $clockIn = Carbon::parse($clocking->clock_in);
                 $clockOut = Carbon::parse($clocking->clock_out);
@@ -85,9 +93,16 @@ class UserScheduleController extends Controller
                         $hoursDecimal = $diffInSeconds / 3600;
                         $weeklyEarnings += ($hoursDecimal * $user->hourly_pay);
                     }
+
+                    // Fuel reimbursement based on miles driven this shift
+                    $miles = $clocking->miles_out - $clocking->miles_in;
+                    $weeklyFuelCost += ($miles * $gasPaymentRate);
                 }
             }
         }
+
+        // NEW: Full weekly total — matches the Scorecard TOTAL column
+        $weeklyTotal = $weeklyEarnings + $weeklyFuelCost + $weeklyPayments;
 
         // NEW: Format actual worked hours
         $actualHoursWorked = sprintf('%02d:%02d',
@@ -96,10 +111,11 @@ class UserScheduleController extends Controller
         );
 
         // NEW: Calculate average daily hours
+        $averageDailySeconds = $daysWorked > 0 ? (int) ($actualWorkedSeconds / $daysWorked) : 0;
         $averageDailyHours = $daysWorked > 0 ?
             sprintf('%02d:%02d',
-                floor(($actualWorkedSeconds / $daysWorked) / 3600),
-                floor((($actualWorkedSeconds / $daysWorked) % 3600) / 60)
+                floor($averageDailySeconds / 3600),
+                floor(($averageDailySeconds % 3600) / 60)
             ) : '00:00';
 
         // Create week calendar with proper date filtering (EXISTING)
@@ -131,7 +147,10 @@ class UserScheduleController extends Controller
             // NEW: Add actual clocking data
             'actualHoursWorked',  // Real worked hours from clocking
             'daysWorked',         // Number of days actually worked
-            'weeklyEarnings',     // Earnings based on actual hours
+            'weeklyEarnings',     // Hourly pay based on actual hours
+            'weeklyFuelCost',     // Mileage reimbursement (matches Scorecard)
+            'weeklyPayments',     // Payments made to company (matches Scorecard)
+            'weeklyTotal',        // Full settlement total (matches Scorecard TOTAL)
             'averageDailyHours',   // Average hours per working day
          'currentWeekStart',
         'currentWeekEnd',

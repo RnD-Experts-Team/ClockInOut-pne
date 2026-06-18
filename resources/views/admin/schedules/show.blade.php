@@ -144,7 +144,7 @@
                     <tr>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
                         @php
-                            $startOfWeek = \Carbon\Carbon::parse($schedule->start_date)->startOfWeek();
+                            $startOfWeek = \Carbon\Carbon::parse($schedule->start_date)->startOfWeek(\Carbon\Carbon::TUESDAY);
                             $weekDays = [];
                             for($i = 0; $i < 7; $i++) {
                                 $weekDays[] = $startOfWeek->copy()->addDays($i);

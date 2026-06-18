@@ -299,5 +299,11 @@ return [
     'this_week' => 'هذا الأسبوع',
     'average_daily_hours' => 'متوسط الساعات اليومية',
     'per_working_day' => 'لكل يوم عمل',
+    'fuel_reimbursement' => 'تعويض الوقود',
+    'from_mileage' => 'حسب المسافة',
+    'payments_to_company' => 'مدفوعات للشركة',
+    'from_purchases' => 'من المشتريات',
+    'week_total' => 'إجمالي الأسبوع',
+    'pay_fuel_payments' => 'الأجر + الوقود + المدفوعات',
 
 ];
